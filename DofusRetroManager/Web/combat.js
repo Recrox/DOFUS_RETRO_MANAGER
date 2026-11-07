@@ -79,6 +79,37 @@ function combatSettings() {
     </div>`;
 }
 
+// Détail d'une session de l'historique (clic sur sa ligne) : fenêtre par-dessus la page, par personnage et par objet
+function sessionDetail() {
+  if (!local.sessDetail || TABS[S.MainTabs?.i ?? 0]?.key !== 'combat' || !T('HuntSessionDetailTitle')) return '';
+  const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1];
+  return `<div class="modal-back" data-act="sess-close"><div class="modal glass wide" data-act="none">
+      <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><button class="small ghost right" data-act="sess-close">✕</button></div>
+      <div class="sub">${esc(T('HuntSessionDetailTitle'))}</div>
+      <div class="modal-body session-detail">
+        <p class="section-title">Par personnage</p>
+        ${table('HuntSessionChars', [
+          { h: '', f: r => r.Gfx ? `<img class="ico" src="icon/head/${r.Gfx}.png" alt="">` : '' },
+          { h: 'Personnage', k: 'Name', f: r => `<span class="strong">${esc(r.Name)}</span>` },
+          { h: 'Combats', k: 'Fights', num: true, f: r => fmt(r.Fights) },
+          { h: 'XP', k: 'Xp', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${fmt(r.Xp)}</span>` },
+          { h: 'Kamas', k: 'Kamas', num: true, f: r => fmt(r.Kamas) },
+          { h: 'Drops', k: 'Drops', num: true, f: r => fmt(r.Drops) },
+          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${fmt(r.Total)}</span>` },
+          { h: '/ h', k: 'PerHour', num: true, f: r => fmt(r.PerHour) },
+        ], { select: false, empty: 'Aucun personnage.' })}
+        <p class="section-title" style="margin-top:12px">Objets obtenus</p>
+        ${table('HuntSessionDrops', [
+          { h: '', f: r => itemImg(r.ItemId, 'sm') },
+          { h: 'Objet', k: 'Name', f: r => `<span class="strong ellipsis" data-tip="${esc(r.Who)}">${esc(r.Name)}</span>` },
+          { h: 'Qté', k: 'Quantity', num: true, f: r => fmt(r.Quantity) },
+          { h: 'Prix u.', k: 'Unit', num: true, f: r => fmt(r.Unit) },
+          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${fmt(r.Total)}</span>` },
+        ], { select: false, empty: 'Aucun objet obtenu.' })}
+        <div class="muted small">Drops au prix HDV actuel (sinon prix marchand) · qui a obtenu chaque objet : au survol de son nom.</div>
+      </div></div></div>`;
+}
+
 // Rentabilité : session en cours (et projection), ou historique de toutes les sessions
 function sessionCard() {
   const hist = local.open.sessHist;
@@ -94,8 +125,8 @@ function sessionCard() {
       { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong" data-tip="${esc('Kamas : ' + fmt(r.Kamas) + ' · Drops : ' + fmt(r.Drops))}">${fmt(r.Total)}</span>` },
       { h: '/ h', k: 'PerHour', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${fmt(r.PerHour)}</span>` },
       { h: '', f: r => r.Current ? '' : `<a class="item-link muted" ${attrs({ act: 'row', grid: 'HuntSessionGrid', i: r._i, handler: 'HuntSessionForget_Click' })} title="Oublier cette session">✕</a>` },
-    ], { select: false, empty: 'Aucune session : chaque fin de combat s\'ajoute à la session en cours.' })}</div>
-    <div class="muted small">Tous les personnages · drops au prix HDV actuel · détail par personnage au survol de la date · ≈ : reconstituée (pauses inconnues).</div>`, tabsHtml, 'glass card session');
+    ], { empty: 'Aucune session : chaque fin de combat s\'ajoute à la session en cours.' })}</div>
+    <div class="muted small">Tous les personnages · drops au prix HDV actuel · clic sur une session : son détail · ≈ : reconstituée (pauses inconnues).</div>`, tabsHtml, 'glass card session');
   return panel('session', 'Rentabilité', `<div class="lines">${esc(T('HuntSession'))}</div>
     ${rows('HuntProjection').length ? `<table class="proj"><thead><tr><th>Sur</th><th class="num">XP</th><th class="num">Kamas</th><th class="num">Drops (HDV)</th><th class="num">Total kamas</th></tr></thead><tbody>
       ${rows('HuntProjection').map(p => `<tr><td class="strong">${esc(p.Span)}</td><td class="num">${fmt(p.Xp)}</td><td class="num">${fmt(p.Kamas)}</td><td class="num">${fmt(p.Drops)}</td><td class="num acc strong">${fmt(p.Total)}</td></tr>`).join('')}</tbody></table>` : ''}

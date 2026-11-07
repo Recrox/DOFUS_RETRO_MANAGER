@@ -161,6 +161,7 @@ public partial class MainWindow
         var current = _hunt.CurrentSession();
         var list = _hunt.Sessions.Select(s => (s, now: false)).ToList();
         if (current != null) list.Add((current, true));
+        _sessionRowsUpdating = true;
         SetRows(HuntSessionGrid, list.AsEnumerable().Reverse().Select(x =>
         {
             var (s, now) = x;
@@ -175,6 +176,57 @@ public partial class MainWindow
                 s.Total.Fights, s.Characters.Count, s.Total.Xp, s.Total.Kamas, drops, total,
                 hours is { } h ? total / h : null, hours is { } h2 ? s.Total.Xp / h2 : null, tip, now, s.Rebuilt);
         }).ToList());
+        // Session dont le détail est ouvert : reste sélectionnée, et son détail suit (session en cours : nouveaux combats)
+        HuntSessionGrid.SelectedItem = (HuntSessionGrid.ItemsSource as IEnumerable<SessionRow>)?.FirstOrDefault(r => r.StartSort == _sessionDetail);
+        _sessionRowsUpdating = false;
+        ShowSessionDetail();
+    }
+
+    /// <summary>Session dont le détail est affiché (clic sur une ligne de l'historique), retrouvée par son début.</summary>
+    DateTime? _sessionDetail;
+    bool _sessionRowsUpdating;
+
+    void HuntSessionGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_sessionRowsUpdating) return;
+        _sessionDetail = (HuntSessionGrid.SelectedItem as SessionRow)?.StartSort;
+        ShowSessionDetail();
+    }
+
+    /// <summary>
+    /// Détail d'une session (fenêtre de la page) : chaque personnage (combats, XP, kamas, drops, total, gain par heure)
+    /// et chaque objet obtenu (quantité, prix unitaire HDV actuel, total, et qui l'a obtenu au survol).
+    /// </summary>
+    void ShowSessionDetail()
+    {
+        var s = _hunt == null || _sessionDetail is not { } start ? null
+            : _hunt.Sessions.FirstOrDefault(x => x.Start == start) ?? (_hunt.CurrentSession() is { } cur && cur.Start == start ? cur : null);
+        if (s == null || _data == null)
+        {
+            HuntSessionDetailTitle.Text = "";
+            SetRows(HuntSessionChars, Array.Empty<SessionCharRow>());
+            SetRows(HuntSessionDrops, Array.Empty<HuntDropRow>());
+            return;
+        }
+        double hours = Math.Max(s.Seconds, 60) / 3600;
+        double Drops(SessionTotals t) => t.Drops.Sum(d => d.Value * (UnitPrice(d.Key) ?? 0));
+        SetRows(HuntSessionChars, s.Characters.Select(c =>
+        {
+            double drops = Drops(c.Value), total = c.Value.Kamas + drops;
+            return new SessionCharRow(c.Key, _hunt!.LookOf(c.Key)?.Gfx ?? 0, c.Value.Fights, c.Value.Xp, c.Value.Kamas, drops, total, total / hours, c.Value.Xp / hours);
+        }).OrderByDescending(r => r.Total).ToList());
+        SetRows(HuntSessionDrops, s.Total.Drops.Select(d => new HuntDropRow(d.Key, _data.GetItem(d.Key).Name, d.Value, DropPrice(d.Key))
+            {
+                Who = string.Join(", ", s.Characters.Where(c => c.Value.Drops.ContainsKey(d.Key)).OrderByDescending(c => c.Value.Drops[d.Key])
+                    .Select(c => $"{c.Key} ×{c.Value.Drops[d.Key]}")),
+            })
+            .OrderByDescending(r => r.Total ?? -1).ThenBy(r => r.Name).ToList());
+        double total = s.Total.Kamas + Drops(s.Total);
+        var minutes = s.Seconds / 60;
+        HuntSessionDetailTitle.Text = $"{s.Start:dd'/'MM HH:mm} → {s.End:HH:mm} · "
+            + (minutes >= 60 ? $"{(int)(minutes / 60)} h {(int)(minutes % 60):00}" : $"{minutes:0} min")
+            + $" · {s.Total.Fights:N0} combat(s) · {s.Total.Xp:N0} XP · {Kamas(total)} ({Kamas(total / hours)} / h)"
+            + (s.Rebuilt ? " · reconstituée (pauses inconnues)" : "");
     }
 
     void HuntSessionForget_Click(object sender, RoutedEventArgs e)

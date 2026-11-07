@@ -180,6 +180,10 @@ public partial class MainWindow
     internal readonly WebText HuntSession = new() { ForegroundKey = "TextMuted" };
     internal readonly WebList HuntProjection = new();
     internal readonly WebList HuntSessionGrid = new();
+    /// <summary>Détail de la session choisie dans l'historique : titre, personnages, objets.</summary>
+    internal readonly WebText HuntSessionDetailTitle = new();
+    internal readonly WebList HuntSessionChars = new();
+    internal readonly WebList HuntSessionDrops = new();
     internal readonly WebText HuntLearned = new() { ForegroundKey = "TextMuted" };
     internal readonly WebButton HuntClearArchis = new() { Content = "Vider" };
     internal readonly WebList HuntArchiGrid = new();
@@ -400,6 +404,7 @@ public partial class MainWindow
         HuntAlertAdd.Click += HuntAlertAdd_Click;
         HuntAlertMonster.TextChanged += (_, _) => SuggestAlertMonsters();
         HuntFightsGroup.Checked += (_, _) => RefreshHunt();
+        HuntSessionGrid.SelectionChanged += HuntSessionGrid_SelectionChanged;
         HuntFightsGroup.Unchecked += (_, _) => RefreshHunt();
         HuntAlertTest.Click += HuntAlertTest_Click;
         EconomeReset.Click += EconomeReset_Click;

@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.62.0 — 7 novembre 2026
+
+- **Combat** : un clic sur une session de l'historique ouvre son détail : chaque personnage (combats, XP, kamas, drops, total, gain par heure) et chaque objet obtenu (quantité, prix, qui l'a eu au survol).
+
 ## 1.61.0 — 7 novembre 2026
 
 - **Combat** : correction : une alerte monstre n'apparaît plus dans le bandeau rouge des archi-monstres ; elle a son propre bandeau, qui disparaît quand le groupe n'est plus sur la map.

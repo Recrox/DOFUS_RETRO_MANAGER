@@ -50,7 +50,7 @@ function render() {
   const scroll = [...document.querySelectorAll('.table-wrap, .detail, .modal-body')].map(e => e.scrollTop);
 
   const html = header() + banner() + tabs(active)
-    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook();
+    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail();
   const app = document.getElementById('app');
   if (local.noMorph) app.innerHTML = html; else morphHtml(app, html);
 
@@ -127,7 +127,8 @@ document.addEventListener('click', e => {
     }
     case 'theme': post({ type: 'theme', value: d.v }); S._theme = d.v; schedule(); break;
     case 'style': post({ type: 'style', value: d.v }); S._style = d.v; schedule(); break;
-    case 'select': post({ type: 'select', name: d.grid, index: +d.i }); break;
+    case 'select': post({ type: 'select', name: d.grid, index: +d.i }); if (d.grid === 'HuntSessionGrid') { local.sessDetail = true; schedule(); } break;
+    case 'sess-close': local.sessDetail = false; schedule(); break;
     case 'row': post({ type: 'row', name: d.grid, index: +d.i, handler: d.handler }); break;
     case 'toggle': post({ type: 'toggle', name: d.name, index: +d.i }); break;
     // Case réglée à une valeur précise (boutons « l'un ou l'autre », ex. Perso / Groupe)

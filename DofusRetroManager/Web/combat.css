@@ -148,3 +148,10 @@ main:has(.combat-split) { overflow-y: auto; }
 .combat-split .stack .ellipsis, .combat-max .ellipsis { display: inline-block; max-width: 170px; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; vertical-align: middle; }
 .combat-split .stack .mobs { min-width: 100px; }
+/* Détail d'une session (fenêtre par-dessus la page) : plus large, deux tableaux qui défilent chacun */
+.modal.wide { width: min(980px, 100%); }
+.session-detail { gap: 6px; }
+.session-detail .table-wrap { flex: none; max-height: 34vh; }
+.session-detail .ellipsis { display: inline-block; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.session-detail .ico { width: 24px; height: 24px; }
+.session-hist tbody tr { cursor: pointer; }

@@ -9,7 +9,12 @@ namespace DofusRetroManager;
 public sealed record HuntDropRow(int ItemId, string Name, int Quantity, double? Unit)
 {
     public double? Total => Unit * Quantity;
+    /// <summary>Détail d'une session : personnages qui l'ont obtenu (« Alpha ×2, Beta ×1 »).</summary>
+    public string Who { get; init; } = "";
 }
+
+/// <summary>Personnage dans le détail d'une session : tête (Gfx), combats, XP, kamas, drops, total et rythmes par heure.</summary>
+public sealed record SessionCharRow(string Name, int Gfx, int Fights, long Xp, long Kamas, double Drops, double Total, double PerHour, double XpPerHour);
 
 /// <summary>Alerte monstre affichée dans l'onglet Combat.</summary>
 public sealed record HuntAlertRow(MonsterAlert Alert, string Text)
