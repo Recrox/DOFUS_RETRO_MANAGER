@@ -115,10 +115,10 @@ public partial class MainWindow
         catch (Exception ex) { AddLog($"Message de chasse ignoré ({ex.GetType().Name})."); }
     }
 
-    void OnArchiSpotted(ArchiSighting a)
+    void OnArchiSpotted(ArchiSighting a, HuntCharacter who)
     {
         if (_hunt?.SoundAlert == true) PlayAlert();
-        ShowArchiPopup(a);
+        ShowArchiPopup(a, who);
         if (_data != null) HuntStatus.Text = $"⚠ Archi-monstre sur la map : {_data.GetMonster(a.MonsterId).Name} (niveau {a.Level})";
     }
 
@@ -148,7 +148,12 @@ public partial class MainWindow
         PlayAlert();
         // Bulle d'exemple, pour vérifier qu'elle s'affiche (case « Pop-up archi »)
         if (_hunt?.ArchiPopup == true)
-            try { Multi.NoticeToast.Show("Archi-monstre (exemple)", "💎 12 345 k\n📍 [4,-18] Amakna", null, sticky: true); }
+            try
+            {
+                var c = _hunt.Characters.FirstOrDefault(c => c.Name.Length > 0);
+                Multi.NoticeToast.Show("Archi-monstre (exemple)", "💎 12 345 k\n📍 [4,-18] Amakna", c != null ? FocusOnClick(c) : null, sticky: true,
+                    who: c != null ? WhoText(c) : null, whoIcon: c != null ? Data.CharacterIcons.Get(_hunt.LookOf(c.Name)) : null);
+            }
             catch (Exception ex) { AddLog($"Bulle archi-monstre impossible : {ex.GetType().Name} {ex.Message}"); }
     }
 

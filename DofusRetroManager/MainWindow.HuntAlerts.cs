@@ -83,29 +83,40 @@ public partial class MainWindow
     }
 
     /// <summary>Bulle au premier plan : l'archi-monstre, sa map et le prix de sa pierre ; un clic affiche la fenêtre qui le voit.</summary>
-    void ShowArchiPopup(ArchiSighting a)
+    void ShowArchiPopup(ArchiSighting a, HuntCharacter who)
     {
         if (_data == null || _hunt?.ArchiPopup != true) return;
         try
         {
             var price = _pda?.Prices.GetValueOrDefault(Hdv.PdaTracker.Key(a.MonsterId, Hdv.PdaTracker.Archi))?.Price;
-            var who = _hunt.Characters.FirstOrDefault(c => c.MapId == a.MapId);
             var window = WindowOf(who);
             // La bulle s'affiche sur l'écran de la fenêtre qui voit l'archi (jeu sur un second écran)
             // Compact : le nom en titre, puis le prix de la pierre et la position (sans la sous-zone entre parenthèses)
             var pos = System.Text.RegularExpressions.Regex.Replace(MapText(a.MapId), @"\s*\(.*\)\s*$", "");
             NoticeToast.Show(_data.GetMonster(a.MonsterId).Name,
                 (price is { } p ? $"💎 {p:N0} k" : "💎 prix inconnu") + $"\n📍 {pos}",
-                window is { } h ? () => FocusWindow(h) : null, window ?? default, sticky: true, icon: Data.MonsterIcons.Get(a.MonsterId));
+                FocusOnClick(who), window ?? default, sticky: true, icon: Data.MonsterIcons.Get(a.MonsterId),
+                who: WhoText(who), whoIcon: Data.CharacterIcons.Get(_hunt.LookOf(who.Name)));
         }
         catch (Exception ex) { AddLog($"Pop-up archi-monstre impossible ({ex.GetType().Name} : {ex.Message})."); }
     }
 
-    /// <summary>Fenêtre du jeu d'un personnage (par son nom), si elle est ouverte.</summary>
-    IntPtr? WindowOf(HuntCharacter? c) =>
-        c == null || c.Name.Length == 0 ? null
-        : (_windows.Count > 0 ? _windows : GameWindows.Find())
-            .FirstOrDefault(w => string.Equals(w.Name, c.Name, StringComparison.OrdinalIgnoreCase))?.Handle;
+    /// <summary>Fenêtre du jeu d'un personnage (par son nom), si elle est ouverte : liste du Switcheur, sinon fenêtres ouvertes.</summary>
+    IntPtr? WindowOf(HuntCharacter? c)
+    {
+        if (c == null || c.Name.Length == 0) return null;
+        bool Same(GameWindow w) => string.Equals(w.Name, c.Name, StringComparison.OrdinalIgnoreCase);
+        return (_windows.FirstOrDefault(Same) ?? GameWindows.Find().FirstOrDefault(Same))?.Handle;
+    }
+
+    /// <summary>
+    /// Clic sur une bulle de monstre : la fenêtre du personnage qui l'a vu passe au premier plan (comme Alt+Tab). Elle est
+    /// cherchée au moment du clic (fenêtre rouverte entre-temps) ; rien ne se passe si elle est fermée.
+    /// </summary>
+    Action FocusOnClick(HuntCharacter c) => () => { if (WindowOf(c) is { } h) FocusWindow(h); };
+
+    /// <summary>Personnage d'une bulle : son nom et son niveau.</summary>
+    static string WhoText(HuntCharacter c) => c.Label + (c.Level is { } l ? $" · niv. {l}" : "");
 
     // --- Alertes monstres ---
 
@@ -192,14 +203,14 @@ public partial class MainWindow
         try { ArchiSound.PlayMonster(_hunt?.SoundVolume ?? 70); } catch { }
         var name = _data.GetMonster(alert.MonsterId).Name;
         var pos = System.Text.RegularExpressions.Regex.Replace(MapText(c.MapId), @"\s*\(.*\)\s*$", "");
-        var text = $"🎯 {count}× {name} (niv. {alert.MinLevel}–{alert.MaxLevel})\n📍 {pos} · {c.Label}";
+        var text = $"🎯 {count}× {name} (niv. {alert.MinLevel}–{alert.MaxLevel})\n📍 {pos}";
         // Bandeau propre aux alertes monstres (celui des archi-monstres reste pour les archi-monstres)
         HuntAlertBanner.Text = $"🎯 {count}× {name} sur la map ({c.Label})";
         _alertBannerMonster = alert.MonsterId;
         AddLog($"Alerte monstre : {count}× {name} ({c.Label}).");
         var window = WindowOf(c);
-        NoticeToast.Show("Alerte monstre", text, window is { } h ? () => FocusWindow(h) : null, window ?? default,
-            icon: Data.MonsterIcons.Get(alert.MonsterId));
+        NoticeToast.Show("Alerte monstre", text, FocusOnClick(c), window ?? default,
+            icon: Data.MonsterIcons.Get(alert.MonsterId), who: WhoText(c), whoIcon: Data.CharacterIcons.Get(_hunt?.LookOf(c.Name)));
     }
 
     /// <summary>Monstre de l'alerte affichée dans le bandeau : le bandeau disparaît quand plus aucun groupe de la map ne le contient.</summary>

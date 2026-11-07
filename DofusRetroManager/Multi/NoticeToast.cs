@@ -23,7 +23,7 @@ public sealed class NoticeToast : Window
     /// <summary>Bulle permanente (archi-monstre) : elle ne disparaît qu'avec sa croix.</summary>
     readonly bool _sticky;
 
-    NoticeToast(string title, string text, Action? onClick, bool sticky, ImageSource? icon)
+    NoticeToast(string title, string text, Action? onClick, bool sticky, ImageSource? icon, string? who, ImageSource? whoIcon)
     {
         _sticky = sticky;
         WindowStyle = WindowStyle.None;
@@ -46,6 +46,17 @@ public sealed class NoticeToast : Window
         var stack = new StackPanel();
         stack.Children.Add(titleBlock);
         stack.Children.Add(textBlock);
+        // Personnage concerné (celui qui voit le monstre) : tête de sa classe, nom et niveau
+        if (!string.IsNullOrEmpty(who))
+        {
+            var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
+            if (whoIcon != null) line.Children.Add(new Image { Source = whoIcon, Width = 20, Height = 20, Margin = new Thickness(0, 0, 6, 0) });
+            var whoBlock = new TextBlock { Text = who, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis };
+            whoBlock.SetResourceReference(TextBlock.ForegroundProperty, "Text");
+            line.Children.Add(whoBlock);
+            stack.Children.Add(line);
+        }
         var row = new DockPanel();
         DockPanel.SetDock(accent, Dock.Left);
         row.Children.Add(accent);
@@ -94,12 +105,14 @@ public sealed class NoticeToast : Window
     /// <param name="screenOf">Fenêtre de jeu concernée : la bulle s'affiche sur son écran (sinon celui de la fenêtre au premier plan).</param>
     /// <param name="sticky">Bulle permanente : pas de disparition automatique, seulement sa croix.</param>
     /// <param name="icon">Image à gauche du texte (ex. illustration du monstre), facultative.</param>
-    public static void Show(string title, string text, Action? onClick, IntPtr screenOf = default, bool sticky = false, ImageSource? icon = null)
+    /// <param name="who">Personnage concerné (nom et niveau), affiché sous le texte avec whoIcon (tête de sa classe), facultatif.</param>
+    public static void Show(string title, string text, Action? onClick, IntPtr screenOf = default, bool sticky = false, ImageSource? icon = null,
+        string? who = null, ImageSource? whoIcon = null)
     {
         _screenOf = screenOf != IntPtr.Zero ? screenOf : GetForegroundWindow();
         // Pas plus de 4 bulles passagères à la fois : la plus ancienne laisse sa place (les permanentes restent)
         if (Open.Where(t => !t._sticky).ToList() is { Count: >= 4 } passing) passing[0].Close();
-        var toast = new NoticeToast(title, text, onClick, sticky, icon);
+        var toast = new NoticeToast(title, text, onClick, sticky, icon, who, whoIcon);
         Open.Add(toast);
         toast.Show();
     }

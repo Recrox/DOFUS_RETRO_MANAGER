@@ -51,7 +51,7 @@ public sealed partial class HuntTracker
             bool known = c.Groups.ContainsKey(id);
             c.Groups[id] = new MapGroup(id, int.TryParse(f[2], out var bonus) ? bonus : 0, monsters, DateTime.Now);
             changed = true;
-            if (!known) { CheckArchis(c.MapId, monsters); CheckAlerts(c, monsters); }
+            if (!known) { CheckArchis(c, monsters); CheckAlerts(c, monsters); }
         }
         if (changed) Changed?.Invoke();
     }
@@ -72,8 +72,9 @@ public sealed partial class HuntTracker
         }
     }
 
-    void CheckArchis(string mapId, List<GroupMonster> monsters)
+    void CheckArchis(HuntCharacter c, List<GroupMonster> monsters)
     {
+        var mapId = c.MapId;
         foreach (var m in monsters.Where(m => _data.GetMonster(m.Id).IsArchi))
         {
             var now = DateTime.Now;
@@ -84,7 +85,7 @@ public sealed partial class HuntTracker
             if (_store.Archis.Count > MaxArchis) _store.Archis.RemoveRange(MaxArchis, _store.Archis.Count - MaxArchis);
             Save();
             Log?.Invoke($"Archi-monstre repéré : {_data.GetMonster(m.Id).Name} (niveau {m.Level}, map {mapId}).");
-            ArchiSpotted?.Invoke(sighting);
+            ArchiSpotted?.Invoke(sighting, c);
         }
     }
 }

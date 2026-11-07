@@ -93,7 +93,7 @@ public sealed partial class HuntTracker
     }
 
     public event Action? Changed;
-    public event Action<ArchiSighting>? ArchiSpotted;
+    public event Action<ArchiSighting, HuntCharacter>? ArchiSpotted;
     /// <summary>Un groupe de la map répond à une alerte monstre du joueur (personnage qui le voit, alerte, nombre trouvé).</summary>
     public event Action<HuntCharacter, MonsterAlert, int>? AlertMatched;
     public event Action<string>? Log;

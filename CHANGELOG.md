@@ -6,6 +6,7 @@ Les changements de chaque version, la plus récente en haut. Ce fichier est int�
 
 - **Combat** : la rentabilité s'agrandit aussi vers le haut en glissant son bord, en vue Session comme Historique.
 - **Combat** : l'historique des sessions affiche le nombre de monstres tués ; son détail les montre avec leur illustration et leur nombre, et le total par personnage.
+- **Combat** : les bulles d'archi-monstre et d'alerte monstre montrent le personnage qui l'a vu (tête de sa classe, nom et niveau) ; un clic sur la bulle affiche la fenêtre de ce personnage.
 
 ## 1.63.0 — 7 novembre 2026
 
