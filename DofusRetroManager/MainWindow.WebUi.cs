@@ -40,6 +40,17 @@ public partial class MainWindow
     /// <summary>Lignes déjà converties en JSON, par contrôle : une liste n'est reconvertie que si elle a été remplacée.</summary>
     readonly Dictionary<string, (object Source, string Json)> _webRows = new();
     readonly ConcurrentDictionary<string, byte[]?> _webIcons = new(); // rempli par le fil de rendu des images
+
+    /// <summary>Caractéristique (voir ItemStats) -> icône de la fiche du personnage dans core.swf (« Icon&lt;nom&gt; »).</summary>
+    static readonly Dictionary<int, string> SheetIcon = new()
+    {
+        [11] = "Vita", [12] = "Wisdom", [10] = "EarthBonus", [15] = "FireBonus", [13] = "WaterBonus", [14] = "AirBonus",
+        [44] = "Init", [48] = "PP", [23] = "MP",
+        [83] = "Earth", [84] = "Fire", [85] = "Water", [86] = "Air", [87] = "Neutral",
+    };
+
+    /// <summary>Caractéristiques dont l'icône d'effet du jeu (clips/effectsicons.swf, « Icon_&lt;n&gt; ») est la bonne.</summary>
+    static readonly HashSet<int> EffectIconChars = [17, 18, 19, 26, 33, 34, 35, 36, 37, 49, 80];
     /// <summary>Gestionnaires de clic sur une ligne que la page peut déclencher (le reste passe par les boutons nommés).</summary>
     static readonly HashSet<string> WebRowHandlers =
         ["HuntDropsToggle_Click", "HuntAlertToggle_Click", "HuntAlertDelete_Click", "BankRecipes_Click", "OrganizerShow_Click", "OrganizerExclude_Click", "OrganizerMain_Click", "FmWeightReset_Click", "HuntSessionForget_Click"];

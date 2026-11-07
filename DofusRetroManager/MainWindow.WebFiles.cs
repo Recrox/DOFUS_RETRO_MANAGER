@@ -103,6 +103,20 @@ public partial class MainWindow
                 _webIcons[path] = png = Png(StatIcons.Get(stat.Groups[1].Value), 64);
             return (png, "image/png");
         }
+        // Effets d'objet (onglet FM) : icône de la fiche du personnage (comme l'infobulle de l'objet en jeu), sinon icône
+        // d'effet du jeu (seulement celles qui correspondent à la caractéristique), sinon sa plus petite rune
+        var effect = Regex.Match(path, @"^icon/effect/(\d+)\.png$");
+        if (effect.Success)
+        {
+            if (!_webIcons.TryGetValue(path, out var png))
+            {
+                int c = int.Parse(effect.Groups[1].Value);
+                _webIcons[path] = png = Png((SheetIcon.TryGetValue(c, out var sheet) ? StatIcons.Get(sheet) : null)
+                    ?? (EffectIconChars.Contains(c) ? EffectIcons.Get(c) : null)
+                    ?? (_data != null && RuneBreaking.SmallestRuneId(_data, c) is { } rune ? ItemIcons.Get(rune) : null), 64);
+            }
+            return (png, "image/png");
+        }
         // Carte : tuiles et icônes rendues depuis les fichiers du client installé (rien n'est livré avec l'application)
         if (path.StartsWith("carte/")) return (CarteWebFile(path), "image/png");
         if (Regex.IsMatch(path, @"^fonts/PlusJakartaSans-\w+\.ttf$"))

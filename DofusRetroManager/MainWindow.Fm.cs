@@ -14,8 +14,19 @@ public sealed record FmItemOption(long Uid, string Label)
     public override string ToString() => Label; // texte affiché dans la liste déroulante
 }
 
-public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Rune, string Outcome, Brush OutcomeBrush,
+/// <summary>Passage de rune. Code : SC, SN, EC (échec avec perte) ou EC0 (échec sans perte visible).</summary>
+public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Rune, string Outcome, string Code,
     string Gains, string Losses, string Weight, string Reliquat);
+
+/// <summary>Ligne de l'objet, comme dans le jeu : texte (« +366 en initiative »), caractéristique (icône), malus, jet du modèle.</summary>
+public sealed record FmStatLine(int Char, string Text, bool Neg, string Range);
+
+/// <summary>Chances d'une rune, pour la page : pourcentages arrondis et explication au survol.</summary>
+public sealed record FmRuneCell(int RuneId, string Rune, int Value, double Sc, double Sn, double Ec, bool Over, string Tip);
+
+/// <summary>Ligne du mode « Chances » : caractéristique, jet, valeur actuelle (et sa place dans le jet), poids et runes.</summary>
+public sealed record FmChanceRow(int Char, string Name, int Value, string Min, int Max, double Fill, string Weight, bool Exo,
+    IReadOnlyList<FmRuneCell> Runes);
 
 /// <summary>Ligne de l'écran « Poids des stats » (onglet FM) : rune, stat, poids par point et valeur par défaut.</summary>
 public sealed record FmWeightRow(int Stat, int RuneId, string Rune, string Label, string Weight, string Default, bool Modified);
@@ -35,6 +46,7 @@ public partial class MainWindow
         _tracker.CraftOpened += _fm.OnCraftOpened;
         _tracker.CraftItemSeen += _fm.OnCraftItemSeen;
         _tracker.CraftInfo += _fm.OnCraftInfo;
+        _tracker.CraftResult += _fm.OnCraftResult;
         _tracker.CraftItemConsumed += (uid, tpl, count) => _fm.OnItemConsumed(uid, tpl, count);
 
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -48,15 +60,11 @@ public partial class MainWindow
         if (_fm == null || _data == null) return;
         RefreshFmWeights();
         _fmUpdating = true;
-        // Plusieurs exemplaires du même objet : ses caractéristiques et la dernière rune les distinguent
-        var options = _fm.Items.Values.OrderByDescending(i => i.LastUsed)
-            .Select(i =>
-            {
-                var stats = string.Join(", ", _fm.ParseStats(i.Effects).Where(kv => kv.Value != 0).Take(3)
-                    .Select(kv => _fm.Describe(kv.Key, kv.Value)));
-                return new FmItemOption(i.Uid, $"{_data.GetItem(i.TemplateId).Name}  ·  {i.History.Count} rune(s)"
-                    + (stats.Length > 0 ? $"  ·  {stats}" : "") + $"  ·  {i.LastUsed:dd/MM HH:mm}");
-            })
+        // Liste courte : le nom et le nombre de runes ; plusieurs exemplaires du même objet : la date les distingue
+        var all = _fm.Items.Values.OrderByDescending(i => i.LastUsed).ToList();
+        var options = all
+            .Select(i => new FmItemOption(i.Uid, $"{_data.GetItem(i.TemplateId).Name} · {i.History.Count} rune(s)"
+                + (all.Count(o => o.TemplateId == i.TemplateId) > 1 ? $" · {i.LastUsed:dd/MM HH:mm}" : "")))
             .ToList();
         FmItemCombo.ItemsSource = options;
         FmItemCombo.SelectedItem = options.FirstOrDefault(o => o.Uid == _fm.CurrentUid);
@@ -67,18 +75,28 @@ public partial class MainWindow
         if (item == null)
         {
             FmItemName.Text = "Aucun objet";
+            FmItemSub.Text = FmItemTpl.Text = FmChancesNote.Text = "";
             FmReliquat.Text = "0";
-            FmStats.ItemsSource = null;
-            FmHistoryGrid.ItemsSource = null;
+            SetRows(FmStats, Array.Empty<FmStatLine>());
+            SetRows(FmChances, Array.Empty<FmChanceRow>());
+            SetRows(FmHistoryGrid, Array.Empty<FmHistoryRow>());
             return;
         }
 
-        FmItemName.Text = _data.GetItem(item.TemplateId).Name;
+        var info = _data.GetItem(item.TemplateId);
+        FmItemName.Text = info.Name;
+        FmItemSub.Text = $"Niv. {info.Level} · {info.TypeName}";
+        FmItemTpl.Text = item.TemplateId.ToString();
         FmReliquat.Text = item.Reliquat.ToString("0.##");
-        FmStats.ItemsSource = _fm.ParseStats(item.Effects)
-            .Where(kv => kv.Value != 0)
-            .Select(kv => _fm.Describe(kv.Key, kv.Value))
-            .ToList();
+        // Lignes dans l'ordre du jeu, avec le jet du modèle au survol (minimum observé à l'HDV ou dans une banque)
+        SetRows(FmStats, _fm.Lines(item.Effects).Select(l =>
+        {
+            int max = info.MaxStats.GetValueOrDefault(l.Characteristic);
+            var roll = _rolls.Of(info.Id, l.Characteristic);
+            var range = max > 0 ? $"Jet : {(roll != null && roll.Min < max ? roll.Min + " à " : "jusqu'à ")}{max}" : l.Value > 0 ? "Ligne exotique" : "";
+            return new FmStatLine(l.Characteristic, _fm.Describe(l.Stat, l.Value), l.Value < 0, range);
+        }).ToList());
+        RefreshFmChances(info, item);
 
         string Changes(IEnumerable<Fm.FmStatChange> changes) =>
             string.Join(", ", changes.Select(c => _fm.Describe(c.Stat, c.Delta)));
@@ -90,18 +108,37 @@ public partial class MainWindow
                 ev.RuneTemplateId ?? 0,
                 ev.RuneTemplateId is { } r ? _data.GetItem(r).Name : "?",
                 ev.Outcome,
-                (Brush)FindResource(ev.Outcome switch
+                ev.Outcome switch
                 {
-                    Fm.FmTracker.SuccesCritique => "Ok",
-                    Fm.FmTracker.SuccesNeutre => "Warning",
-                    _ => "Missing",
-                }),
+                    Fm.FmTracker.SuccesCritique => "SC",
+                    Fm.FmTracker.SuccesNeutre => "SN",
+                    Fm.FmTracker.EchecSansEffet => "EC0",
+                    _ => "EC",
+                },
                 Changes(ev.Changes.Where(c => c.Delta > 0)),
                 Changes(ev.Changes.Where(c => c.Delta < 0)),
                 $"+{ev.WeightGained:0.##} / -{ev.WeightLost:0.##}",
                 ev.ReliquatAfter.ToString("0.##")))
             .Reverse() // le plus récent en haut
             .ToList());
+    }
+
+    /// <summary>
+    /// Mode « Chances » : chaque ligne de l'objet (celles du modèle, puis les exotiques) et, pour chacune de ses runes,
+    /// les chances de succès critique, neutre et d'échec (formule de FmChances), le détail au survol.
+    /// </summary>
+    void RefreshFmChances(Data.ItemInfo info, Fm.FmItem item)
+    {
+        if (_fm == null || _data == null) return;
+        var current = ItemStats.FromParsed(_fm.ParseStats(item.Effects));
+        var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min);
+        static string Pct(double v) => v < 10 ? v.ToString("0.#") : v.ToString("0");
+        SetRows(FmChances, lines.Select(l => new FmChanceRow(l.Characteristic, l.Name, l.Value, l.Min?.ToString() ?? "?", l.Max,
+            l.Max > 0 ? Math.Clamp((double)l.Value / l.Max, 0, 1.2) : 0, Num(l.Weight), l.Exo,
+            l.Runes.Select(r => new FmRuneCell(r.RuneId, r.Rune, r.Value, Math.Round(r.Sc, 1), Math.Round(r.Sn, 1), Math.Round(r.Ec, 1), r.Over,
+                $"{r.Rune} (+{r.Value}) : {l.Value} → {l.Value + r.Value}{(r.Over ? (l.Max > 0 ? $" (au-dessus du max {l.Max})" : " (ligne exotique)") : "")}\n"
+                + $"SC {Pct(r.Sc)} % · SN {Pct(r.Sn)} % · EC {Pct(r.Ec)} %\nDifficulté D = {r.D:0}")).ToList())).ToList());
+        FmChancesNote.Text = $"Niveau {info.Level} · poids de l'objet {Num(lines.Sum(l => l.Weight))}";
     }
 
     void FmItemCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

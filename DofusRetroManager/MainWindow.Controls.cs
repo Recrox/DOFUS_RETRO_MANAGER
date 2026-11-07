@@ -242,6 +242,10 @@ public partial class MainWindow
     internal readonly WebButton FmForget = new() { Content = "Oublier l'objet" };
     internal readonly WebButton FmWeights = new() { ToolTip = "Affiche et modifie le poids de chaque stat, utilisé pour estimer le reliquat", Content = "Poids des stats" };
     internal readonly WebList FmStats = new();
+    internal readonly WebText FmItemSub = new();
+    internal readonly WebText FmItemTpl = new();
+    internal readonly WebList FmChances = new();
+    internal readonly WebText FmChancesNote = new();
     internal readonly WebList FmHistoryGrid = new();
     internal readonly WebText FmEmpty = new() { Text = "Ouvrez un atelier de forgemagie en jeu, posez l'objet et passez une rune : chaque passage s'affichera ici.", ForegroundKey = "TextMuted" };
     internal readonly WebControl FmWeightsPanel = new() { Visibility = Visibility.Collapsed };

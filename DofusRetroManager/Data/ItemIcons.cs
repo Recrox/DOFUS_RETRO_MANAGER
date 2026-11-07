@@ -125,6 +125,42 @@ public static class ChallengeIcons
 }
 
 /// <summary>
+/// Icônes des effets d'objet, comme dans l'infobulle d'un objet en jeu : symboles « Icon_&lt;caractéristique&gt; » de
+/// clips/effectsicons.swf du client installé (11 : vitalité, 13 : chance…). Lecture seule : le jeu n'est jamais modifié.
+/// </summary>
+public static class EffectIcons
+{
+    static readonly string SwfPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Ankama", "Retro", "resources", "app", "retroclient", "clips", "effectsicons.swf");
+
+    static readonly Dictionary<int, ImageSource?> Cache = new();
+    static SwfRenderer? _swf;
+
+    /// <summary>Icône de la caractéristique, null si le client n'en a pas (l'appelant prend alors une autre image).</summary>
+    public static ImageSource? Get(int characteristic)
+    {
+        lock (Cache)
+        {
+            if (Cache.TryGetValue(characteristic, out var img)) return img;
+            img = null;
+            try
+            {
+                _swf ??= File.Exists(SwfPath) ? SwfRenderer.Load(File.ReadAllBytes(SwfPath)) : null;
+                if (_swf?.RenderSymbol("Icon_" + characteristic) is { } drawing)
+                {
+                    var di = new DrawingImage(drawing);
+                    di.Freeze();
+                    img = di;
+                }
+            }
+            catch { }
+            return Cache[characteristic] = img;
+        }
+    }
+}
+
+/// <summary>
 /// Icônes des caractéristiques de la fiche du personnage, comme dans le jeu : symboles « Icon&lt;nom&gt; » de
 /// modules/core.swf du client installé (Wisdom : sagesse, PP : prospection, Init : initiative, Vita : vitalité).
 /// Lecture seule : le jeu n'est jamais modifié.

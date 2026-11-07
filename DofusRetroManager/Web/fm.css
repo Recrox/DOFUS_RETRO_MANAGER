@@ -1,12 +1,57 @@
 /* Onglet FM */
+.split.fm { grid-template-columns: 300px minmax(0, 1fr); }
+.fm-top { flex-wrap: nowrap; }
+.fm-top .fm-select { min-width: 0; max-width: 360px; flex: 0 1 360px; }
+.fm-top .seg.right { margin-left: auto; }
+.fm-main { min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.fm-main > .table-wrap { flex: 1; min-height: 0; }
 
-/* FM */
-.split.fm { grid-template-columns: 330px minmax(0, 1fr); }
-/* FM : poids des stats (à la place de l'historique) */
-.fm-weights { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
-.fm-weights > .filters { justify-content: space-between; flex-wrap: nowrap; align-items: flex-start; }
-.fm-weights h3 { margin: 0 0 2px; }
-input.weight { width: 84px; text-align: center; font-weight: 700; }
+/* Objet, comme son infobulle en jeu : icône et nom, puis ses lignes (texte à gauche, icône de l'effet à droite) */
+.fm-item { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.fm-head { display: flex; align-items: center; gap: 10px; }
+.fm-head h2 { margin: 0; font-size: 17px; }
+.ico.fm-big { width: 52px; height: 52px; flex: none; }
+.fm-effects { flex: none; display: flex; flex-direction: column; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--line); }
+.fx { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px 4px 10px; font-weight: 600;
+  color: var(--ok); background: var(--hover); }
+.fx:nth-child(even) { background: transparent; }
+.fx.neg { color: var(--bad); }
+.fx-ico { width: 22px; height: 22px; object-fit: contain; flex: none; }
+.fm-reliquat { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 10px; padding: 8px 10px;
+  border-radius: var(--radius-md); background: var(--hover); border: 1px solid var(--line); }
+.fm-reliquat .huge { margin: 0; font-size: 30px; }
+.fm-fix { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; }
+.fm-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Résultat d'un passage : SC vert, SN bleu, EC rouge (sans perte : pâle) */
+.fm-badge { display: inline-block; min-width: 26px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 800; text-align: center; color: #fff; }
+.fm-badge.sc, .fm-bar .sc, .fm-legend .sc { background: #2e9e5b; }
+.fm-badge.sn, .fm-bar .sn, .fm-legend .sn { background: #4a8fd8; }
+.fm-badge.ec, .fm-bar .ec, .fm-legend .ec { background: #d6493f; }
+.fm-badge.ec0 { background: #d6493f; opacity: .55; }
+.fm-counts { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 22px; font-weight: 700; }
+.fm-rune { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+/* Gains et pertes coupés (texte complet au survol) : le tableau tient dans son cadre */
+.fm-main .ellipsis { display: inline-block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.fm-legend { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--muted); }
+.fm-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: 6px; }
+
+/* Chances : une case par rune (icône, % de succès critique, barre SC / SN / EC) */
+.fm-chances { display: flex; gap: 6px; flex-wrap: wrap; }
+.fm-chance { display: grid; grid-template-columns: auto auto; align-items: center; gap: 2px 5px; padding: 3px 6px; border-radius: 8px;
+  background: var(--hover); border: 1px solid var(--line); min-width: 74px; }
+.fm-chance b { font-size: 13px; font-variant-numeric: tabular-nums; }
+.fm-chance.over { border-color: var(--bad); }
+.fm-bar { grid-column: 1 / -1; display: flex; height: 4px; border-radius: 2px; overflow: hidden; background: var(--line); }
+.fm-fill { display: block; width: 54px; height: 3px; margin: 3px 0 0 auto; border-radius: 2px; background: var(--line); overflow: hidden; }
+.fm-fill i { display: block; height: 100%; background: var(--accent-solid); }
+.fm-exo { font-size: 10.5px; font-weight: 800; padding: 0 5px; border-radius: 5px; color: var(--accent-solid); border: 1px solid var(--accent-solid); }
+
+/* Poids des stats */
+.fm-weights { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.fm-weights > .filters { justify-content: space-between; flex-wrap: nowrap; }
+input.weight { width: 70px; text-align: center; font-weight: 700; }
 input.weight.modified { border-color: var(--warn); color: var(--warn); }
 .huge { font-size: 38px; font-weight: 800; letter-spacing: -.03em; background: var(--accent); -webkit-background-clip: text;
   background-clip: text; color: transparent; line-height: 1.1; margin: 2px 0 8px; }
+@media (max-width: 860px) { .split.fm { grid-template-columns: minmax(0, 1fr); } .fm-top { flex-wrap: wrap; } }

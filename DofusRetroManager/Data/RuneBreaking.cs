@@ -63,6 +63,10 @@ public static class RuneBreaking
         return cache.Ids;
     }
 
+    /// <summary>Runes de forgemagie d'une caractéristique et leur valeur, de la plus petite à la plus grosse (vide si aucune).</summary>
+    public static IReadOnlyList<(string Rune, int Value)> RunesOf(int characteristic) =>
+        Table.TryGetValue(characteristic, out var line) ? line.Runes : [];
+
     /// <summary>Identifiant d'une rune de forgemagie d'après son nom (ex. « Rune Vi »), null si absente des données.</summary>
     public static int? RuneId(GameData data, string name) => RuneIds(data).TryGetValue(name, out var id) ? id : null;
 

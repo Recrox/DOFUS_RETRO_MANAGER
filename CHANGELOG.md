@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.65.0 — 7 novembre 2026
+
+- **FM** : correction : le résultat de chaque rune (succès critique, succès neutre, échec) est lu sur le message de fin du jeu ; à plusieurs runes par seconde, un résultat n'est plus attribué à la rune voisine.
+- **FM** : correction : une perte de % de résistance s'affichait « +-1 ».
+- **FM** : l'objet s'affiche comme dans le jeu, avec les icônes de ses caractéristiques ; liste des objets raccourcie ; résultats en pastilles SC / SN / EC avec leurs compteurs ; boutons en icônes.
+- **FM** : nouveau mode « Chances » : pour chaque ligne de l'objet, la chance de succès critique, neutre et d'échec de chaque rune (estimation d'après la formule communautaire).
+
 ## 1.64.0 — 7 novembre 2026
 
 - **Combat** : la rentabilité s'agrandit aussi vers le haut en glissant son bord, en vue Session comme Historique.

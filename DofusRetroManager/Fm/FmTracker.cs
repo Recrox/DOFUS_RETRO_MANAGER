@@ -94,141 +94,94 @@ public sealed class FmTracker
 
     /// <summary>Objet en cours de modification dans l'atelier : modèle, uid et caractéristiques connues.</summary>
     (int Template, long Uid, string Effects)? _work;
-
-    /// <summary>
-    /// Résultat annoncé par le jeu (message 117, 183 ou 194) en attente de la nouvelle version de l'objet. Le jeu peut
-    /// envoyer plusieurs messages pour un même passage (ex. 183 puis 194 dans la même seconde) : ils sont réunis.
-    /// </summary>
-    (string Outcome, DateTime Time)? _pendingOutcome;
-    /// <summary>Messages plus rapprochés que ce délai : un seul passage.</summary>
-    static readonly TimeSpan MergeWindow = TimeSpan.FromSeconds(1.5);
-
-    /// <summary>Résultat le plus précis quand plusieurs messages décrivent le même passage : 194 > 117 > 183.</summary>
-    static int Priority(string outcome) => outcome switch { SuccesNeutre => 3, Echec => 2, EchecSansEffet => 1, _ => 0 };
-    /// <summary>Dernier passage classé d'après les stats seules : un message du jeu peut encore le corriger.</summary>
-    FmEvent? _awaitingMessage;
+    /// <summary>Caractéristiques de l'objet au début du passage en cours (avant la rune).</summary>
+    string _base = "";
+    /// <summary>Dernière version de l'objet vue : un passage sans message de fin (ancien client) est enregistré après ce délai.</summary>
+    DateTime _lastSeen;
+    /// <summary>Message d'information du passage en cours (117, 183 ou 194), le plus précis s'il y en a plusieurs.</summary>
+    int? _passCode;
 
     public void OnCraftOpened()
     {
         _work = null;
-        _pendingOutcome = null;
-        _awaitingMessage = null;
+        _base = "";
+        _passCode = null;
+        _pendingRunes.Clear();
     }
 
     /// <summary>
-    /// Objet vu dans l'atelier. Retro recrée l'objet (nouvel uid) à chaque rune qui modifie ses stats :
-    /// succès critique, succès neutre ou échec avec perte. Chaque nouvelle version de l'objet en cours
-    /// est donc un passage, comparé à la version précédente. L'échec sans effet ne recrée pas l'objet :
-    /// il est détecté par son message (183, voir OnCraftInfo).
+    /// Objet vu dans l'atelier. Retro recrée l'objet (nouvel uid) à chaque rune : la fiche suit le nouvel uid. Le passage
+    /// lui-même est enregistré à son message de fin (OnCraftResult), qui suit toujours la nouvelle version de l'objet.
     /// </summary>
     public void OnCraftItemSeen(long uid, int templateId, string effects)
     {
         var it = _data.GetItem(templateId);
         if (it.TypeId == RuneTypeId || ParseStats(effects).Count == 0) return;
+        _lastSeen = DateTime.Now;
 
         if (_work is not { } work || work.Template != templateId)
         {
             _work = (templateId, uid, effects); // nouvel objet posé : état de départ
+            _base = effects;
+            _passCode = null;
+            if (Items.TryGetValue(uid, out var known)) { known.Effects = effects; CurrentUid = uid; Changed?.Invoke(); }
             return;
         }
         _work = (templateId, uid, effects);
-
-        // Résultat annoncé pour un passage précédent (plus ancien que le délai de regroupement) : il est enregistré d'abord
-        if (_pendingOutcome is { } old && DateTime.Now - old.Time > MergeWindow && DateTime.Now - old.Time < RuneWindow)
-            FlushPending();
-
-        var changes = Diff(work.Effects, effects);
-        if (changes.Count == 0)
+        // La fiche suit la nouvelle version de l'objet (nouvel uid)
+        if (work.Uid != uid && Items.Remove(work.Uid, out var moved))
         {
-            // Même version re-signalée (OAKO puis EMK…), ou objet renvoyé sous un nouvel uid sans changement
-            // de stats (échec sans effet) : pas de passage, il est compté par son message (183, voir OnCraftInfo).
-            // La fiche suit simplement le nouvel uid.
-            if (work.Uid != uid && Items.Remove(work.Uid, out var moved))
-            {
-                moved.Uid = uid;
-                Items[uid] = moved;
-                if (CurrentUid == work.Uid) CurrentUid = uid;
-                Save();
-            }
-            return;
+            moved.Uid = uid;
+            Items[uid] = moved;
+            if (CurrentUid == work.Uid) CurrentUid = uid;
         }
-
-        // La fiche de l'objet suit sa nouvelle version
-        if (!Items.Remove(work.Uid, out var item)) item = Items.GetValueOrDefault(uid) ?? new FmItem { TemplateId = templateId };
-        item.Uid = uid;
-        Items[uid] = item;
-        item.Effects = effects;
-        item.LastUsed = DateTime.Now;
-        CurrentUid = uid;
-
-        var ev = new FmEvent
-        {
-            Time = DateTime.Now, Changes = changes,
-            WeightGained = changes.Where(c => c.Delta > 0).Sum(c => c.Delta * Weight(c.Stat)),
-            WeightLost = changes.Where(c => c.Delta < 0).Sum(c => -c.Delta * Weight(c.Stat)),
-            RuneTemplateId = DequeueRune(),
-        };
-
-        // Le jeu a déjà annoncé le résultat (un « échec sans effet » ne change pas les stats : elles priment alors)
-        if (_pendingOutcome is { } p && DateTime.Now - p.Time < RuneWindow && p.Outcome != EchecSansEffet)
-        {
-            ev.Outcome = p.Outcome;
-            _pendingOutcome = null;
-            _awaitingMessage = null;
-        }
-        else
-        {
-            // Sans message : succès critique si l'objet gagne, sinon succès neutre (gain et perte
-            // sur la même stat peuvent s'annuler) ; un message 117/194 qui suit corrigera.
-            bool hasLoss = changes.Any(c => c.Delta < 0), hasGain = changes.Any(c => c.Delta > 0);
-            ev.Outcome = hasGain && !hasLoss ? SuccesCritique : hasGain ? SuccesNeutre : hasLoss ? Echec : SuccesNeutre;
-            _pendingOutcome = null; // un « échec sans effet » annoncé était le même passage
-            _awaitingMessage = ev;
-        }
-        AddEvent(item, ev);
     }
 
-    /// <summary>Message de résultat du jeu : 117 = échec avec perte, 183 = échec sans effet, 194 = succès neutre.</summary>
+    /// <summary>
+    /// Message d'information du jeu pendant un passage : 194 = succès neutre (gain avec perte), 117 = échec avec perte,
+    /// 183 = échec sans perte visible. Un succès critique n'en envoie aucun.
+    /// </summary>
     public void OnCraftInfo(int code)
     {
-        string? outcome = code switch { 117 => Echec, 183 => EchecSansEffet, 194 => SuccesNeutre, _ => null };
-        if (outcome == null) return;
-
-        // Message après la nouvelle version de l'objet : on corrige le passage déjà enregistré
-        // (un 183 n'apporte rien de plus : l'objet a changé, ce n'est pas un échec sans effet)
-        if (_awaitingMessage is { } ev && DateTime.Now - ev.Time < RuneWindow
-            && CurrentUid is { } uid && Items.TryGetValue(uid, out var current) && current.History.LastOrDefault() == ev)
-        {
-            if (outcome == EchecSansEffet) return;
-            _awaitingMessage = null;
-            ev.Outcome = outcome;
-            current.Reliquat = ev.ReliquatBefore;
-            ApplyReliquat(current, ev);
-            Log?.Invoke($"FM : résultat confirmé par le jeu ({outcome}), reliquat {current.Reliquat:0.##}.");
-            Save();
-            Changed?.Invoke();
-            return;
-        }
-
-        // Autre message du même passage : on garde le résultat le plus précis
-        if (_pendingOutcome is { } p && DateTime.Now - p.Time <= MergeWindow)
-        {
-            if (Priority(outcome) > Priority(p.Outcome)) _pendingOutcome = (outcome, p.Time);
-            return;
-        }
-        // Résultat d'un passage précédent jamais complété par l'objet : enregistré avant le nouveau
-        if (_pendingOutcome != null) FlushPending();
-        // Message avant la nouvelle version de l'objet (ou seul signe du passage pour un échec sans effet)
-        _pendingOutcome = (outcome, DateTime.Now);
+        if (code is not (117 or 183 or 194)) return;
+        static int Priority(int c) => c switch { 194 => 3, 117 => 2, _ => 1 };
+        if (_passCode is not { } p || Priority(code) > Priority(p)) _passCode = code;
     }
 
-    /// <summary>Enregistre le résultat annoncé en attente comme un passage, avec la rune consommée à ce moment-là.</summary>
-    void FlushPending()
+    /// <summary>
+    /// Fin d'un passage de rune, envoyée par le jeu après la nouvelle version de l'objet : « K;modèle » = succès,
+    /// « EF » (ou autre « E… ») = échec. Succès sans message 194 ni perte = succès critique ; avec = succès neutre.
+    /// </summary>
+    public void OnCraftResult(string data)
     {
-        if (_pendingOutcome is not { } p) return;
-        _pendingOutcome = null;
-        if (WorkItem() is { } item)
-            AddEvent(item, new FmEvent { Time = p.Time, Outcome = p.Outcome, RuneTemplateId = DequeueRune(p.Time) });
+        if (_work is not { } work || data.Length == 0) return;
+        bool success = data[0] == 'K';
+        if (!success && data[0] != 'E') return;
+        var changes = Diff(_base, work.Effects);
+        int? rune = LastRune();
+        // Atelier d'un autre métier (pas de rune, rien de changé) : pas de forgemagie
+        if (rune == null && _passCode == null && changes.Count == 0) return;
+
+        bool loss = changes.Any(c => c.Delta < 0);
+        string outcome = success
+            ? (_passCode == 194 || loss ? SuccesNeutre : SuccesCritique)
+            : (_passCode == 117 || loss ? Echec : EchecSansEffet);
+        RecordPass(changes, outcome, rune);
+    }
+
+    /// <summary>Enregistre le passage en cours : variations depuis le début du passage, résultat et rune.</summary>
+    void RecordPass(List<FmStatChange> changes, string outcome, int? rune)
+    {
+        if (WorkItem() is not { } item) return;
+        item.Effects = _work!.Value.Effects;
+        _base = item.Effects;
+        _passCode = null;
+        AddEvent(item, new FmEvent
+        {
+            Time = DateTime.Now, Changes = changes, Outcome = outcome, RuneTemplateId = rune,
+            WeightGained = changes.Where(c => c.Delta > 0).Sum(c => c.Delta * Weight(c.Stat)),
+            WeightLost = changes.Where(c => c.Delta < 0).Sum(c => -c.Delta * Weight(c.Stat)),
+        });
     }
 
     /// <summary>Fiche de l'objet posé dans l'atelier, créée au besoin.</summary>
@@ -273,18 +226,20 @@ public sealed class FmTracker
     {
         if (_data.GetItem(templateId).TypeId != RuneTypeId) return;
 
-        for (int i = 0; i < Math.Min(count, 100); i++)
-        {
-            // La rune peut être signalée juste après la nouvelle version de l'objet :
-            // on la rattache au plus ancien passage récent qui n'a pas encore sa rune
-            var waiting = CurrentUid is { } cur && Items.TryGetValue(cur, out var item)
-                ? item.History.Where(e => e.RuneTemplateId == null && DateTime.Now - e.Time < RuneWindow).FirstOrDefault()
-                : null;
-            if (waiting != null) waiting.RuneTemplateId = templateId;
-            else _pendingRunes.Enqueue((templateId, DateTime.Now));
-        }
-        Save();
-        Changed?.Invoke();
+        // La rune est retirée au début du passage, avant son message de fin (OnCraftResult) qui la reprend
+        for (int i = 0; i < Math.Min(count, 100); i++) _pendingRunes.Enqueue((templateId, DateTime.Now));
+    }
+
+    /// <summary>
+    /// Rune du passage qui se termine : la dernière retirée (une rune par passage). Les autres runes en attente (quantité
+    /// mal connue, passage interrompu) sont oubliées : elles ne décalent pas les passages suivants.
+    /// </summary>
+    int? LastRune()
+    {
+        DropStaleRunes(DateTime.Now);
+        int? rune = _pendingRunes.Count > 0 ? _pendingRunes.Last().Template : null;
+        _pendingRunes.Clear();
+        return rune;
     }
 
     /// <summary>Rune consommée autour de ce passage (par défaut : maintenant), s'il y en a une.</summary>
@@ -307,11 +262,13 @@ public sealed class FmTracker
     /// </summary>
     public void Tick()
     {
-        // D'abord le résultat en attente : sa rune a été consommée au moment du message, il y a plus de
-        // RuneWindow, et serait sinon oubliée juste avant
-        // Échec sans effet : l'objet ne change pas, rien d'autre n'est attendu une fois les messages du passage réunis
-        if (_pendingOutcome is { } p && DateTime.Now - p.Time > (p.Outcome == EchecSansEffet ? MergeWindow : RuneWindow))
-            FlushPending();
+        // Objet modifié sans message de fin de passage (ne devrait pas arriver) : classé d'après ses stats seules
+        if (_work is { } work && work.Effects != _base && DateTime.Now - _lastSeen > RuneWindow)
+        {
+            var changes = Diff(_base, work.Effects);
+            bool gain = changes.Any(c => c.Delta > 0), loss = changes.Any(c => c.Delta < 0);
+            RecordPass(changes, _passCode == 194 || gain && loss ? SuccesNeutre : gain ? SuccesCritique : Echec, DequeueRune(_lastSeen));
+        }
         DropStaleRunes(DateTime.Now);
     }
 
@@ -378,10 +335,30 @@ public sealed class FmTracker
     }
 
     /// <summary>Libellé d'une stat avec sa valeur signée, ex. « +12 en force » ou « -3 en sagesse ».</summary>
-    public string Describe(int stat, int value) =>
-        value < 0 && _malusOfStat.TryGetValue(stat, out var malus)
-            ? _data.FormatEffect(malus, -value)
-            : _data.FormatEffect(stat, value);
+    public string Describe(int stat, int value)
+    {
+        if (value >= 0) return _data.FormatEffect(stat, value);
+        if (_malusOfStat.TryGetValue(stat, out var malus)) return _data.FormatEffect(malus, -value);
+        // Pas d'effet malus connu (ex. % de résistance) : libellé du bonus, signe « - » à la place du « + »
+        var text = _data.FormatEffect(stat, -value).TrimStart();
+        return "-" + (text.StartsWith('+') ? text[1..] : text);
+    }
+
+    /// <summary>
+    /// Lignes de l'objet dans l'ordre du jeu (celui de ses effets) : stat (effet bonus), caractéristique (voir ItemStats,
+    /// 0 si inconnue) et valeur signée. Les effets sans valeur (signature…) sont ignorés.
+    /// </summary>
+    public List<(int Stat, int Characteristic, int Value)> Lines(string effects)
+    {
+        var stats = ParseStats(effects);
+        var order = new List<int>();
+        foreach (var part in effects.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            if (int.TryParse(part.Split('#')[0], NumberStyles.HexNumber, null, out var id) && _statOfEffect.GetValueOrDefault(id, id) is var s
+                && stats.ContainsKey(s) && !order.Contains(s))
+                order.Add(s);
+        return order.Where(s => stats[s] != 0)
+            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s])).ToList();
+    }
 
     // --- Poids des caractéristiques (modifiables dans l'onglet FM, « Poids des stats » ; enregistrés dans fm_poids.json) ---
 
