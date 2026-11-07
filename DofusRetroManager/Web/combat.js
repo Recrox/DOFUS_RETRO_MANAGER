@@ -82,7 +82,7 @@ function combatSettings() {
 // Détail d'une session de l'historique (clic sur sa ligne) : fenêtre par-dessus la page, par personnage et par objet
 function sessionDetail() {
   if (!local.sessDetail || TABS[S.MainTabs?.i ?? 0]?.key !== 'combat' || !T('HuntSessionDetailTitle')) return '';
-  const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1];
+  const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1], kills = rows('HuntSessionMobs');
   return `<div class="modal-back" data-act="sess-close"><div class="modal glass wide" data-act="none">
       <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><button class="small ghost right" data-act="sess-close">✕</button></div>
       <div class="sub">${esc(T('HuntSessionDetailTitle'))}</div>
@@ -92,12 +92,15 @@ function sessionDetail() {
           { h: '', f: r => r.Gfx ? `<img class="ico" src="icon/head/${r.Gfx}.png" alt="">` : '' },
           { h: 'Personnage', k: 'Name', f: r => `<span class="strong">${esc(r.Name)}</span>` },
           { h: 'Combats', k: 'Fights', num: true, f: r => fmt(r.Fights) },
+          { h: 'Mobs', k: 'Kills', num: true, f: r => r.Kills == null ? '—' : fmt(r.Kills) },
           { h: 'XP', k: 'Xp', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${fmt(r.Xp)}</span>` },
           { h: 'Kamas', k: 'Kamas', num: true, f: r => fmt(r.Kamas) },
           { h: 'Drops', k: 'Drops', num: true, f: r => fmt(r.Drops) },
           { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${fmt(r.Total)}</span>` },
           { h: '/ h', k: 'PerHour', num: true, f: r => fmt(r.PerHour) },
         ], { select: false, empty: 'Aucun personnage.' })}
+        <p class="section-title" style="margin-top:12px">Monstres tués${kills.length ? ' · ' + fmt(kills.reduce((a, m) => a + m.Count, 0)) : ''}</p>
+        <div class="sess-mobs">${kills.length ? mobs(kills) : '<span class="muted small">Inconnus pour cette session (gardée avant leur décompte).</span>'}</div>
         <p class="section-title" style="margin-top:12px">Objets obtenus</p>
         ${table('HuntSessionDrops', [
           { h: '', f: r => itemImg(r.ItemId, 'sm') },
@@ -120,6 +123,7 @@ function sessionCard() {
       { h: 'Début', k: 'StartSort', f: r => `<span class="${r.Current ? 'acc strong' : ''}" data-tip="${esc(r.Tip)}">${esc(r.Date)}${r.Rebuilt ? ' ≈' : ''}</span>` },
       { h: 'Durée', k: 'Minutes', num: true, f: r => esc(r.Duration) },
       { h: 'Combats', k: 'Fights', num: true, f: r => `<span data-tip="${esc(r.Characters + ' personnage(s)')}">${fmt(r.Fights)}</span>` },
+      { h: 'Mobs', k: 'Kills', num: true, f: r => r.Kills == null ? '—' : fmt(r.Kills) },
       { h: 'XP', k: 'Xp', num: true, f: r => fmt(r.Xp) },
       // Kamas + drops : le détail au survol (tableau étroit)
       { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong" data-tip="${esc('Kamas : ' + fmt(r.Kamas) + ' · Drops : ' + fmt(r.Drops))}">${fmt(r.Total)}</span>` },
@@ -196,8 +200,8 @@ function combatPanels(byGroup) {
   // selon leur poids (bord glissé à la souris). Une poignée entre deux panneaux ouverts, rien à côté d'un panneau réduit
   const sz = local.sizes, { tpl, gut } = sideRows();
   const cells = ['archis', 'fights', 'drops'].map((k, i) => all[k] + (gut[i] ?? '')).join('');
-  // Rentabilité : hauteur réglable quand son historique est ouvert
-  const sess = local.open.sessHist && local.panels.session !== 'min' && local.panels.groups !== 'min';
+  // Rentabilité : hauteur réglable (session en cours ou historique), sauf si elle ou les groupes sont réduits
+  const sess = local.panels.session !== 'min' && local.panels.groups !== 'min';
   return `<div class="split wide combat-split" style="${sz.side ? `--side:min(${sz.side}px, 65%)` : ''}">
       <div class="stack ${sess && sz.sess ? 'sized' : ''}" style="${sz.sess ? `--sess:${sz.sess}px` : ''}">${groups}${sess ? gutter('sess') : ''}${all.session}</div>
       ${gutter('side')}
@@ -235,7 +239,8 @@ document.addEventListener('pointerdown', e => {
     move = ev => { sz.side = Math.round(Math.min(max, Math.max(300, w0 - (ev.clientX - x0)))); split.style.setProperty('--side', `min(${sz.side}px, 65%)`); };
   } else if (d.gut === 'sess') {
     const stack = g.parentElement, el = stack.querySelector('.session'), h0 = el.offsetHeight;
-    const max = stack.offsetHeight - 120;
+    // Vers le haut : la rentabilité peut prendre presque toute la place, les groupes de la map gardent leur titre et une ligne
+    const max = h0 + stack.querySelector('[data-panel="groups"]').offsetHeight - 70;
     stack.classList.add('sized');
     move = ev => { sz.sess = Math.round(Math.min(max, Math.max(120, h0 - (ev.clientY - y0)))); stack.style.setProperty('--sess', sz.sess + 'px'); };
   } else {
@@ -264,8 +269,8 @@ document.addEventListener('dblclick', e => {
 });
 
 // Monstres en illustrations du jeu (nom et niveau au survol), avec leur nombre s'il y en a plusieurs
-const mobs = list => `<span class="mobs">${(list || []).map(m => `<span class="mob" data-tip="${esc(m.Name + (m.Count > 1 ? ' ×' + m.Count : '') + (m.Name.includes('(niv.') ? '' : ' · niv. ' + m.Level))}">
-    <img src="icon/monster/${m.Id}.png" alt="" loading="lazy">${m.Count > 1 ? `<i>${m.Count}</i>` : `<b>${m.Level}</b>`}</span>`).join('')}</span>`;
+const mobs = list => `<span class="mobs">${(list || []).map(m => `<span class="mob" data-tip="${esc(m.Name + (m.Count > 1 ? ' ×' + m.Count : '') + (m.Name.includes('(niv.') || !m.Level ? '' : ' · niv. ' + m.Level))}">
+    <img src="icon/monster/${m.Id}.png" alt="" loading="lazy">${m.Count > 1 ? `<i>${m.Count}</i>` : m.Level ? `<b>${m.Level}</b>` : ''}</span>`).join('')}</span>`;
 
 Object.assign(views, {
   combat() {

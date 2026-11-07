@@ -185,6 +185,8 @@ public sealed class SessionTotals
     public long Kamas { get; set; }
     /// <summary>Objets obtenus : valorisés au prix HDV du moment de l'affichage, comme la session en cours.</summary>
     public Dictionary<int, int> Drops { get; set; } = new();
+    /// <summary>Monstres tués (modèle -> nombre). Total de la session : un combat fait par plusieurs de vos personnages ne compte qu'une fois.</summary>
+    public Dictionary<int, int> Monsters { get; set; } = new();
 }
 
 /// <summary>

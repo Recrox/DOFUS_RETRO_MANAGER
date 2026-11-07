@@ -63,12 +63,18 @@ public sealed partial class HuntTracker
     static SessionSummary Summarize(List<FightRecord> fights, DateTime start, DateTime end, double seconds, bool rebuilt)
     {
         var s = new SessionSummary { Start = start, End = end, Seconds = Math.Max(0, seconds), Rebuilt = rebuilt };
+        var counted = new List<FightRecord>();
         foreach (var f in fights)
         {
             Add(s.Total, f);
             var name = f.Character.Length > 0 ? f.Character : "?";
             if (!s.Characters.TryGetValue(name, out var c)) s.Characters[name] = c = new();
             Add(c, f);
+            AddMonsters(c, f);
+            // Même combat qu'un autre de vos personnages (groupés ou non) : ses monstres sont déjà comptés
+            if (counted.Any(g => SameFight(g, f))) continue;
+            counted.Add(f);
+            AddMonsters(s.Total, f);
         }
         return s;
 
@@ -78,6 +84,33 @@ public sealed partial class HuntTracker
             t.Xp += f.Xp;
             t.Kamas += f.Kamas;
             foreach (var d in f.Drops) t.Drops[d.ItemId] = t.Drops.GetValueOrDefault(d.ItemId) + d.Quantity;
+        }
+
+        static void AddMonsters(SessionTotals t, FightRecord f)
+        {
+            foreach (var m in f.Monsters) t.Monsters[m.Id] = t.Monsters.GetValueOrDefault(m.Id) + 1;
+        }
+    }
+
+    /// <summary>Deux fins de combat de personnages différents à 15 s près, contre les mêmes monstres : le même combat.</summary>
+    static bool SameFight(FightRecord a, FightRecord b) =>
+        a.Character != b.Character && (a.Time - b.Time).Duration() <= TimeSpan.FromSeconds(15) && a.Monsters.Count == b.Monsters.Count
+        && a.Monsters.OrderBy(m => m.Id).ThenBy(m => m.Level).SequenceEqual(b.Monsters.OrderBy(m => m.Id).ThenBy(m => m.Level));
+
+    /// <summary>
+    /// Sessions gardées avant le décompte des monstres : il est refait d'après les combats encore gardés de la session
+    /// (les plus anciens ont pu être oubliés : le décompte reste alors vide).
+    /// </summary>
+    void FillSessionMonsters()
+    {
+        foreach (var s in _store.Sessions.Where(s => s.Total.Fights > 0 && s.Total.Monsters.Count == 0))
+        {
+            var fights = _store.Fights.Where(f => f.Time >= s.Start && f.Time <= s.End).ToList();
+            if (fights.Count != s.Total.Fights) continue;
+            var again = Summarize(fights, s.Start, s.End, s.Seconds, s.Rebuilt);
+            s.Total.Monsters = again.Total.Monsters;
+            foreach (var (name, c) in s.Characters)
+                if (again.Characters.TryGetValue(name, out var a)) c.Monsters = a.Monsters;
         }
     }
 }

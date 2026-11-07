@@ -14,7 +14,11 @@ public sealed record HuntDropRow(int ItemId, string Name, int Quantity, double? 
 }
 
 /// <summary>Personnage dans le détail d'une session : tête (Gfx), combats, XP, kamas, drops, total et rythmes par heure.</summary>
-public sealed record SessionCharRow(string Name, int Gfx, int Fights, long Xp, long Kamas, double Drops, double Total, double PerHour, double XpPerHour);
+public sealed record SessionCharRow(string Name, int Gfx, int Fights, long Xp, long Kamas, double Drops, double Total, double PerHour, double XpPerHour)
+{
+    /// <summary>Monstres tués par ce personnage (null : décompte inconnu).</summary>
+    public int? Kills { get; init; }
+}
 
 /// <summary>Alerte monstre affichée dans l'onglet Combat.</summary>
 public sealed record HuntAlertRow(MonsterAlert Alert, string Text)

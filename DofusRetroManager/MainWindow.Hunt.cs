@@ -55,7 +55,11 @@ public sealed record ProjectionRow(string Span, double Xp, double Kamas, double 
 
 /// <summary>Ligne de l'historique des sessions (tous les personnages) ; Current : la session en cours. Tip : détail par personnage.</summary>
 public sealed record SessionRow(string Date, DateTime StartSort, string Duration, double Minutes, int Fights, int Characters,
-    long Xp, long Kamas, double Drops, double Total, double? PerHour, double? XpPerHour, string Tip, bool Current, bool Rebuilt);
+    long Xp, long Kamas, double Drops, double Total, double? PerHour, double? XpPerHour, string Tip, bool Current, bool Rebuilt)
+{
+    /// <summary>Monstres tués sur la session (null : décompte inconnu, session gardée avant lui).</summary>
+    public int? Kills { get; init; }
+}
 
 /// <summary>
 /// Onglet Chasse : monstres de la map avec l'XP et les drops estimés d'après les combats déjà faits, alerte sonore et
@@ -174,7 +178,8 @@ public partial class MainWindow
                 now ? "En cours" : s.Start.ToString("dd'/'MM HH:mm"), s.Start,
                 minutes >= 60 ? $"{(int)(minutes / 60)} h {(int)(minutes % 60):00}" : $"{minutes:0} min", minutes,
                 s.Total.Fights, s.Characters.Count, s.Total.Xp, s.Total.Kamas, drops, total,
-                hours is { } h ? total / h : null, hours is { } h2 ? s.Total.Xp / h2 : null, tip, now, s.Rebuilt);
+                hours is { } h ? total / h : null, hours is { } h2 ? s.Total.Xp / h2 : null, tip, now, s.Rebuilt)
+            { Kills = s.Total.Monsters.Count > 0 ? s.Total.Monsters.Values.Sum() : null };
         }).ToList());
         // Session dont le détail est ouvert : reste sélectionnée, et son détail suit (session en cours : nouveaux combats)
         HuntSessionGrid.SelectedItem = (HuntSessionGrid.ItemsSource as IEnumerable<SessionRow>)?.FirstOrDefault(r => r.StartSort == _sessionDetail);
@@ -206,6 +211,7 @@ public partial class MainWindow
             HuntSessionDetailTitle.Text = "";
             SetRows(HuntSessionChars, Array.Empty<SessionCharRow>());
             SetRows(HuntSessionDrops, Array.Empty<HuntDropRow>());
+            SetRows(HuntSessionMobs, Array.Empty<MonsterChip>());
             return;
         }
         double hours = Math.Max(s.Seconds, 60) / 3600;
@@ -213,8 +219,12 @@ public partial class MainWindow
         SetRows(HuntSessionChars, s.Characters.Select(c =>
         {
             double drops = Drops(c.Value), total = c.Value.Kamas + drops;
-            return new SessionCharRow(c.Key, _hunt!.LookOf(c.Key)?.Gfx ?? 0, c.Value.Fights, c.Value.Xp, c.Value.Kamas, drops, total, total / hours, c.Value.Xp / hours);
+            return new SessionCharRow(c.Key, _hunt!.LookOf(c.Key)?.Gfx ?? 0, c.Value.Fights, c.Value.Xp, c.Value.Kamas, drops, total, total / hours, c.Value.Xp / hours)
+                { Kills = c.Value.Monsters.Count > 0 ? c.Value.Monsters.Values.Sum() : null };
         }).OrderByDescending(r => r.Total).ToList());
+        // Monstres tués : illustration et nombre, du plus tué au moins tué (un combat de plusieurs personnages compte une fois)
+        SetRows(HuntSessionMobs, s.Total.Monsters.Select(m => new MonsterChip(m.Key, _data.GetMonster(m.Key).Name, 0, m.Value))
+            .OrderByDescending(m => m.Count).ThenBy(m => m.Name).ToList());
         SetRows(HuntSessionDrops, s.Total.Drops.Select(d => new HuntDropRow(d.Key, _data.GetItem(d.Key).Name, d.Value, DropPrice(d.Key))
             {
                 Who = string.Join(", ", s.Characters.Where(c => c.Value.Drops.ContainsKey(d.Key)).OrderByDescending(c => c.Value.Drops[d.Key])

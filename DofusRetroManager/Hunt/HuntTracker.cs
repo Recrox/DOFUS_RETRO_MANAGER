@@ -194,6 +194,7 @@ public sealed partial class HuntTracker
         }
         catch { _store = new(); }
         RebuildSessions();
+        FillSessionMonsters();
     }
 
     void Save()

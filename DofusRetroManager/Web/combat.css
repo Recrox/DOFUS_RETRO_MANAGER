@@ -113,6 +113,8 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 .g-sess { flex: none; height: 12px; margin: -12px 0; }
 .stack.sized > .session:not(.is-min) { flex: none; height: var(--sess); }
 .stack.sized > .session .session-hist { max-height: none; flex: 1; min-height: 0; }
+.stack.sized > .session .panel-body { overflow: auto; }
+.stack.sized > .panel:not(.session) { min-height: 0; overflow: hidden; }
 body.resizing { user-select: none; }
 body.resizing.col, body.resizing.col * { cursor: col-resize !important; }
 body.resizing.row, body.resizing.row * { cursor: row-resize !important; }
