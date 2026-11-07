@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.63.0 — 7 novembre 2026
+
+- **Combat** : les bords entre les panneaux se glissent à la souris pour agrandir ou réduire une zone (colonne de droite, hauteur des listes, rentabilité) ; double-clic sur un bord pour revenir à la taille par défaut.
+
 ## 1.62.0 — 7 novembre 2026
 
 - **Combat** : un clic sur une session de l'historique ouvre son détail : chaque personnage (combats, XP, kamas, drops, total, gain par heure) et chaque objet obtenu (quantité, prix, qui l'a eu au survol).

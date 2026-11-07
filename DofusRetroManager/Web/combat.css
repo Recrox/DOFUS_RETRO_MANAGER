@@ -100,12 +100,27 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 /* Colonne de droite plus large (un tiers de la largeur, 360 px au moins) */
 /* Hauteur : celle qui reste dans la fenêtre (400 px au moins), jamais celle du contenu : les tableaux défilent dans leur
    cadre au lieu de s'étirer (sinon l'onglet devenait immense) */
-.split.wide.combat-split { grid-template-columns: minmax(0, 1fr) minmax(360px, 34%); flex: 1 1 0; min-height: 400px; }
+.split.wide.combat-split { grid-template-columns: minmax(0, 1fr) 12px var(--side, minmax(360px, 34%)); column-gap: 0; flex: 1 1 0; min-height: 400px; }
+.combat-split .side-tables { row-gap: 0; }
+/* Poignées de redimensionnement (bords glissés à la souris) : un trait discret, accentué au survol */
+.gutter { position: relative; touch-action: none; }
+.gutter::after { content: ""; position: absolute; border-radius: 2px; background: var(--line); opacity: 0; transition: opacity .15s; }
+.gutter:hover::after, body.resizing .gutter::after { opacity: 1; background: var(--accent-solid); }
+.g-side { cursor: col-resize; }
+.g-side::after { left: 5px; width: 2px; top: 0; bottom: 0; }
+.g-row, .g-sess { cursor: row-resize; }
+.g-row::after, .g-sess::after { top: 5px; height: 2px; left: 0; right: 0; }
+.g-sess { flex: none; height: 12px; margin: -12px 0; }
+.stack.sized > .session:not(.is-min) { flex: none; height: var(--sess); }
+.stack.sized > .session .session-hist { max-height: none; flex: 1; min-height: 0; }
+body.resizing { user-select: none; }
+body.resizing.col, body.resizing.col * { cursor: col-resize !important; }
+body.resizing.row, body.resizing.row * { cursor: row-resize !important; }
 /* Groupes de la map : jamais écrasés par les réglages ou l'historique ouverts (l'onglet défile alors un peu) */
 .combat-split .stack > .table-wrap { min-height: 140px; }
 /* L'onglet défile plutôt que d'écraser les listes de droite quand les réglages ou l'historique sont ouverts */
 main:has(.combat-split) { overflow-y: auto; }
-@media (max-width: 860px) { .split.wide.combat-split { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 860px) { .split.wide.combat-split { grid-template-columns: minmax(0, 1fr); } .combat-split .g-side { display: none; } }
 .chrono-stats b.ellipsis { max-width: 320px; }
 /* Groupes du chronomètre : membres en cartes (tête, nom, niveau), ceux du groupe d'abord */
 .members-block + .members-block { margin-top: 8px; }

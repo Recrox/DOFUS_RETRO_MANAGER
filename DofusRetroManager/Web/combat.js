@@ -138,7 +138,7 @@ function sessionCard() {
 local.panels ??= (() => { try { return JSON.parse(localStorage.getItem('combatPanels')) || {}; } catch { return {}; } })();
 function panel(key, title, body, tools = '', cls = 'mini') {
   const st = local.panels[key];
-  return `<section class="panel ${cls} ${st ? 'is-' + st : ''}">
+  return `<section class="panel ${cls} ${st ? 'is-' + st : ''}" data-panel="${key}">
       <div class="panel-bar"><p class="section-title">${title}</p><span class="panel-tools">${st === 'min' ? '' : tools}</span>
         <button class="pbtn" data-act="panel" data-key="${key}" data-v="min" data-tip="${st === 'min' ? 'Déplier' : 'Réduire'}">${st === 'min' ? '▸' : '▾'}</button>
         <button class="pbtn" data-act="panel" data-key="${key}" data-v="max" data-tip="${st === 'max' ? 'Restaurer' : 'Agrandir'}">${st === 'max' ? '🗗' : '⤢'}</button></div>
@@ -192,13 +192,76 @@ function combatPanels(byGroup) {
   const all = { groups, session: sessionCard(), archis, fights, drops };
   const max = Object.keys(all).find(k => local.panels[k] === 'max');
   if (max) return `<div class="combat-max">${all[max]}</div>`;
-  // Colonne de droite : un panneau réduit ne prend que la hauteur de son titre
-  const rowsTpl = ['archis', 'fights', 'drops'].map(k => local.panels[k] === 'min' ? 'auto' : 'minmax(0, 1fr)').join(' ');
-  return `<div class="split wide combat-split">
-      <div class="stack">${groups}${all.session}</div>
-      <div class="side-tables" style="grid-template-rows:${rowsTpl}">${archis}${fights}${drops}</div>
+  // Colonne de droite : un panneau réduit ne prend que la hauteur de son titre ; les autres se partagent la hauteur
+  // selon leur poids (bord glissé à la souris). Une poignée entre deux panneaux ouverts, rien à côté d'un panneau réduit
+  const sz = local.sizes, { tpl, gut } = sideRows();
+  const cells = ['archis', 'fights', 'drops'].map((k, i) => all[k] + (gut[i] ?? '')).join('');
+  // Rentabilité : hauteur réglable quand son historique est ouvert
+  const sess = local.open.sessHist && local.panels.session !== 'min' && local.panels.groups !== 'min';
+  return `<div class="split wide combat-split" style="${sz.side ? `--side:min(${sz.side}px, 65%)` : ''}">
+      <div class="stack ${sess && sz.sess ? 'sized' : ''}" style="${sz.sess ? `--sess:${sz.sess}px` : ''}">${groups}${sess ? gutter('sess') : ''}${all.session}</div>
+      ${gutter('side')}
+      <div class="side-tables" style="grid-template-rows:${tpl.join(' ')}">${cells}</div>
     </div>`;
 }
+
+// Lignes de la colonne de droite : panneau réduit = hauteur de son titre, sinon sa part (poids) de la hauteur ; entre
+// deux panneaux, une poignée qui partage la hauteur des deux panneaux ouverts les plus proches
+function sideRows() {
+  const side = ['archis', 'fights', 'drops'], open = side.filter(k => local.panels[k] !== 'min'), tpl = [], gut = [];
+  side.forEach((k, i) => {
+    tpl.push(local.panels[k] === 'min' ? 'auto' : `minmax(0, ${local.sizes['w_' + k] || 1}fr)`);
+    if (i === side.length - 1) return;
+    const a = open.filter(o => side.indexOf(o) <= i).pop(), b = open.find(o => side.indexOf(o) > i);
+    tpl.push('12px');
+    gut.push(a && b ? gutter('row', `data-a="${a}" data-b="${b}"`) : '<div></div>');
+  });
+  return { tpl, gut };
+}
+
+// Poignées de redimensionnement : glisser le bord entre deux zones ; double-clic : taille par défaut. Les tailles sont
+// gardées dans le navigateur de l'application (préférence d'affichage seulement)
+local.sizes ??= (() => { try { return JSON.parse(localStorage.getItem('combatSizes')) || {}; } catch { return {}; } })();
+const gutter = (g, extra = '') => `<div class="gutter g-${g}" data-gut="${g}" ${extra} title="Glisser pour redimensionner · double-clic : taille par défaut"></div>`;
+const saveSizes = () => { try { localStorage.setItem('combatSizes', JSON.stringify(local.sizes)); } catch { } };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.gutter[data-gut]');
+  if (!g || e.button !== 0) return;
+  e.preventDefault();
+  const d = g.dataset, sz = local.sizes, split = g.closest('.combat-split'), x0 = e.clientX, y0 = e.clientY;
+  let move;
+  if (d.gut === 'side') {
+    const w0 = split.querySelector('.side-tables').offsetWidth, max = split.offsetWidth - 320;
+    move = ev => { sz.side = Math.round(Math.min(max, Math.max(300, w0 - (ev.clientX - x0)))); split.style.setProperty('--side', `min(${sz.side}px, 65%)`); };
+  } else if (d.gut === 'sess') {
+    const stack = g.parentElement, el = stack.querySelector('.session'), h0 = el.offsetHeight;
+    const max = stack.offsetHeight - 120;
+    stack.classList.add('sized');
+    move = ev => { sz.sess = Math.round(Math.min(max, Math.max(120, h0 - (ev.clientY - y0)))); stack.style.setProperty('--sess', sz.sess + 'px'); };
+  } else {
+    // Deux panneaux voisins : leur hauteur totale et leur poids total restent les mêmes, seul le partage change
+    const box = g.parentElement, pa = box.querySelector(`[data-panel="${d.a}"]`), pb = box.querySelector(`[data-panel="${d.b}"]`);
+    const h0 = pa.offsetHeight, H = h0 + pb.offsetHeight, W = (sz['w_' + d.a] || 1) + (sz['w_' + d.b] || 1);
+    move = ev => {
+      const h = Math.min(H - 70, Math.max(70, h0 + ev.clientY - y0));
+      sz['w_' + d.a] = +(W * h / H).toFixed(3); sz['w_' + d.b] = +(W - sz['w_' + d.a]).toFixed(3);
+      box.style.gridTemplateRows = sideRows().tpl.join(' ');
+    };
+  }
+  document.body.classList.add('resizing', d.gut === 'side' ? 'col' : 'row');
+  const up = () => {
+    document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
+    document.body.classList.remove('resizing', 'col', 'row'); saveSizes(); schedule();
+  };
+  document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+});
+document.addEventListener('dblclick', e => {
+  const g = e.target.closest('.gutter[data-gut]');
+  if (!g) return;
+  const d = g.dataset, sz = local.sizes;
+  if (d.gut === 'row') { delete sz['w_' + d.a]; delete sz['w_' + d.b]; } else delete sz[d.gut];
+  saveSizes(); schedule();
+});
 
 // Monstres en illustrations du jeu (nom et niveau au survol), avec leur nombre s'il y en a plusieurs
 const mobs = list => `<span class="mobs">${(list || []).map(m => `<span class="mob" data-tip="${esc(m.Name + (m.Count > 1 ? ' ×' + m.Count : '') + (m.Name.includes('(niv.') ? '' : ' · niv. ' + m.Level))}">
