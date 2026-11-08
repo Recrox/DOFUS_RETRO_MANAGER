@@ -2,6 +2,15 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.68.0 — 8 novembre 2026
+
+- **FM** : correction : les lignes de l'objet sont rangées exactement comme dans l'infobulle du jeu.
+- **FM** : icônes des caractéristiques identiques à celles du jeu (coups critiques, résistances…), aussi dans la superposition.
+- **FM** : gains et pertes affichés en icônes avec leur valeur, le texte au survol (onglet et superposition).
+- **FM, superposition** : une chance de réussite s'affiche en rouge seulement sous 50 %.
+- **FM** : correction : l'objet est reconnu après une déconnexion au lieu d'apparaître en double.
+- **FM** : reliquat sans décimale, comme en jeu : un gain de 0,75 consomme 1 de reliquat.
+
 ## 1.67.0 — 8 novembre 2026
 
 - **FM, Chances** : correction : le pourcentage affiché est la chance de réussite (succès critique + succès neutre), aussi dans la superposition.

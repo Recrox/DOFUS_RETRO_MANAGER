@@ -25,7 +25,7 @@ public sealed record OverlayModel(string Title, string Stats, string Econome, IR
 public sealed record OverlayGroup(string Monsters, string Info, bool Archi);
 
 /// <summary>Rune passée (superposition FM) : rune, résultat (SC, SN, EC, EC0), gains et pertes.</summary>
-public sealed record OverlayFmRune(int RuneId, string Code, string Gains, string Losses)
+public sealed record OverlayFmRune(int RuneId, string Code, string Gains, string Losses, IReadOnlyList<OverlayFmChange> Changes)
 {
     public System.Windows.Media.ImageSource? Icon => Data.ItemIcons.Get(RuneId);
     public string Badge => Code == "EC0" ? "EC" : Code;
@@ -34,10 +34,17 @@ public sealed record OverlayFmRune(int RuneId, string Code, string Gains, string
 /// <summary>Ligne de l'objet (superposition FM) : caractéristique, valeur / max et chance SC de chaque rune.</summary>
 public sealed record OverlayFmLine(int Characteristic, string Value, bool Over, IReadOnlyList<OverlayFmChance> Runes)
 {
-    public System.Windows.Media.ImageSource? Icon => Data.EffectIcons.Get(Characteristic);
+    public System.Windows.Media.ImageSource? Icon => Data.CharacteristicIcons.Get(Characteristic);
     public string Key => $"{Characteristic}:{Value}:{string.Join("/", Runes)}";
 }
 
+/// <summary>Gain (vert) ou perte (rouge) d'une rune passée : icône de la caractéristique et valeur, texte au survol.</summary>
+public sealed record OverlayFmChange(int Characteristic, string Value, string Text, bool Gain)
+{
+    public System.Windows.Media.ImageSource? Icon => Data.CharacteristicIcons.Get(Characteristic);
+}
+
+/// <summary>Chance de réussite (SC + SN) d'une rune ; Over : moins de 50 % (en rouge).</summary>
 public sealed record OverlayFmChance(int RuneId, string Sc, bool Over)
 {
     public System.Windows.Media.ImageSource? Icon => Data.ItemIcons.Get(RuneId);

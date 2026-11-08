@@ -174,10 +174,12 @@ public partial class MainWindow
         bool fmActive = fmItem != null && DateTime.Now - fmItem.LastUsed < TimeSpan.FromMinutes(10);
         var fmTitle = fmActive ? $"FM · {FmItemName.Text} · reliquat {FmReliquat.Text}" : "";
         var fmHistory = !fmActive ? [] : ((FmHistoryGrid.ItemsSource as IEnumerable<FmHistoryRow>) ?? []).Take(_organizer.OverlayFmHistoryCount)
-            .Select(r => new OverlayFmRune(r.RuneId, r.Code, r.Gains, r.Losses)).ToList();
+            .Select(r => new OverlayFmRune(r.RuneId, r.Code, r.Gains, r.Losses,
+                r.GainList.Select(c => new OverlayFmChange(c.Char, c.Value, c.Text, true))
+                    .Concat(r.LossList.Select(c => new OverlayFmChange(c.Char, c.Value, c.Text, false))).ToList())).ToList();
         var fmChances = !fmActive ? [] : ((FmChances.ItemsSource as IEnumerable<FmChanceRow>) ?? [])
             .Select(r => new OverlayFmLine(r.Char, r.Exo ? $"{r.Value} exo" : $"{r.Value} / {r.Max}", r.Fill > 1 || r.Exo,
-                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Over)).ToList()))
+                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Sc + c.Sn < 50)).ToList()))
             .ToList();
         static string N(int? v) => v?.ToString("N0") ?? "?";
         EnsureOverlay().Show(new OverlayModel(

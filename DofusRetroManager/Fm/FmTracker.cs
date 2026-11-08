@@ -123,6 +123,12 @@ public sealed class FmTracker
             _work = (templateId, uid, effects); // nouvel objet posé : état de départ
             _base = effects;
             _passCode = null;
+            if (!Items.ContainsKey(uid) && SameItem(templateId, effects) is { } same && Items.Remove(same.Uid))
+            {
+                // Retro donne un nouvel uid à l'objet après une reconnexion : on reprend sa fiche
+                same.Uid = uid;
+                Items[uid] = same;
+            }
             if (Items.TryGetValue(uid, out var known)) { known.Effects = effects; CurrentUid = uid; Changed?.Invoke(); }
             return;
         }
@@ -134,6 +140,25 @@ public sealed class FmTracker
             Items[uid] = moved;
             if (CurrentUid == work.Uid) CurrentUid = uid;
         }
+    }
+
+    /// <summary>
+    /// Fiche d'un objet du même modèle : mêmes effets, sinon les plus proches (écart de poids d'au plus 5 % de l'objet :
+    /// passages faits sans l'application).
+    /// </summary>
+    FmItem? SameItem(int templateId, string effects)
+    {
+        var mine = Items.Values.Where(i => i.TemplateId == templateId).ToList();
+        if (mine.FirstOrDefault(i => i.Effects == effects) is { } exact) return exact;
+        var now = ParseStats(effects);
+        double total = now.Sum(kv => Math.Abs(kv.Value) * Weight(kv.Key));
+        double Gap(FmItem i)
+        {
+            var old = ParseStats(i.Effects);
+            return old.Keys.Union(now.Keys).Sum(k => Math.Abs(old.GetValueOrDefault(k) - now.GetValueOrDefault(k)) * Weight(k));
+        }
+        return mine.Select(i => (Item: i, Gap: Gap(i))).Where(x => x.Gap <= total * 0.05).OrderBy(x => x.Gap)
+            .Select(x => x.Item).FirstOrDefault();
     }
 
     /// <summary>
@@ -210,7 +235,9 @@ public sealed class FmTracker
     /// </summary>
     static void ApplyReliquat(FmItem item, FmEvent ev)
     {
-        double before = ev.ReliquatBefore, net = ev.WeightGained - ev.WeightLost;
+        // Retro ne garde pas de décimale : le poids d'un gain est arrondi au-dessus (rune Vi, 0,75 : 1 de reliquat consommé),
+        // celui d'une perte au-dessous
+        double before = ev.ReliquatBefore, net = Math.Ceiling(ev.WeightGained - 1e-6) - Math.Floor(ev.WeightLost + 1e-6);
         item.Reliquat = ev.Outcome switch
         {
             SuccesCritique => net > 0 && before >= net ? before - net : before,
@@ -304,6 +331,12 @@ public sealed class FmTracker
 
     public double Weight(int stat) => _weights.GetValueOrDefault(stat);
 
+    /// <summary>Rang d'affichage de la stat dans l'infobulle du jeu (le plus grand en haut).</summary>
+    public int Priority(int stat) => _data.Effects.TryGetValue(stat, out var e) ? e.Priority : 0;
+
+    /// <summary>Caractéristique de la stat (voir ItemStats), 0 si inconnue.</summary>
+    public int Characteristic(int stat) => _data.Effects.TryGetValue(stat, out var e) ? e.Characteristic : 0;
+
     /// <summary>Valeur signée par stat (les malus comptent en négatif).</summary>
     public Dictionary<int, int> ParseStats(string effects)
     {
@@ -355,9 +388,11 @@ public sealed class FmTracker
             if (int.TryParse(part.Split('#')[0], NumberStyles.HexNumber, null, out var id) && _statOfEffect.GetValueOrDefault(id, id) is var s
                 && stats.ContainsKey(s) && !order.Contains(s))
                 order.Add(s);
-        // Ordre du jeu : celui des effets de l'objet, tel que le serveur l'envoie et que le jeu l'affiche
+        // Ordre du jeu : l'infobulle trie les effets par priorité (champ « p » du fichier des effets), à égalité dans
+        // l'ordre de l'objet
         return order.Where(s => stats[s] != 0)
-            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s])).ToList();
+            .OrderByDescending(Priority)
+            .Select(s => (s, Characteristic(s), stats[s])).ToList();
     }
 
     // --- Poids des caractéristiques (affichés dans l'onglet FM, mode « Poids ») ---

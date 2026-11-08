@@ -93,4 +93,5 @@ public sealed record HarvestResource(int Id, string Name, IReadOnlyList<HarvestS
 public sealed record Recipe(int ResultId, IReadOnlyList<Ingredient> Ingredients, IReadOnlyList<string> Jobs);
 
 /// <summary>Effet d'objet. Characteristic est commune au bonus et au malus d'une même stat (ex. +Force / -Force).</summary>
-public sealed record EffectInfo(int Id, string Description, bool IsMalus, int Characteristic);
+/// <summary>Priority : rang d'affichage dans l'infobulle d'un objet en jeu (champ « p », le plus grand en haut).</summary>
+public sealed record EffectInfo(int Id, string Description, bool IsMalus, int Characteristic, int Priority = 0);

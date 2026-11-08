@@ -217,8 +217,22 @@
                             <Border x:Name="Badge" DockPanel.Dock="Left" CornerRadius="3" Padding="4,0" Margin="0,0,5,0" Background="#2ECC71" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="Bold" Foreground="White"/>
                             </Border>
-                            <TextBlock Text="{Binding Gains}" Foreground="#2ECC71" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Losses}" Foreground="#E74C3C" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <ItemsControl ItemsSource="{Binding Changes}" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,5,0" ToolTip="{Binding Text}" Background="Transparent">
+                                            <Image Source="{Binding Icon}" Width="14" Height="14" Margin="0,0,2,0"/>
+                                            <TextBlock x:Name="Chg" Text="{Binding Value}" Foreground="#2ECC71" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Gain}" Value="False"><Setter TargetName="Chg" Property="Foreground" Value="#E74C3C"/></DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </DockPanel>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding Code}" Value="SN"><Setter TargetName="Badge" Property="Background" Value="#3B82F6"/></DataTrigger>

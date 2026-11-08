@@ -161,6 +161,32 @@ public static class EffectIcons
 }
 
 /// <summary>
+/// Icône d'une caractéristique comme dans l'infobulle d'un objet en jeu (core.swf / loader.swf du client installé : IconVita,
+/// IconWaterBonus, CriticalHit, IconEarth pour le % de résistance, IconEarthAlt pour la résistance fixe…), sinon icône
+/// d'effet (clips/effectsicons.swf), sinon la plus petite rune de la caractéristique.
+/// </summary>
+public static class CharacteristicIcons
+{
+    static readonly Dictionary<int, string> Game = new()
+    {
+        [11] = "Vita", [12] = "Wisdom", [10] = "EarthBonus", [15] = "FireBonus", [13] = "WaterBonus", [14] = "AirBonus",
+        [44] = "Init", [48] = "PP", [23] = "MP", [18] = "CriticalHit",
+        [33] = "Earth", [34] = "Fire", [35] = "Water", [36] = "Air", [37] = "Neutral",
+        [83] = "EarthAlt", [84] = "FireAlt", [85] = "WaterAlt", [86] = "AirAlt", [87] = "NeutralAlt",
+    };
+
+    /// <summary>Caractéristiques dont l'icône d'effet du jeu (« Icon_&lt;n&gt; ») est la bonne.</summary>
+    static readonly HashSet<int> EffectChars = [17, 19, 26, 49, 80];
+
+    public static GameData? Data { get; set; }
+
+    public static ImageSource? Get(int characteristic) =>
+        (Game.TryGetValue(characteristic, out var n) ? StatIcons.Get(n) : null)
+        ?? (EffectChars.Contains(characteristic) ? EffectIcons.Get(characteristic) : null)
+        ?? (Data != null && RuneBreaking.SmallestRuneId(Data, characteristic) is { } rune ? ItemIcons.Get(rune) : null);
+}
+
+/// <summary>
 /// Icônes des caractéristiques de la fiche du personnage, comme dans le jeu : symboles « Icon&lt;nom&gt; » de
 /// modules/core.swf du client installé (Wisdom : sagesse, PP : prospection, Init : initiative, Vita : vitalité).
 /// Lecture seule : le jeu n'est jamais modifié.
@@ -172,12 +198,15 @@ public static class StatIcons
         "Ankama", "Retro", "resources", "app", "retroclient", "modules", "core.swf");
 
     static readonly Dictionary<string, ImageSource?> Cache = new();
-    static SwfRenderer? _core;
+    static readonly string LoaderPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(CorePath))!, "loader.swf");
+    static SwfRenderer? _core, _loader;
 
     public static ImageSource? Get(string name)
     {
         lock (Cache) return Build(name);
     }
+
+    static Drawing? Symbol(SwfRenderer? swf, string name) => swf != null && swf.Exports.ContainsKey(name) ? swf.RenderSymbol(name) : null;
 
     static ImageSource? Build(string name)
     {
@@ -186,7 +215,9 @@ public static class StatIcons
         try
         {
             _core ??= File.Exists(CorePath) ? SwfRenderer.Load(File.ReadAllBytes(CorePath)) : null;
-            if (_core?.RenderSymbol("Icon" + name) is { } drawing)
+            // core.swf (fiche du personnage), sinon loader.swf (infobulle des objets : IconEarthAlt, CriticalHit…)
+            _loader ??= File.Exists(LoaderPath) ? SwfRenderer.Load(File.ReadAllBytes(LoaderPath)) : null;
+            if ((Symbol(_core, "Icon" + name) ?? Symbol(_loader, "Icon" + name) ?? Symbol(_loader, name)) is { } drawing)
             {
                 var di = new DrawingImage(drawing);
                 di.Freeze();

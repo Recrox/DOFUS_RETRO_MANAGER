@@ -16,7 +16,10 @@ public sealed record FmItemOption(long Uid, string Label)
 
 /// <summary>Passage de rune. Code : SC, SN, EC (échec avec perte) ou EC0 (échec sans perte visible).</summary>
 public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Rune, string Outcome, string Code,
-    string Gains, string Losses, string Weight, string Reliquat);
+    string Gains, string Losses, string Weight, string Reliquat, IReadOnlyList<FmChange> GainList, IReadOnlyList<FmChange> LossList);
+
+/// <summary>Gain ou perte d'un passage : caractéristique (icône), valeur signée (« +3 ») et texte complet (survol).</summary>
+public sealed record FmChange(int Char, string Value, string Text);
 
 /// <summary>Ligne de l'objet, comme dans le jeu : texte (« +366 en initiative »), caractéristique (icône), malus, jet du modèle.</summary>
 public sealed record FmStatLine(int Char, string Text, bool Neg, string Range, int Max);
@@ -100,6 +103,8 @@ public partial class MainWindow
 
         string Changes(IEnumerable<Fm.FmStatChange> changes) =>
             string.Join(", ", changes.Select(c => _fm.Describe(c.Stat, c.Delta)));
+        List<FmChange> Chips(IEnumerable<Fm.FmStatChange> changes) =>
+            changes.Select(c => new FmChange(_fm.Characteristic(c.Stat), c.Delta.ToString("+0;-0"), _fm.Describe(c.Stat, c.Delta))).ToList();
 
         SetRows(FmHistoryGrid, item.History
             .Select((ev, i) => new FmHistoryRow(
@@ -118,7 +123,9 @@ public partial class MainWindow
                 Changes(ev.Changes.Where(c => c.Delta > 0)),
                 Changes(ev.Changes.Where(c => c.Delta < 0)),
                 $"+{ev.WeightGained:0.##} / -{ev.WeightLost:0.##}",
-                ev.ReliquatAfter.ToString("0.##")))
+                ev.ReliquatAfter.ToString("0.##"),
+                Chips(ev.Changes.Where(c => c.Delta > 0)),
+                Chips(ev.Changes.Where(c => c.Delta < 0))))
             .Reverse() // le plus récent en haut
             .ToList());
     }
@@ -134,7 +141,9 @@ public partial class MainWindow
         // Même ordre que l'objet dans le jeu ; les lignes du modèle absentes de l'objet à la fin
         var order = _fm.Lines(item.Effects).Select(l => l.Characteristic).ToList();
         var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min)
-            .OrderBy(l => order.IndexOf(l.Characteristic) is var i && i >= 0 ? i : int.MaxValue).ToList();
+            .OrderBy(l => order.IndexOf(l.Characteristic) is var i && i >= 0 ? i : int.MaxValue)
+            .ThenByDescending(l => ItemStats.All.FirstOrDefault(s => s.Characteristic == l.Characteristic) is { } s ? _fm.Priority(s.Effects[0]) : 0)
+            .ToList();
         static string Pct(double v) => v < 10 ? v.ToString("0.#") : v.ToString("0");
         SetRows(FmChances, lines.Select(l => new FmChanceRow(l.Characteristic, l.Name, l.Value, l.Min?.ToString() ?? "?", l.Max,
             l.Max > 0 ? Math.Clamp((double)l.Value / l.Max, 0, 1.2) : 0, Num(l.Weight), l.Exo,

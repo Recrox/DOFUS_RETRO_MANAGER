@@ -30,6 +30,9 @@ function fmWeights() {
     ], { select: false })}</div>`;
 }
 
+// Gains ou pertes d'un passage : icône de la caractéristique et valeur, texte complet au survol
+const fmChips = (list, cls) => `<span class="fm-chips">${(list || []).map(c => `<span class="fm-chg ${cls}" title="${esc(c.Text)}">${fxImg(c.Char)}${esc(c.Value)}</span>`).join('')}</span>`;
+
 // Historique : le plus récent en haut, résultat en pastille, compteurs SC / SN / EC au-dessus
 function fmHistory() {
   const h = rows('FmHistoryGrid'), n = c => h.filter(r => r.Code === c || (c === 'EC' && r.Code === 'EC0')).length;
@@ -39,8 +42,8 @@ function fmHistory() {
       { h: '#', k: 'Index', num: true, f: r => `<span class="muted" title="${esc(r.Time)}">${r.Index}</span>` },
       { h: 'Rune', k: 'Rune', f: r => `<span class="fm-rune">${itemImg(r.RuneId, 'sm')}<span class="strong">${esc(r.Rune)}</span></span>` },
       { h: '', k: 'Code', f: outcomeBadge },
-      { h: 'Gains', k: 'Gains', f: r => `<span class="ok ellipsis" title="${esc(r.Gains)}">${esc(r.Gains)}</span>` },
-      { h: 'Pertes', k: 'Losses', f: r => `<span class="bad ellipsis" title="${esc(r.Losses)}">${esc(r.Losses)}</span>` },
+      { h: 'Gains', k: 'Gains', f: r => fmChips(r.GainList, 'ok') },
+      { h: 'Pertes', k: 'Losses', f: r => fmChips(r.LossList, 'bad') },
       { h: 'Reliquat', k: 'Reliquat', num: true, f: r => `<span class="acc strong" data-tip="${esc('Poids gagné / perdu : ' + r.Weight)}">${esc(r.Reliquat)}</span>` },
     ], { select: false, empty: T('FmEmpty') || 'Aucun passage de rune.' })}`;
 }

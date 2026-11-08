@@ -122,7 +122,8 @@ public sealed partial class GameData
             foreach (var (k, v) in E)
                 if (v is AsObject o && int.TryParse(k, out var eid))
                     data.Effects[eid] = new EffectInfo(eid, Avm1.ToStr(o.GetValueOrDefault("d")),
-                        Avm1.ToStr(o.GetValueOrDefault("o")) == "-", (int)Avm1.ToNum(o.GetValueOrDefault("c")));
+                        Avm1.ToStr(o.GetValueOrDefault("o")) == "-", (int)Avm1.ToNum(o.GetValueOrDefault("c")),
+                        (int)Avm1.ToNum(o.GetValueOrDefault("p")));
 
         var types = new Dictionary<int, string>();
         if (items.GetValueOrDefault("I") is AsObject I)
