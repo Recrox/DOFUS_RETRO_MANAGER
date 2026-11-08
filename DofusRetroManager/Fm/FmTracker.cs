@@ -16,6 +16,8 @@ public sealed class FmEvent
     public List<FmStatChange> Changes { get; set; } = new();
     public double WeightGained { get; set; }
     public double WeightLost { get; set; }
+    /// <summary>Poids de la rune passée (0 si inconnue : le poids gagné en tient lieu).</summary>
+    public double RuneWeight { get; set; }
     public double ReliquatBefore { get; set; }
     public double ReliquatAfter { get; set; }
 }
@@ -35,9 +37,9 @@ public sealed class FmItem
 /// pendant un atelier), calcule le poids gagné/perdu, classe le résultat et estime le reliquat.
 ///
 /// Modèle de reliquat (estimation, corrigeable à la main) :
-///   succès critique (gain sans perte)  : si reliquat ≥ poids gagné, il est consommé d'autant
-///   succès neutre (gain et perte)      : reliquat += poids perdu − poids gagné (minimum 0)
-///   échec (perte sans gain)            : reliquat += poids perdu
+///   succès critique (gain sans perte)  : reliquat inchangé
+///   succès neutre (gain et perte)      : reliquat += poids perdu − poids de la rune (minimum 0)
+///   échec (avec ou sans perte)         : reliquat += poids perdu − poids de la rune (minimum 0)
 ///   échec sans effet                   : inchangé
 /// </summary>
 public sealed class FmTracker
@@ -205,6 +207,7 @@ public sealed class FmTracker
             Time = DateTime.Now, Changes = changes, Outcome = outcome, RuneTemplateId = rune,
             WeightGained = changes.Where(c => c.Delta > 0).Sum(c => c.Delta * Weight(c.Stat)),
             WeightLost = changes.Where(c => c.Delta < 0).Sum(c => -c.Delta * Weight(c.Stat)),
+            RuneWeight = rune is { } r ? RuneBreaking.RuneWeight(_data.GetItem(r).Name) ?? 0 : 0,
         });
     }
 
@@ -230,19 +233,20 @@ public sealed class FmTracker
     }
 
     /// <summary>
-    /// Met à jour le reliquat selon le résultat. On raisonne sur la variation nette de poids
-    /// (gain − perte), qui reste juste quand le gain et la perte touchent la même stat.
+    /// Met à jour le reliquat selon le résultat : succès critique, inchangé ; succès neutre ou échec (avec ou sans
+    /// perte), reliquat + poids perdu − poids de la rune (minimum 0) : la rune est consommée même sans rien changer.
     /// </summary>
     static void ApplyReliquat(FmItem item, FmEvent ev)
     {
-        // Retro ne garde pas de décimale : le poids d'un gain est arrondi au-dessus (rune Vi, 0,75 : 1 de reliquat consommé),
+        // Retro ne garde pas de décimale : le poids de la rune est arrondi au-dessus (rune Vi, 0,75 : 1 de reliquat consommé),
         // celui d'une perte au-dessous
-        double before = ev.ReliquatBefore, net = Math.Ceiling(ev.WeightGained - 1e-6) - Math.Floor(ev.WeightLost + 1e-6);
+        double before = ev.ReliquatBefore;
+        double rune = Math.Ceiling((ev.RuneWeight > 0 ? ev.RuneWeight : ev.WeightGained) - 1e-6);
+        double lost = Math.Floor(ev.WeightLost + 1e-6);
         item.Reliquat = ev.Outcome switch
         {
-            SuccesCritique => net > 0 && before >= net ? before - net : before,
-            SuccesNeutre => Math.Max(0, before - net),
-            Echec => before + Math.Max(0, -net),
+            SuccesCritique => before,
+            SuccesNeutre or Echec or EchecSansEffet => Math.Max(0, before + lost - rune),
             _ => before,
         };
         ev.ReliquatAfter = item.Reliquat;

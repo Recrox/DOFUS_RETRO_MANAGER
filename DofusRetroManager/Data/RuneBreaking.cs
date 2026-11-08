@@ -67,6 +67,10 @@ public static class RuneBreaking
     public static IReadOnlyList<(string Rune, int Value)> RunesOf(int characteristic) =>
         Table.TryGetValue(characteristic, out var line) ? line.Runes : [];
 
+    /// <summary>Poids d'une rune (points apportés × poids par point, ex. Rune Ra Fo : 10), null si inconnue.</summary>
+    public static double? RuneWeight(string name) =>
+        Table.Values.SelectMany(l => l.Runes.Select(r => (r.Rune, W: r.Value * l.PointWeight))).FirstOrDefault(r => r.Rune == name) is { Rune: not null } x ? x.W : null;
+
     /// <summary>Identifiant d'une rune de forgemagie d'après son nom (ex. « Rune Vi »), null si absente des données.</summary>
     public static int? RuneId(GameData data, string name) => RuneIds(data).TryGetValue(name, out var id) ? id : null;
 
