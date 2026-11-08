@@ -51,7 +51,7 @@ Le trafic capturé contient des informations sensibles : nom de compte, ticket d
   Ces messages ne sont **jamais journalisés**, ni dans `packets.log` ni dans le journal de l'application, et rien n'en sort de la machine.
 - **Aucune donnée du joueur ne sort de la machine** : pas de télémétrie, pas d'envoi de la banque ni de l'inventaire. Les seules requêtes réseau autorisées sont :
   - le téléchargement des données du jeu depuis le CDN d'Ankama ([GameData.cs](DofusRetroManager/Data/GameData.cs)) ;
-  - la lecture de la dernière Release GitHub du projet pour vérifier la version, et le téléchargement de son installateur quand l'utilisateur le demande ([UpdateChecker.cs](DofusRetroManager/UpdateChecker.cs)) ;
+  - la lecture de la dernière Release GitHub du projet pour vérifier la version, et le téléchargement de son installateur quand l'utilisateur le demande ([UpdateChecker.cs](DofusRetroManager/UpdateChecker.cs)) ; de même sur le miroir Cloudflare du projet ([update/](update/README.md) : un fichier de version et l'installateur en morceaux, rien n'y est envoyé) ;
   - le serveur de partage des prix du groupe ([HdvSync.cs](DofusRetroManager/Hdv/HdvSync.cs), [server/](server/README.md)), **uniquement si l'utilisateur l'active** (désactivé par défaut). Il n'envoie que des prix : pour l'HDV, l'identifiant de l'objet, ses prix ×1/×10/×100, le prix moyen et la date du relevé ; pour les cartes TTG, l'identifiant de la carte, son prix, la quantité en vente et la date (jamais le marchand) ; pour les pierres d'âme, l'identifiant du monstre, la catégorie de pierre, le prix, le nombre d'offres, le prix moyen et la date.
 
   Ces requêtes ne contiennent aucune information sur le joueur. Toute nouvelle requête vers l'extérieur doit respecter la même règle.

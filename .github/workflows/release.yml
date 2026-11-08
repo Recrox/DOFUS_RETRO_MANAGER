@@ -78,6 +78,38 @@ jobs:
             --title $tag `
             @notes
 
+      # Miroir Cloudflare (update/README.md) : l'application s'y met à jour quand GitHub ne répond pas. L'installateur est
+      # découpé en morceaux de 20 Mo (limite de 25 Mo par fichier d'un Worker). Sans le secret CLOUDFLARE_API_TOKEN, étape
+      # ignorée ; un échec ne bloque pas la suite (la Release GitHub est déjà publiée).
+      - name: Publier sur le miroir Cloudflare
+        continue-on-error: true
+        shell: pwsh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if (-not $env:CLOUDFLARE_API_TOKEN) { "Secret CLOUDFLARE_API_TOKEN absent : miroir non mis à jour."; exit 0 }
+          $version = "${{ steps.version.outputs.version }}"
+          $msi = "dist/DofusRetroManager-Setup.msi"
+          $pub = "update/public"
+          Get-ChildItem $pub -Exclude _headers | Remove-Item
+          $bytes = [IO.File]::ReadAllBytes($msi)
+          $chunk = 20MB
+          $parts = @()
+          for ($i = 0; $i * $chunk -lt $bytes.Length; $i++) {
+            $name = "DofusRetroManager-Setup-$version.msi.$i"
+            $len = [Math]::Min($chunk, $bytes.Length - $i * $chunk)
+            $seg = [byte[]]::new($len)
+            [Array]::Copy($bytes, $i * $chunk, $seg, 0, $len)
+            [IO.File]::WriteAllBytes("$pub/$name", $seg)
+            $parts += $name
+          }
+          $sha = (Get-FileHash $msi -Algorithm SHA256).Hash.ToLower()
+          $json = [ordered]@{ version = $version; sha256 = $sha; size = $bytes.Length; parts = $parts } | ConvertTo-Json
+          [IO.File]::WriteAllText("$pub/version.json", $json, [Text.UTF8Encoding]::new($false))
+          Get-Content "$pub/version.json"
+          Set-Location update
+          npx --yes wrangler@4 deploy
+
       - name: Reporter la version dans le .csproj
         shell: pwsh
         run: |

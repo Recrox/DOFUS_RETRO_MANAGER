@@ -11,7 +11,8 @@ namespace DofusRetroManager;
 /// Nouvelle version publiée. InstallerUrl : installateur joint à la Release (null s'il manque) ;
 /// Sha256 : empreinte annoncée par GitHub, vérifiée après le téléchargement quand elle est fournie.
 /// </summary>
-public sealed record UpdateInfo(Version Latest, string PageUrl, string? InstallerUrl, string? Sha256, long Size);
+public sealed record UpdateInfo(Version Latest, string PageUrl, string? InstallerUrl, string? Sha256, long Size,
+    IReadOnlyList<string>? Parts = null);
 
 /// <summary>
 /// Vérifie si une version plus récente est publiée dans les Releases GitHub du projet, et télécharge son
@@ -35,12 +36,56 @@ public static class UpdateChecker
     }
 
     /// <summary>
-    /// Vérification légère, faite toutes les 30 secondes : numéro de la dernière version publiée, lu dans la redirection
-    /// de la page « latest » (requête HEAD, sans contenu). Elle ne passe pas par l'API GitHub, limitée à 60 requêtes
-    /// par heure sans compte ; l'API (CheckAsync) n'est appelée que quand ce numéro dépasse la version installée.
-    /// null : aucune version publiée.
+    /// <summary>
+    /// Miroir des mises à jour sur Cloudflare (dossier update/ du dépôt) : version.json (version, empreinte, taille, morceaux)
+    /// et l'installateur découpé en morceaux de moins de 25 Mo, publiés par le workflow de Release. Il prend le relais
+    /// quand GitHub ne répond pas (503, 504, limite de requêtes).
+    /// </summary>
+    public const string MirrorBase = "https://drm-update.recrox.workers.dev/";
+
+    /// <summary>Version annoncée par le miroir Cloudflare, avec ses morceaux ; null s'il n'en annonce aucune.</summary>
+    static async Task<UpdateInfo?> MirrorAsync()
+    {
+        using var http = NewClient(TimeSpan.FromSeconds(8));
+        using var doc = JsonDocument.Parse(await http.GetStringAsync(MirrorBase + "version.json"));
+        var root = doc.RootElement;
+        if (!Version.TryParse(root.GetProperty("version").GetString(), out var latest)) return null;
+        var parts = root.GetProperty("parts").EnumerateArray().Select(p => MirrorBase + p.GetString()).ToList();
+        if (parts.Count == 0) return null;
+        latest = Normalize(latest);
+        var sha = root.TryGetProperty("sha256", out var s) && s.GetString() is { Length: > 0 } h ? h : null;
+        long size = root.TryGetProperty("size", out var z) ? z.GetInt64() : 0;
+        return new UpdateInfo(latest, $"https://github.com/{Repo}/releases/tag/v{latest.ToString(3)}", parts[0], sha, size, parts);
+    }
+
+    /// <summary>Résultat d'une source, ou son erreur réseau (l'autre source peut répondre).</summary>
+    static async Task<(T? Value, Exception? Error)> TryAsync<T>(Func<Task<T?>> source) where T : class
+    {
+        try { return (await source(), null); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or IOException
+                                       or KeyNotFoundException or InvalidOperationException)
+        { return (null, ex); }
+    }
+
+    /// <summary>
+    /// Vérification légère, faite toutes les 30 secondes : numéro de la dernière version publiée, d'après le miroir
+    /// Cloudflare (petit fichier) et la redirection de la page « latest » de GitHub (requête HEAD, sans contenu), le plus
+    /// récent des deux. Elle ne passe pas par l'API GitHub, limitée à 60 requêtes par heure sans compte ; CheckAsync
+    /// n'est appelée que quand ce numéro dépasse la version installée. null : aucune version publiée. Lève une exception
+    /// si les deux sources sont injoignables.
     /// </summary>
     public static async Task<Version?> LatestVersionAsync()
+    {
+        var mirror = TryAsync(MirrorAsync);
+        var github = TryAsync(GitHubLatestAsync);
+        await Task.WhenAll(mirror, github);
+        var (m, mError) = mirror.Result;
+        var (g, gError) = github.Result;
+        if (mError != null && gError != null) throw gError;
+        return m?.Latest > g ? m.Latest : g ?? m?.Latest;
+    }
+
+    static async Task<Version?> GitHubLatestAsync()
     {
         using var handler = new HttpClientHandler { AllowAutoRedirect = false };
         using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
@@ -56,20 +101,34 @@ public static class UpdateChecker
     }
 
     /// <summary>
-    /// Retourne la nouvelle version si elle est plus récente, sinon null. API GitHub indisponible (limite de requêtes,
-    /// erreur du serveur) : version lue sur la page « latest » et installateur à son adresse fixe, sans empreinte
-    /// (CheckWithoutApiAsync). Lève une exception si GitHub reste injoignable.
+    /// Retourne la nouvelle version si elle est plus récente, sinon null : la plus récente du miroir Cloudflare et de GitHub,
+    /// le miroir à égalité (téléchargement hors de GitHub). Lève une exception si les deux sources sont injoignables.
     /// </summary>
     public static async Task<UpdateInfo?> CheckAsync()
     {
+        var mirror = TryAsync(MirrorAsync);
+        var github = TryAsync(GitHubCheckAsync);
+        await Task.WhenAll(mirror, github);
+        var (m, mError) = mirror.Result;
+        var (g, gError) = github.Result;
+        if (mError != null && gError != null) throw gError;
+        if (m != null && m.Latest <= Current) m = null;
+        return m != null && (g == null || m.Latest >= g.Latest) ? m : g;
+    }
+
+    /// <summary>
+    /// GitHub : API des Releases ; API indisponible (limite de requêtes, erreur du serveur) : version lue sur la page
+    /// « latest » et installateur à son adresse fixe, sans empreinte.
+    /// </summary>
+    static async Task<UpdateInfo?> GitHubCheckAsync()
+    {
         try { return await CheckWithApiAsync(); }
-        catch (HttpRequestException) { return await CheckWithoutApiAsync(); }
-        catch (TaskCanceledException) { return await CheckWithoutApiAsync(); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { return await CheckWithoutApiAsync(); }
     }
 
     static async Task<UpdateInfo?> CheckWithoutApiAsync()
     {
-        var latest = await LatestVersionAsync();
+        var latest = await GitHubLatestAsync();
         if (latest == null || latest <= Current) return null;
         var tag = $"v{latest.ToString(3)}";
         return new UpdateInfo(latest, $"https://github.com/{Repo}/releases/tag/{tag}",
@@ -132,20 +191,42 @@ public static class UpdateChecker
             catch (InvalidDataException) { }
         }
 
-        // Erreur passagère de GitHub (502, 503, 504…) ou coupure : jusqu'à 4 essais, de plus en plus espacés
-        for (int attempt = 1; ; attempt++)
+        // Morceaux du miroir Cloudflare, ou fichier unique de GitHub. Erreur passagère (502, 503, 504…) ou coupure :
+        // jusqu'à 4 essais par fichier, de plus en plus espacés
+        var urls = update.Parts ?? [update.InstallerUrl];
+        var pieces = new List<string>();
+        long before = 0;
+        for (int i = 0; i < urls.Count; i++)
         {
-            try
+            var file = urls.Count == 1 ? part : $"{part}{i}";
+            for (int attempt = 1; ; attempt++)
             {
-                await DownloadOnceAsync(update, part, progress, cancel);
-                break;
+                try
+                {
+                    long start = before;
+                    await DownloadOnceAsync(urls[i], file, (done, length) =>
+                    {
+                        long total = update.Size > 0 ? update.Size : length ?? 0;
+                        if (total > 0) progress.Report(Math.Min(1, (double)(start + done) / total));
+                    }, cancel);
+                    break;
+                }
+                catch (Exception ex) when (attempt < 4 && !cancel.IsCancellationRequested
+                    && ex is HttpRequestException { StatusCode: null or >= System.Net.HttpStatusCode.InternalServerError } or IOException or TaskCanceledException)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3 * attempt), cancel);
+                }
             }
-            catch (Exception ex) when (attempt < 4 && !cancel.IsCancellationRequested
-                && ex is HttpRequestException { StatusCode: null or >= System.Net.HttpStatusCode.InternalServerError } or IOException or TaskCanceledException)
-            {
-                progress.Report(0);
-                await Task.Delay(TimeSpan.FromSeconds(3 * attempt), cancel);
-            }
+            before += new FileInfo(file).Length;
+            pieces.Add(file);
+        }
+        if (pieces.Count > 1)
+        {
+            await using (var output = File.Create(part))
+                foreach (var piece in pieces)
+                    await using (var input = File.OpenRead(piece))
+                        await input.CopyToAsync(output, cancel);
+            foreach (var piece in pieces) File.Delete(piece);
         }
 
         await VerifyAsync(part, update, cancel);
@@ -153,15 +234,16 @@ public static class UpdateChecker
         return path;
     }
 
-    static async Task DownloadOnceAsync(UpdateInfo update, string part, IProgress<double> progress, CancellationToken cancel)
+    /// <summary>Télécharge un fichier ; progress : octets reçus et taille annoncée.</summary>
+    static async Task DownloadOnceAsync(string url, string file, Action<long, long?> progress, CancellationToken cancel)
     {
         using (var http = NewClient(TimeSpan.FromMinutes(10)))
-        using (var resp = await http.GetAsync(update.InstallerUrl, HttpCompletionOption.ResponseHeadersRead, cancel))
+        using (var resp = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancel))
         {
             resp.EnsureSuccessStatusCode();
-            long total = resp.Content.Headers.ContentLength ?? update.Size;
+            long? length = resp.Content.Headers.ContentLength;
             await using var input = await resp.Content.ReadAsStreamAsync(cancel);
-            await using var output = File.Create(part);
+            await using var output = File.Create(file);
             var buffer = new byte[81920];
             long done = 0;
             int read;
@@ -169,7 +251,7 @@ public static class UpdateChecker
             {
                 await output.WriteAsync(buffer.AsMemory(0, read), cancel);
                 done += read;
-                if (total > 0) progress.Report((double)done / total);
+                progress(done, length);
             }
             // Coupure en cours de route (taille annoncée non atteinte) : nouvel essai
             if (resp.Content.Headers.ContentLength is { } expected && done != expected)

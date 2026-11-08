@@ -1,0 +1,8 @@
+# Miroir des mises à jour sur Cloudflare (voir update/README.md) : fichiers statiques seulement, aucun script.
+# Le dossier public/ est rempli par le workflow de Release (.github/workflows/release.yml), puis déployé.
+name = "drm-update"
+account_id = "a65a8ad66731dc62dfdbfb0e46258833"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./public"

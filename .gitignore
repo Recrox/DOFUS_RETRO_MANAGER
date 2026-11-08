@@ -13,3 +13,5 @@ monstres.json
 
 # Fichiers de travail locaux (ex. images extraites du jeu) : jamais committés ni livrés (règle 5)
 local/
+update/.wrangler/
+update/public/*.msi.*
