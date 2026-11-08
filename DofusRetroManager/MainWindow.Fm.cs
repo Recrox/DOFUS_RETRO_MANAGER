@@ -32,7 +32,9 @@ public sealed record FmChanceRow(int Char, string Name, int Value, string Min, i
     IReadOnlyList<FmRuneCell> Runes);
 
 /// <summary>Ligne de l'écran « Poids des stats » (onglet FM) : rune, stat, poids par point et valeur par défaut.</summary>
-public sealed record FmWeightRow(int Stat, int RuneId, string Rune, string Label, string Weight);
+public sealed record FmWeightRow(int Stat, int RuneId, string Rune, string Label, string Weight, IReadOnlyList<FmRuneWeight> Runes);
+/// <summary>Rune d'une stat (simple, Pa ou Ra) : points apportés et poids total.</summary>
+public sealed record FmRuneWeight(int RuneId, string Name, int Value, string Weight);
 
 public partial class MainWindow
 {
@@ -204,7 +206,10 @@ public partial class MainWindow
     {
         if (_fm == null || _data == null) return;
         SetRows(FmWeightsGrid, _fm.WeightList().Select(w => new FmWeightRow(w.Stat, w.RuneId,
-            w.Rune.Length > 0 ? w.Rune : "—", _data.FormatEffect(w.Stat, 1), Num(w.Weight)
+            w.Rune.Length > 0 ? w.Rune : "—", _data.FormatEffect(w.Stat, 1), Num(w.Weight),
+            RuneBreaking.RunesOf(_fm.Characteristic(w.Stat)) is { Count: > 0 } runes
+                ? runes.Select(r => new FmRuneWeight(RuneBreaking.RuneId(_data, r.Rune) ?? 0, r.Rune, r.Value, Num(r.Value * w.Weight))).ToList()
+                : w.Rune.Length > 0 ? [new FmRuneWeight(w.RuneId, w.Rune, 1, Num(w.Weight))] : []
             )).ToList());
     }
 }

@@ -58,3 +58,6 @@
 .fm-chips { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; }
 .fm-chg { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
 .fm-chg .fx-ico { width: 16px; height: 16px; }
+
+/* Poids des stats : chaque rune (simple, Pa, Ra) avec ses points et son poids */
+.fm-rw { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }

@@ -24,9 +24,9 @@ function fmWeights() {
     <div class="filters"><span class="muted" data-tip="Poids d'un point de chaque stat dans Dofus Retro (valeurs communautaires) : estimation du reliquat et chances des runes.">Poids par point de stat ⓘ</span></div>
     ${table('FmWeightsGrid', [
       { h: '', f: r => itemImg(r.RuneId, 'sm') },
-      { h: 'Rune', k: 'Rune', f: r => `<span class="strong">${esc(r.Rune)}</span>` },
-      { h: 'Stat', k: 'Label' },
-      { h: 'Poids', k: 'Weight', num: true, f: r => `<span class="acc strong">${esc(r.Weight)}</span>` },
+      { h: 'Stat', k: 'Label', f: r => `<span class="strong">${esc(r.Label)}</span>` },
+      { h: 'Poids / pt', k: 'Weight', num: true, f: r => `<span class="acc strong">${esc(r.Weight)}</span>` },
+      ...['Rune', 'Pa', 'Ra'].map((h, i) => ({ h, f: r => { const u = r.Runes?.[i]; return u ? `<span class="fm-rw" title="${esc(u.Name)} : +${u.Value} → poids ${esc(u.Weight)}">${itemImg(u.RuneId, 'sm')}+${u.Value} <b class="acc">${esc(u.Weight)}</b></span>` : ''; } })),
     ], { select: false })}</div>`;
 }
 

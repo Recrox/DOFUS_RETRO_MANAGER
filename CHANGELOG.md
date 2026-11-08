@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.74.0 — 8 novembre 2026
+
+- **FM, poids des stats** : chaque stat affiche aussi ses runes Pa et Ra, avec leur icône, les points apportés et leur poids (ex. Rune Ra Fo : +10, poids 10).
+
 ## 1.73.0 — 8 novembre 2026
 
 - **TTG** : le graphique des prix chez les marchands s’affiche en haut, avant les offres vues. Le prix et le graphique de l’HDV ne s’affichent plus dans cet onglet.
