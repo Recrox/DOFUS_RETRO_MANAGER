@@ -113,6 +113,18 @@ public sealed class FmTracker
     }
 
     /// <summary>
+    /// Objet retiré de l'atelier (ex. un autre anneau du même modèle mis à sa place) : le prochain objet posé est un
+    /// nouvel objet, pas la version suivante de celui-ci.
+    /// </summary>
+    public void OnCraftItemRemoved(long uid)
+    {
+        if (_work is not { } work || work.Uid != uid) return;
+        _work = null;
+        _base = "";
+        _passCode = null;
+    }
+
+    /// <summary>
     /// Objet vu dans l'atelier. Retro recrée l'objet (nouvel uid) à chaque rune : la fiche suit le nouvel uid. Le passage
     /// lui-même est enregistré à son message de fin (OnCraftResult), qui suit toujours la nouvelle version de l'objet.
     /// </summary>
@@ -122,7 +134,8 @@ public sealed class FmTracker
         if (it.TypeId == RuneTypeId || ParseStats(effects).Count == 0) return;
         _lastSeen = DateTime.Now;
 
-        if (_work is not { } work || work.Template != templateId)
+        if (_work is not { } work || work.Template != templateId
+            || (work.Uid != uid && Items.ContainsKey(uid))) // autre objet déjà suivi, posé à la place
         {
             _work = (templateId, uid, effects); // nouvel objet posé : état de départ
             _base = effects;
@@ -147,22 +160,14 @@ public sealed class FmTracker
     }
 
     /// <summary>
-    /// Fiche d'un objet du même modèle : mêmes effets, sinon les plus proches (écart de poids d'au plus 5 % de l'objet :
-    /// passages faits sans l'application).
+    /// Fiche d'un objet du même modèle aux caractéristiques identiques (objet revu après une reconnexion, nouvel uid).
+    /// Jamais un objet seulement proche : deux anneaux du même modèle aux jets voisins restent deux fiches.
     /// </summary>
     FmItem? SameItem(int templateId, string effects)
     {
-        var mine = Items.Values.Where(i => i.TemplateId == templateId).ToList();
-        if (mine.FirstOrDefault(i => i.Effects == effects) is { } exact) return exact;
         var now = ParseStats(effects);
-        double total = now.Sum(kv => Math.Abs(kv.Value) * Weight(kv.Key));
-        double Gap(FmItem i)
-        {
-            var old = ParseStats(i.Effects);
-            return old.Keys.Union(now.Keys).Sum(k => Math.Abs(old.GetValueOrDefault(k) - now.GetValueOrDefault(k)) * Weight(k));
-        }
-        return mine.Select(i => (Item: i, Gap: Gap(i))).Where(x => x.Gap <= total * 0.05).OrderBy(x => x.Gap)
-            .Select(x => x.Item).FirstOrDefault();
+        return Items.Values.Where(i => i.TemplateId == templateId).FirstOrDefault(i => i.Effects == effects
+            || ParseStats(i.Effects) is var old && old.Count == now.Count && old.All(kv => now.TryGetValue(kv.Key, out var v) && v == kv.Value));
     }
 
     /// <summary>

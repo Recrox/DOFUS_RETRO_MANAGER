@@ -89,6 +89,8 @@ public sealed partial class DofusTracker
     /// </summary>
     public event Action<long, int, string>? CraftItemSeen;
     public event Action? CraftOpened;
+    /// <summary>Objet retiré de l'atelier par le joueur (EmKO- / EMKO-) : uid.</summary>
+    public event Action<long>? CraftItemRemoved;
     /// <summary>Objet consommé pendant un atelier (rune, potion…) : (uid, template, quantité consommée).</summary>
     public event Action<long, int, int>? CraftItemConsumed;
     /// <summary>Résultat brut d'une action d'atelier (message Ec sans le préfixe).</summary>
@@ -124,6 +126,7 @@ public sealed partial class DofusTracker
         else if (msg.StartsWith("OR") && long.TryParse(msg.AsSpan(2), out var removed)) OnInventoryRemove(removed);
         else if (msg.StartsWith("OQ")) OnInventoryQuantity(msg[2..]);
         else if (InCraft && (msg.StartsWith("EmKO+") || msg.StartsWith("EMKO+"))) OnCraftItem(msg[5..]);
+        else if (InCraft && (msg.StartsWith("EmKO-") || msg.StartsWith("EMKO-")) && long.TryParse(msg.AsSpan(5), out var gone)) CraftItemRemoved?.Invoke(gone);
         else if (msg.StartsWith("EHl")) HdvOffers?.Invoke(msg[3..]);
         else if (msg.StartsWith("EHP")) HdvAverage?.Invoke(msg[3..]);
         else if (msg.StartsWith("EHm")) HdvOfferMove?.Invoke(msg[3..]);

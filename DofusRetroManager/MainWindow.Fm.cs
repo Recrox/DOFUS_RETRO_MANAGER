@@ -50,6 +50,7 @@ public partial class MainWindow
         _fm.Changed += RefreshFm;
         _tracker.CraftOpened += _fm.OnCraftOpened;
         _tracker.CraftItemSeen += _fm.OnCraftItemSeen;
+        _tracker.CraftItemRemoved += _fm.OnCraftItemRemoved;
         _tracker.CraftInfo += _fm.OnCraftInfo;
         _tracker.CraftResult += _fm.OnCraftResult;
         _tracker.CraftItemConsumed += (uid, tpl, count) => _fm.OnItemConsumed(uid, tpl, count);

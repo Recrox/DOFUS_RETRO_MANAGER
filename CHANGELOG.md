@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.78.0 — 8 novembre 2026
+
+- **FM** : Correction : plusieurs objets du même modèle (ex. trois anneaux identiques) ont chacun leur fiche, même quand vous les échangez dans l’atelier sans le fermer.
+
 ## 1.77.0 — 8 novembre 2026
 
 - **FM** : Correction : le reliquat ne gonfle plus pendant les tentatives d’exo. Un succès critique utilise le reliquat pour payer la rune quand il suffit, comme en jeu.
