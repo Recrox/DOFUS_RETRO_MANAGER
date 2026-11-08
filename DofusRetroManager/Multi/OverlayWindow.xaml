@@ -179,8 +179,12 @@
             <!-- Forgemagie : objet en cours, dernières runes passées (la plus récente en haut) -->
             <TextBlock Text="{Binding FmTitle}" Style="{StaticResource Section}" TextTrimming="CharacterEllipsis"
                        Visibility="{Binding ShowFm, Converter={StaticResource Visible}}"/>
+            <!-- Reliquat en évidence -->
+            <TextBlock Visibility="{Binding ShowFm, Converter={StaticResource Visible}}" Margin="0,0,0,4">
+                <Run Text="Reliquat " Foreground="{DynamicResource TextMuted}"/><Run Text="{Binding FmReliquat, Mode=OneWay}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AccentSolid}"/>
+            </TextBlock>
             <!-- Forgemagie : chaque ligne, valeur / max et chance de succès (SC + SN) de ses runes (rouge : au-delà du max) -->
-            <ItemsControl ItemsSource="{Binding FmChances}" Visibility="{Binding ShowFmChances, Converter={StaticResource Visible}}">
+            <ItemsControl x:Name="FmChancesList" ItemsSource="{Binding FmChances}" Visibility="{Binding ShowFmChances, Converter={StaticResource Visible}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <DockPanel Margin="0,0,0,2">
@@ -192,7 +196,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,6,0" ToolTip="{Binding Tip}" Background="Transparent">
                                             <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,2,0"/>
                                             <TextBlock x:Name="Sc" Text="{Binding Sc}" Foreground="#2ECC71" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         </StackPanel>

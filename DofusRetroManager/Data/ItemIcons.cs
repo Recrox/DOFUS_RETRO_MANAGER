@@ -171,6 +171,7 @@ public static class CharacteristicIcons
     {
         [11] = "Vita", [12] = "Wisdom", [10] = "EarthBonus", [15] = "FireBonus", [13] = "WaterBonus", [14] = "AirBonus",
         [44] = "Init", [48] = "PP", [23] = "MP", [18] = "CriticalHit",
+        [80] = "Damage", [17] = "DamagePercent", [70] = "DamageTrap", [69] = "DamageTrapPercent", [50] = "ReflectDamage",
         [33] = "Earth", [34] = "Fire", [35] = "Water", [36] = "Air", [37] = "Neutral",
         [83] = "EarthAlt", [84] = "FireAlt", [85] = "WaterAlt", [86] = "AirAlt", [87] = "NeutralAlt",
     };

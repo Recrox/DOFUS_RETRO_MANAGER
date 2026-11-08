@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.76.0 — 8 novembre 2026
+
+- **FM, superposition** : le reliquat s’affiche en grand, sous le nom de l’objet. Au survol des chances d’une rune : % SC, % SN et % EC.
+- **FM** : jauges des stats et des chances plus grandes.
+- **FM, chances** : une rune qui ferait dépasser le max d’une ligne de plus de 101 de poids (over) affiche 0 % : elle ne peut pas passer.
+- **FM** : Correction : les icônes des dommages (fixes, %, pièges, renvoi) sont maintenant celles du jeu.
+
 ## 1.75.0 — 8 novembre 2026
 
 - **FM** : Correction : le reliquat ne bouge plus sur un succès critique. Sur un succès neutre ou un échec, même sans stat perdue, il gagne le poids perdu et perd le poids de la rune passée (ex. Ra Fo : 10).

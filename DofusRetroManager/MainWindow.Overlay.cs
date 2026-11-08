@@ -172,14 +172,14 @@ public partial class MainWindow
         // Forgemagie : objet en cours, seulement pendant une séance (rune passée il y a moins de 10 min)
         var fmItem = _fm?.CurrentUid is { } fmUid ? _fm.Items.GetValueOrDefault(fmUid) : null;
         bool fmActive = fmItem != null && DateTime.Now - fmItem.LastUsed < TimeSpan.FromMinutes(10);
-        var fmTitle = fmActive ? $"FM · {FmItemName.Text} · reliquat {FmReliquat.Text}" : "";
+        var fmTitle = fmActive ? $"FM · {FmItemName.Text}" : "";
         var fmHistory = !fmActive ? [] : ((FmHistoryGrid.ItemsSource as IEnumerable<FmHistoryRow>) ?? []).Take(_organizer.OverlayFmHistoryCount)
             .Select(r => new OverlayFmRune(r.RuneId, r.Code, r.Gains, r.Losses,
                 r.GainList.Select(c => new OverlayFmChange(c.Char, c.Value, c.Text, true))
                     .Concat(r.LossList.Select(c => new OverlayFmChange(c.Char, c.Value, c.Text, false))).ToList())).ToList();
         var fmChances = !fmActive ? [] : ((FmChances.ItemsSource as IEnumerable<FmChanceRow>) ?? [])
             .Select(r => new OverlayFmLine(r.Char, r.Exo ? $"{r.Value} exo" : $"{r.Value} / {r.Max}", r.Fill > 1 || r.Exo,
-                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Sc + c.Sn < 50)).ToList()))
+                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Sc + c.Sn < 50, c.Tip)).ToList()))
             .ToList();
         static string N(int? v) => v?.ToString("N0") ?? "?";
         EnsureOverlay().Show(new OverlayModel(
@@ -196,6 +196,6 @@ public partial class MainWindow
             harvest.Select(Harvest.HarvestTracker.Chip).ToList(),
             _organizer.OverlayHarvest && me != null && _harvest?.MapOf(me.Stream) != null,
             fmTitle, fmHistory, fmChances, fmActive && _organizer.OverlayFmHistory && fmHistory.Count > 0,
-            fmActive && _organizer.OverlayFmChances && fmChances.Count > 0));
+            fmActive && _organizer.OverlayFmChances && fmChances.Count > 0, fmActive ? FmReliquat.Text : ""));
     }
 }

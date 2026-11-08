@@ -151,7 +151,8 @@ public partial class MainWindow
             l.Max > 0 ? Math.Clamp((double)l.Value / l.Max, 0, 1.2) : 0, Num(l.Weight), l.Exo,
             l.Runes.Select(r => new FmRuneCell(r.RuneId, r.Rune, r.Value, Math.Round(r.Sc, 1), Math.Round(r.Sn, 1), Math.Round(r.Ec, 1), r.Over,
                 $"{r.Rune} (+{r.Value}) : {l.Value} → {l.Value + r.Value}{(r.Over ? (l.Max > 0 ? $" (au-dessus du max {l.Max})" : " (ligne exotique)") : "")}\n"
-                + $"SC {Pct(r.Sc)} % · SN {Pct(r.Sn)} % · EC {Pct(r.Ec)} %\nDifficulté D = {r.D:0}")).ToList())).ToList());
+                + $"SC {Pct(r.Sc)} % · SN {Pct(r.Sn)} % · EC {Pct(r.Ec)} %\n"
+                + (double.IsInfinity(r.D) ? $"Over de plus de {Fm.FmChances.MaxOverWeight:0} de poids : impossible" : $"Difficulté D = {r.D:0}"))).ToList())).ToList());
         FmChancesNote.Text = $"Niveau {info.Level} · poids de l'objet {Num(lines.Sum(l => l.Weight))}";
     }
 

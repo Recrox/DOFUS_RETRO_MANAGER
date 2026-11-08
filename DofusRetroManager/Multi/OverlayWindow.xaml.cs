@@ -11,7 +11,7 @@ public sealed record OverlayModel(string Title, string Stats, string Econome, IR
     bool ShowEconome, bool ShowGroups, bool ShowRotation, System.Windows.Media.ImageSource? Icon = null,
     string HarvestTitle = "", IReadOnlyList<Harvest.HarvestChip>? Harvest = null, bool ShowHarvest = false,
     string FmTitle = "", IReadOnlyList<OverlayFmRune>? FmHistory = null, IReadOnlyList<OverlayFmLine>? FmChances = null,
-    bool ShowFmHistory = false, bool ShowFmChances = false)
+    bool ShowFmHistory = false, bool ShowFmChances = false, string FmReliquat = "")
 {
     public bool ShowFm => ShowFmHistory || ShowFmChances;
 
@@ -19,7 +19,7 @@ public sealed record OverlayModel(string Title, string Stats, string Econome, IR
     public string Key => string.Join("|", Title, Stats, Econome, string.Join(",", Spells.Select(s => $"{s.Id}:{s.State}")),
         GroupsTitle, string.Join(",", Groups), string.Join(",", Rotation), ShowEconome, ShowGroups, ShowRotation, Icon,
         HarvestTitle, string.Join(",", (Harvest ?? []).Select(h => h.Tooltip)), ShowHarvest,
-        FmTitle, string.Join(",", FmHistory ?? []), string.Join(",", (FmChances ?? []).Select(l => l.Key)), ShowFmHistory, ShowFmChances);
+        FmTitle, string.Join(",", FmHistory ?? []), string.Join(",", (FmChances ?? []).Select(l => l.Key)), ShowFmHistory, ShowFmChances, FmReliquat);
 }
 
 public sealed record OverlayGroup(string Monsters, string Info, bool Archi);
@@ -45,7 +45,7 @@ public sealed record OverlayFmChange(int Characteristic, string Value, string Te
 }
 
 /// <summary>Chance de réussite (SC + SN) d'une rune ; Over : moins de 50 % (en rouge).</summary>
-public sealed record OverlayFmChance(int RuneId, string Sc, bool Over)
+public sealed record OverlayFmChance(int RuneId, string Sc, bool Over, string Tip = "")
 {
     public System.Windows.Media.ImageSource? Icon => Data.ItemIcons.Get(RuneId);
 }
@@ -116,17 +116,20 @@ public partial class OverlayWindow : Window
 
     /// <summary>
     /// Appelé régulièrement : la superposition laisse passer les clics vers le jeu, sauf sur la liste de l'ordre de jeu,
-    /// où un clic sur un personnage affiche sa fenêtre. Elle ne prend jamais le focus.
+    /// où un clic sur un personnage affiche sa fenêtre, et sur les chances FM (détail au survol). Elle ne prend jamais le focus.
     /// </summary>
     public void UpdateHitTest()
     {
         if (!IsVisible || !GetCursorPos(out var p)) return;
         bool over = false;
-        if (_locked && RotationList.IsVisible && RotationList.ActualHeight > 0)
+        // Ordre de jeu (clic) et chances FM (détail SC / SN / EC au survol)
+        bool On(FrameworkElement e)
         {
-            var local = RotationList.PointFromScreen(new Point(p.X, p.Y));
-            over = local.X >= 0 && local.Y >= 0 && local.X <= RotationList.ActualWidth && local.Y <= RotationList.ActualHeight;
+            if (!e.IsVisible || e.ActualHeight <= 0) return false;
+            var local = e.PointFromScreen(new Point(p.X, p.Y));
+            return local.X >= 0 && local.Y >= 0 && local.X <= e.ActualWidth && local.Y <= e.ActualHeight;
         }
+        if (_locked) over = On(RotationList) || On(FmChancesList);
         if (over == _overRotation) return;
         _overRotation = over;
         ApplyStyle();
