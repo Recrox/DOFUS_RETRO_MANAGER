@@ -17,7 +17,7 @@ public sealed record TtgRow(int ItemId, int? Number, string Name, string Rarity,
     public bool Has => Owned > 0 || InBinder;
 }
 
-/// <summary>Offre vue chez un marchand : prix, quantité, pseudo et position (« groupe » si elle vient du partage).</summary>
+/// <summary>Offre vue chez un marchand : prix, quantité, pseudo et position (« 👥 Partage » si elle vient du partage entre amis, qui n’envoie jamais le marchand ni sa position).</summary>
 public sealed record TtgOfferRow(string Price, int Quantity, string Merchant, string Where, string Seen, CarteTarget? Goto) : IHasCarteTarget;
 
 /// <summary>
@@ -93,7 +93,7 @@ public partial class MainWindow
             // Meilleure offre de la période : son marchand et sa position (là où aller acheter)
             var best = m?.Recent(days).OrderBy(sn => sn.Price).ThenByDescending(sn => sn.Time).FirstOrDefault();
             return new TtgRow(it.Id, CardNumber(it.Name), it.Name, it.TypeName, owned.GetValueOrDefault(it.Id),
-                last?.Price, best?.Price, last != null ? Ago(last.Time) + (last.Shared ? " · groupe" : "") : "", last?.Time ?? DateTime.MinValue,
+                last?.Price, best?.Price, last != null ? Ago(last.Time) + (last.Shared ? " · 👥" : "") : "", last?.Time ?? DateTime.MinValue,
                 UnitPrice(it.Id), best == null ? "" : OfferMerchant(best), best == null ? "" : OfferWhere(best), best == null ? null : OfferGoto(best))
                 { InBinder = binder.Contains(it.Id) };
         }).ToList();
@@ -133,7 +133,8 @@ public partial class MainWindow
     }
 
     /// <summary>Pseudo du marchand d'une offre (« groupe » si elle vient du partage, « ? » si relevée avant cette version).</summary>
-    static string OfferMerchant(Ttg.MerchantSnapshot s) => s.Merchant ?? (s.Shared ? "groupe" : "?");
+    const string SharedMerchant = "👥 Partage";
+    static string OfferMerchant(Ttg.MerchantSnapshot s) => s.Merchant ?? (s.Shared ? SharedMerchant : "?");
 
     /// <summary>Position d'une offre : coordonnées, zone et case, ex. « [4,-19] Astrub (Cité d'Astrub) · case 301 ».</summary>
     string OfferWhere(Ttg.MerchantSnapshot s) =>

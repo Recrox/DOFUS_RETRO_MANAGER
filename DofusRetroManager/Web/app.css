@@ -160,12 +160,18 @@ tbody tr.clickable { cursor: pointer; }
 .card { background: var(--glass-strong); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px; }
 
 /* Graphique */
-svg.chart { width: 100%; height: 170px; display: block; }
-svg.chart .grid { stroke: var(--line); }
+svg.chart { width: 100%; height: auto; max-height: 220px; display: block; overflow: visible; }
+svg.chart .grid { stroke: var(--line); stroke-dasharray: 2 3; }
 svg.chart .axis { fill: var(--muted); font-size: 10px; }
-svg.chart .line { fill: none; stroke: url(#chartGrad); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+svg.chart .line { fill: none; stroke: url(#chartGrad); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 svg.chart .area { fill: url(#chartFill); }
-svg.chart circle { fill: var(--accent-solid); }
+svg.chart .pt circle, svg.chart .pt path { fill: var(--accent-solid); opacity: .55; transition: opacity .15s, r .15s; }
+svg.chart .pt.last circle { opacity: 1; stroke: var(--glass-strong); stroke-width: 2; }
+svg.chart .pt.out path { fill: #ef4444; opacity: .8; }
+svg.chart .pt .hit { fill: transparent; opacity: 1; }
+svg.chart .pt:hover circle:not(.hit) { opacity: 1; r: 5; }
+.chart-sum { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.chart-sum b { color: var(--text); font-weight: 700; }
 
 /* Onglet pas encore en HTML */
 .soon-card { margin: auto; max-width: 460px; text-align: center; padding: 34px; display: flex; flex-direction: column; gap: 14px; align-items: center; }

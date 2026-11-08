@@ -116,26 +116,60 @@ const posLink = (text, go, cls = '') => !text ? '' : go
   ? `<a class="pos-link ${cls}" data-act="goto" data-g="${esc(JSON.stringify(go))}" title="Voir sur la carte : ${esc(text)}">${esc(text)}</a>`
   : `<span class="muted ${cls}" title="${esc(text)}">${esc(text)}</span>`;
 
-// Courbe de prix en SVG (points [ms, prix])
+// Courbe de prix en SVG (points [ms, prix]) : une ligne par le meilleur prix du jour, chaque relevé en point (détail au
+// survol), le dernier mis en avant. Les prix aberrants (plus de 3 fois le prix courant) ne tassent pas l'échelle : ils
+// restent en haut, marqués ▲.
+const fmtShort = n => n >= 1e6 ? (n / 1e6).toFixed(n < 1e7 ? 1 : 0).replace('.', ',').replace(',0', '') + ' M'
+  : n >= 1e4 ? Math.round(n / 1e3) + ' k' : fmt(n);
 function chart(points) {
   if (!points?.length) return '<div class="empty">Aucun relevé pour l\'instant.</div>';
-  const W = 340, H = 170, L = 52, R = 8, Tp = 10, B = 22;
-  const ts = points.map(p => p[0]), ps = points.map(p => p[1]);
-  const t0 = Math.min(...ts), t1 = Math.max(...ts), p0 = Math.min(...ps), p1 = Math.max(...ps);
-  const x = t => L + (t1 === t0 ? (W - L - R) / 2 : (t - t0) / (t1 - t0) * (W - L - R));
-  const y = p => Tp + (p1 === p0 ? (H - Tp - B) / 2 : (1 - (p - p0) / (p1 - p0)) * (H - Tp - B));
+  const W = 360, H = 170, L = 42, R = 12, Tp = 12, B = 22;
   const sorted = points.slice().sort((a, b) => a[0] - b[0]);
-  const line = sorted.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
-  const area = `${x(sorted[0][0])},${H - B} ${line} ${x(sorted[sorted.length - 1][0])},${H - B}`;
-  const ticks = [p1, (p0 + p1) / 2, p0].map(p => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(p)}" y2="${y(p)}"/>
-    <text class="axis" x="${L - 6}" y="${y(p) + 3}" text-anchor="end">${fmt(p)}</text>`).join('');
+  const ps = sorted.map(p => p[1]).sort((a, b) => a - b);
+  const q = k => ps[Math.min(ps.length - 1, Math.floor(k * (ps.length - 1)))];
+  const cap = ps.length >= 3 ? q(.75) * 3 : Infinity;
+  const kept = ps.filter(p => p <= cap);
+  let p0 = kept[0], p1 = kept[kept.length - 1];
+  if (p1 === p0) { p0 = p0 * .9; p1 = p1 * 1.1 || 1; }
+  // Échelle « ronde » : 3 ou 4 graduations
+  const raw = (p1 - p0) / 3, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+  p0 = Math.max(0, Math.floor(p0 / step) * step); p1 = Math.ceil(p1 / step) * step;
+  const t0 = sorted[0][0], t1 = sorted[sorted.length - 1][0];
+  const x = t => L + (t1 === t0 ? (W - L - R) / 2 : (t - t0) / (t1 - t0) * (W - L - R));
+  const y = p => Tp + (1 - (Math.min(p, p1) - p0) / (p1 - p0)) * (H - Tp - B);
   const d = t => new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+  const dh = t => new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  // Meilleur prix de chaque jour
+  const days = new Map();
+  for (const [t, p] of sorted) { const k = new Date(t).toDateString(), v = days.get(k); if (!v || p < v[1]) days.set(k, [t, p]); }
+  const best = [...days.values()].filter(p => p[1] <= cap);
+  const line = best.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+  const area = best.length > 1 ? `<polygon class="area" points="${x(best[0][0]).toFixed(1)},${H - B} ${line} ${x(best[best.length - 1][0]).toFixed(1)},${H - B}"/>` : '';
+  let grid = '';
+  for (let p = p0; p <= p1 + step / 2; p += step)
+    grid += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(p)}" y2="${y(p)}"/><text class="axis" x="${L - 5}" y="${y(p) + 3}" text-anchor="end">${fmtShort(p)}</text>`;
+  const nx = t1 === t0 ? 1 : Math.min(4, days.size);
+  for (let i = 0; i < nx; i++) {
+    const t = nx === 1 ? t0 : t0 + (t1 - t0) * i / (nx - 1), a = nx === 1 ? 'middle' : i === 0 ? 'start' : i === nx - 1 ? 'end' : 'middle';
+    grid += `<text class="axis" x="${x(t)}" y="${H - 6}" text-anchor="${a}">${d(t)}</text>`;
+  }
+  const last = sorted[sorted.length - 1];
+  const dot = (p, cls) => {
+    const out = p[1] > cap, cx = x(p[0]).toFixed(1), cy = out ? Tp : y(p[1]).toFixed(1);
+    const tip = `<title>${dh(p[0])} : ${fmt(p[1])} k${out ? ' (hors échelle)' : ''}</title>`;
+    return `<g class="pt ${cls}${out ? ' out' : ''}">${out ? `<path d="M${cx - 4},${+cy + 4}h8l-4,-7z"/>` : `<circle cx="${cx}" cy="${cy}" r="${cls ? 4 : 2.5}"/>`}
+      <circle class="hit" cx="${cx}" cy="${cy}" r="8"/>${tip}</g>`;
+  };
+  const med = q(.5);
+  const sum = `<div class="chart-sum"><span title="Prix le plus bas relevé">Min <b>${fmtShort(ps[0])}</b></span>
+    <span title="Prix médian des relevés">Méd. <b>${fmtShort(med)}</b></span>
+    <span title="Dernier relevé : ${dh(last[0])}">Dernier <b>${fmtShort(last[1])}</b></span>
+    <span class="muted" title="Nombre de relevés">${sorted.length} rel.</span></div>`;
+  return `${sum}<svg class="chart" viewBox="0 0 ${W} ${H}">
     <defs><linearGradient id="chartGrad" x1="0" x2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
-    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity=".35"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs>
-    ${ticks}<polygon class="area" points="${area}"/><polyline class="line" points="${line}"/>
-    ${sorted.map(p => `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="3"><title>${d(p[0])} : ${fmt(p[1])} k</title></circle>`).join('')}
-    <text class="axis" x="${L}" y="${H - 6}">${d(t0)}</text><text class="axis" x="${W - R}" y="${H - 6}" text-anchor="end">${d(t1)}</text>
+    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity=".3"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${area}${best.length > 1 ? `<polyline class="line" points="${line}"/>` : ''}
+    ${sorted.slice(0, -1).map(p => dot(p, '')).join('')}${dot(last, 'last')}
   </svg>`;
 }
 
