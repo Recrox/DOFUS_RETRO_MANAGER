@@ -2,6 +2,11 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.73.0 — 8 novembre 2026
+
+- **TTG** : le graphique des prix chez les marchands s’affiche en haut, avant les offres vues. Le prix et le graphique de l’HDV ne s’affichent plus dans cet onglet.
+- **TTG, partage entre amis** : les prix partagés indiquent maintenant le marchand et sa position (précédés de 👥), comme vos propres relevés. Un clic sur la position l’affiche sur la carte. Il faut que vos amis aient aussi cette version.
+
 ## 1.72.0 — 8 novembre 2026
 
 - **Graphiques de prix** (HDV, Pierres d’âme, TTG) : plus lisibles, avec une ligne du meilleur prix de chaque jour, une échelle en k/M, des dates régulières et le minimum, la médiane et le dernier prix au-dessus. Les prix aberrants ne tassent plus la courbe : ils restent en haut, en rouge.

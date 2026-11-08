@@ -17,7 +17,7 @@ public sealed record TtgRow(int ItemId, int? Number, string Name, string Rarity,
     public bool Has => Owned > 0 || InBinder;
 }
 
-/// <summary>Offre vue chez un marchand : prix, quantité, pseudo et position (« 👥 Partage » si elle vient du partage entre amis, qui n’envoie jamais le marchand ni sa position).</summary>
+/// <summary>Offre vue chez un marchand : prix, quantité, pseudo et position (précédé de 👥 s’il vient du partage entre amis ; « 👥 Partage » si l’ami ne l’a pas envoyé, version 1.73 ou avant ; « ? » si relevée avant que le marchand soit gardé).</summary>
 public sealed record TtgOfferRow(string Price, int Quantity, string Merchant, string Where, string Seen, CarteTarget? Goto) : IHasCarteTarget;
 
 /// <summary>
@@ -134,7 +134,7 @@ public partial class MainWindow
 
     /// <summary>Pseudo du marchand d'une offre (« groupe » si elle vient du partage, « ? » si relevée avant cette version).</summary>
     const string SharedMerchant = "👥 Partage";
-    static string OfferMerchant(Ttg.MerchantSnapshot s) => s.Merchant ?? (s.Shared ? SharedMerchant : "?");
+    static string OfferMerchant(Ttg.MerchantSnapshot s) => s.Merchant is { } n ? (s.Shared ? "👥 " + n : n) : s.Shared ? SharedMerchant : "?";
 
     /// <summary>Position d'une offre : coordonnées, zone et case, ex. « [4,-19] Astrub (Cité d'Astrub) · case 301 ».</summary>
     string OfferWhere(Ttg.MerchantSnapshot s) =>
@@ -150,7 +150,6 @@ public partial class MainWindow
     {
         if (_data == null || _merchants == null || TtgGrid.SelectedItem is not TtgRow row) return;
         var m = _merchants.Prices.GetValueOrDefault(row.ItemId);
-        var hdv = _hdv?.Prices.GetValueOrDefault(row.ItemId);
 
         TtgDetailTitle.Text = row.Name;
         int days = TtgDays;
@@ -158,7 +157,6 @@ public partial class MainWindow
         lines.Add(m?.Last is { } last
             ? $"Marchand : {Kamas(last.Price)} ({Ago(last.Time)}, {last.Quantity} en vente) · meilleur sur {days} j : {Kamas(m.BestRecent(days))}"
             : "Marchand : pas encore vu. Consultez la boutique d'un marchand qui la vend.");
-        lines.Add(hdv?.UnitPrice is { } u ? $"HDV : {Kamas(u)} ({Ago(hdv.SeenAt)})" : "HDV : pas de prix relevé.");
         TtgDetailSub.Text = string.Join("\n", lines);
 
         // Offres vues sur la période, de la moins chère à la plus chère, avec le marchand et sa position
@@ -175,8 +173,6 @@ public partial class MainWindow
         TtgOffers.ItemsSource = offers;
 
         TtgMerchantChart.Points = m?.History.Select(sn => (sn.Time, (double)sn.Price)).ToList() ?? [];
-        TtgHdvChart.Points = hdv?.History
-            .Where(sn => sn.UnitPrice != null).Select(sn => (sn.Time, sn.UnitPrice!.Value)).ToList() ?? [];
     }
 
     void TtgForget_Click(object sender, RoutedEventArgs e)

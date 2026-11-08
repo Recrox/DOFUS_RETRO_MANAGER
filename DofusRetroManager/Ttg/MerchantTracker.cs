@@ -14,8 +14,8 @@ public sealed class MerchantSnapshot
     /// <summary>Vrai si le relevé vient d'un autre membre du groupe (partage des prix).</summary>
     public bool Shared { get; set; }
     /// <summary>
-    /// Pseudo du marchand, sa map et sa case : gardés sur ce PC seulement, pour retrouver la boutique.
-    /// Jamais envoyés au partage entre amis (HdvSync n'envoie que la carte, le prix, la quantité et la date).
+    /// Pseudo du marchand, sa map et sa case, pour retrouver la boutique. Envoyés au partage entre amis seulement
+    /// s'il est activé (règle 4).
     /// </summary>
     public string? Merchant { get; set; }
     public int? MapId { get; set; }
@@ -177,15 +177,24 @@ public sealed class MerchantTracker
     /// Ajoute les relevés reçus du groupe à l'historique. Un relevé déjà connu (même carte, même prix, à la
     /// seconde près, y compris les siens renvoyés par le serveur) est ignoré. Retourne le nombre de relevés ajoutés.
     /// </summary>
-    public int MergeShared(IEnumerable<(int Tpl, long Price, int Qty, DateTime SeenAt)> snapshots)
+    public int MergeShared(IEnumerable<(int Tpl, long Price, int Qty, DateTime SeenAt, string? Merchant, int? Map, int? Cell)> snapshots)
     {
         int added = 0;
         foreach (var r in snapshots)
         {
             if (!IsCard(r.Tpl)) continue;
             if (!Prices.TryGetValue(r.Tpl, out var p)) Prices[r.Tpl] = p = new MerchantPrice { TemplateId = r.Tpl };
-            if (p.History.Any(s => s.Price == r.Price && (s.Time - r.SeenAt).Duration() < TimeSpan.FromSeconds(1))) continue;
-            p.History.Add(new MerchantSnapshot { Time = r.SeenAt, Price = r.Price, Quantity = r.Qty, Shared = true });
+            var known = p.History.FirstOrDefault(s => s.Price == r.Price && (s.Time - r.SeenAt).Duration() < TimeSpan.FromSeconds(1));
+            if (known != null)
+            {
+                // Relevé déjà reçu sans le marchand : on le complète
+                if (known.Merchant != null || r.Merchant == null) continue;
+                (known.Merchant, known.MapId, known.Cell) = (r.Merchant, r.Map, r.Cell);
+                added++;
+                continue;
+            }
+            p.History.Add(new MerchantSnapshot { Time = r.SeenAt, Price = r.Price, Quantity = r.Qty, Shared = true,
+                Merchant = r.Merchant, MapId = r.Map, Cell = r.Cell });
             p.History.Sort((a, b) => a.Time.CompareTo(b.Time));
             if (p.History.Count > MaxHistory) p.History.RemoveRange(0, p.History.Count - MaxHistory);
             added++;

@@ -17,8 +17,12 @@ CREATE TABLE IF NOT EXISTS merchant_prices (
   qty         INTEGER NOT NULL,
   seen_at     INTEGER NOT NULL,
   received_at INTEGER NOT NULL,
+  merchant    TEXT,     -- pseudo du marchand, sa map et sa case (facultatifs)
+  map         INTEGER,
+  cell        INTEGER,
   PRIMARY KEY (tpl, seen_at, price)
 );
+-- Base créée avant ces colonnes : voir server/README.md (ALTER TABLE)
 CREATE INDEX IF NOT EXISTS idx_merchant_received ON merchant_prices (received_at);
 
 -- Pierres d'âme : un prix par monstre et par catégorie (0 = monstre, 1 = donjon, 2 = archi-monstre), le plus récent

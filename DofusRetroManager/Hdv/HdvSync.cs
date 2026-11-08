@@ -161,7 +161,8 @@ public sealed class HdvSync
         if (_merchantOutbox.Count > 0)
         {
             var batch = _merchantOutbox.Take(MaxBatch).ToList();
-            var payload = batch.Select(x => new { tpl = x.Tpl, price = x.Snap.Price, qty = x.Snap.Quantity, seenAt = Ms(x.Snap.Time) });
+            var payload = batch.Select(x => new { tpl = x.Tpl, price = x.Snap.Price, qty = x.Snap.Quantity, seenAt = Ms(x.Snap.Time),
+                merchant = x.Snap.Merchant, map = x.Snap.MapId, cell = x.Snap.Cell });
             var ok = await PostAsync("/merchant", payload);
             if (ok == false) return;
             _merchantOutbox.RemoveRange(0, batch.Count);
@@ -225,7 +226,7 @@ public sealed class HdvSync
         if (doc.RootElement.TryGetProperty("merchant", out var merchant))
             updated += _merchants.MergeShared(merchant.EnumerateArray().Select(e => (
                 Tpl: e.GetProperty("tpl").GetInt32(), Price: e.GetProperty("price").GetInt64(), Qty: e.GetProperty("qty").GetInt32(),
-                SeenAt: Date(e))).ToList());
+                SeenAt: Date(e), Merchant: Text(e, "merchant"), Map: Int(e, "map"), Cell: Int(e, "cell"))).ToList());
         if (doc.RootElement.TryGetProperty("pda", out var pda))
             updated += _pda.MergeShared(pda.EnumerateArray().Select(e => (
                 Monster: e.GetProperty("monster").GetInt32(), Category: e.GetProperty("category").GetInt32(),
@@ -254,6 +255,10 @@ public sealed class HdvSync
 
     static long? Long(JsonElement e, string name) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetInt64() : null;
+    static int? Int(JsonElement e, string name) =>
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i) ? i : null;
+    static string? Text(JsonElement e, string name) =>
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String && v.GetString() is { Length: > 0 and <= 40 } s ? s : null;
 
     void SetStatus(string status)
     {

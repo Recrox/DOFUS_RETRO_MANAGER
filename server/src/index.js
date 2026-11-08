@@ -1,11 +1,11 @@
 // Base de prix partagée de Dofus Retro Manager (Cloudflare Worker + D1).
 //
 // Ne contient que des prix : objets de l'HDV, cartes TTG vues chez les marchands, pierres d'âme par monstre.
-// Aucune donnée de joueur ni de marchand (README, règle 4). L'accès exige le code de groupe (secret GROUP_KEY).
+// Pour les cartes TTG, le pseudo du marchand, sa map et sa case (règle 4) ; aucune autre donnée de joueur. L'accès exige le code de groupe (secret GROUP_KEY).
 //
 //   GET  /prices?since=<ms>   relevés reçus par le serveur depuis cette date -> { now, prices, merchant, pda }
 //   POST /prices              [{ tpl, lot1, lot10, lot100, avg, seenAt }, ...] -> { accepted }
-//   POST /merchant            [{ tpl, price, qty, seenAt }, ...] -> { accepted }
+//   POST /merchant            [{ tpl, price, qty, seenAt, merchant?, map?, cell? }, ...] -> { accepted }
 //   POST /pda                 [{ monster, category, price, offers, avg, seenAt }, ...] -> { accepted }
 //   GET  /health              vérifie le code de groupe
 
@@ -31,7 +31,7 @@ export default {
           `SELECT tpl, lot1, lot10, lot100, avg, seen_at AS seenAt
              FROM prices WHERE received_at > ?1 ORDER BY received_at LIMIT 50000`).bind(since),
         env.DB.prepare(
-          `SELECT tpl, price, qty, seen_at AS seenAt
+          `SELECT tpl, price, qty, seen_at AS seenAt, merchant, map, cell
              FROM merchant_prices WHERE received_at > ?1 ORDER BY received_at LIMIT 50000`).bind(since),
         env.DB.prepare(
           `SELECT monster, category, price, offers, avg, seen_at AS seenAt
@@ -67,10 +67,11 @@ export default {
       const valid = items.filter(it => isValidMerchant(it, now));
       // Chaque relevé est conservé ; un relevé déjà reçu (même carte, date et prix) est ignoré
       const insert = env.DB.prepare(
-        `INSERT OR IGNORE INTO merchant_prices (tpl, price, qty, seen_at, received_at) VALUES (?1, ?2, ?3, ?4, ?5)`);
+        `INSERT OR IGNORE INTO merchant_prices (tpl, price, qty, seen_at, received_at, merchant, map, cell)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`);
       if (valid.length > 0)
         await env.DB.batch([
-          ...valid.map(it => insert.bind(it.tpl, it.price, it.qty, it.seenAt, now)),
+          ...valid.map(it => insert.bind(it.tpl, it.price, it.qty, it.seenAt, now, it.merchant ?? null, it.map ?? null, it.cell ?? null)),
           env.DB.prepare(`DELETE FROM merchant_prices WHERE seen_at < ?1`).bind(now - MAX_AGE_MS),
         ]);
       return json({ accepted: valid.length });
@@ -108,7 +109,9 @@ function isValidHdv(it, now) {
 
 function isValidMerchant(it, now) {
   return !!it && isId(it.tpl) && isDate(it.seenAt, now) && it.price != null && isPrice(it.price)
-    && Number.isInteger(it.qty) && it.qty >= 0 && it.qty <= 1_000_000;
+    && Number.isInteger(it.qty) && it.qty >= 0 && it.qty <= 1_000_000
+    && (it.merchant == null || (typeof it.merchant === "string" && /^[p{L}p{N}-[] ]{1,40}$/u.test(it.merchant)))
+    && (it.map == null || isId(it.map)) && (it.cell == null || (Number.isInteger(it.cell) && it.cell >= 0 && it.cell < 2000));
 }
 
 function isValidPda(it, now) {

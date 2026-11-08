@@ -118,7 +118,6 @@ public partial class MainWindow
     internal readonly WebText TtgOffersTitle = new() { Text = "Offres vues", ForegroundKey = "TextMuted" };
     internal readonly WebList TtgOffers = new();
     internal readonly WebChart TtgMerchantChart = new();
-    internal readonly WebChart TtgHdvChart = new();
     internal readonly WebTextBox PdaSearch = new() { ToolTip = "Nom d'un monstre ou d'une race" };
     internal readonly WebCombo PdaSource = new();
     internal readonly WebText PdaCharacterLabel = new() { Visibility = Visibility.Collapsed, Text = "Personnage" };

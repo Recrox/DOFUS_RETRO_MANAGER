@@ -23,7 +23,7 @@ const TABS = [
     'ShareToggle', 'ShareSync', 'SharePanel', 'ShareEnabled', 'ShareUrl', 'ShareKey', 'ShareTest', 'ShareSave', 'ShareStatus'] },
   { key: 'ttg', label: 'TTG', watch: ['TtgSearch', 'TtgRarity', 'TtgCharacter', 'TtgMissing', 'TtgShow', 'TtgShowAll', 'TtgDaysBox', 'TtgCount',
     'TtgCollection', 'TtgGrid', 'TtgBestColumn', 'TtgEmpty', 'TtgDetailTitle', 'TtgDetailSub', 'TtgOffersMode', 'TtgOffersTitle',
-    'TtgOffers', 'TtgMerchantChart', 'TtgHdvChart'] },
+    'TtgOffers', 'TtgMerchantChart'] },
   { key: 'pda', label: 'PDA', watch: ['PdaSearch', 'PdaSource', 'PdaCharacter', 'PdaCategory', 'PdaShowAll', 'PdaCount', 'PdaValue',
     'PdaGrid', 'PdaEmpty', 'PdaDetailTitle', 'PdaDetailSub', 'PdaChart'] },
   { key: 'ocre', label: 'Ocre', watch: ['OcreCharacter', 'OcreStep', 'OcreKindFilter', 'OcreSummary', 'OcreGrid', 'OcreDetailTitle',

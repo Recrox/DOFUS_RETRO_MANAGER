@@ -42,6 +42,9 @@ function ttgBook() {
       </div></div></div>`;
 }
 
+// Relevé reçu par le partage entre amis (👥) : explication au survol
+const shareTip = m => String(m || '').startsWith('👥') ? `title="${m === '👥 Partage' ? 'Prix partagé par un ami dont la version n’envoie pas encore le marchand' : 'Prix partagé par un ami'}"` : '';
+
 Object.assign(views, {
   ttg() {
     const sel = rows('TtgGrid')[S.TtgGrid?.sel ?? -1];
@@ -60,17 +63,15 @@ Object.assign(views, {
           { h: 'Classeur', k: 'InBinder', f: r => r.InBinder ? '<span class="ok strong" title="Carte rangée dans le classeur">✓</span>' : '' },
           { h: 'Marchand', k: 'MerchantPrice', num: true, f: r => `<span class="acc strong">${fmt(r.MerchantPrice)}</span>` },
           { h: S.TtgBestColumn?.t || 'Meilleur', k: 'BestPrice', num: true, f: r => fmt(r.BestPrice) },
-          { h: 'Chez', k: 'BestMerchant', f: r => `<span class="strong" ${r.BestMerchant === "👥 Partage" ? `title="Prix reçu par le partage entre amis : le marchand et sa position ne sont jamais partagés"` : ""}>${esc(r.BestMerchant)}</span>` },
+          { h: 'Chez', k: 'BestMerchant', f: r => `<span class="strong" ${shareTip(r.BestMerchant)}>${esc(r.BestMerchant)}</span>` },
           { h: 'Position', k: 'BestWhere', f: r => posLink(r.BestWhere, r.Goto, 'ellipsis') },
           { h: 'Vu', k: 'SeenAt', f: r => `<span class="muted">${esc(r.Seen)}</span>` },
         ], { empty: T('TtgEmpty') || 'Aucune carte à afficher.' })}
         <aside class="detail glass">${detailHead(sel ? itemImg(sel.ItemId, 'lg') : '', 'TtgDetailTitle', 'TtgDetailSub')}
-          ${sel ? `${select('TtgOffersMode')}<h3>${esc(T('TtgOffersTitle'))}</h3>
+          ${sel ? `<div class="card">${chart(S.TtgMerchantChart?.pts)}</div>${select('TtgOffersMode')}<h3>${esc(T('TtgOffersTitle'))}</h3>
           ${rows('TtgOffers').map(o => `<div class="card"><div class="filters" style="justify-content:space-between"><b class="acc">${esc(o.Price)}<span class="muted"> · ${o.Quantity} en vente</span></b>
-            <span class="muted" style="font-size:11px">${esc(o.Seen)}</span></div><div class="strong" ${o.Merchant === "👥 Partage" ? `title="Prix reçu par le partage entre amis : le marchand et sa position ne sont jamais partagés"` : ""}>${esc(o.Merchant)}</div>
+            <span class="muted" style="font-size:11px">${esc(o.Seen)}</span></div><div class="strong" ${shareTip(o.Merchant)}>${esc(o.Merchant)}</div>
             ${o.Where ? `<div style="font-size:11.5px">${posLink(o.Where, o.Goto)}</div>` : ''}</div>`).join('') || '<div class="muted">Aucune offre.</div>'}
-          <h3>Prix chez les marchands</h3><div class="card">${chart(S.TtgMerchantChart?.pts)}</div>
-          <h3>Prix unitaire à l'HDV</h3><div class="card">${chart(S.TtgHdvChart?.pts)}</div>
           <button class="ghost" data-act="click" data-name="TtgForget">Oublier les prix marchands</button>` : ''}</aside>
       </div>`;
   },

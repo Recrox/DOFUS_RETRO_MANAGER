@@ -5,7 +5,7 @@
 
 Petite base de prix commune, hébergée gratuitement sur Cloudflare (Workers + D1). Elle permet à un groupe d'amis de mettre en commun les prix relevés à l'hôtel de vente : chacun consulte quelques objets, tout le monde reçoit tous les prix.
 
-Elle ne stocke **que** des prix : pour l'HDV, identifiant d'objet, prix des lots ×1/×10/×100, prix moyen, date du relevé ; pour les cartes TTG vues chez les marchands, identifiant de la carte, prix, quantité en vente et date (pas le marchand) ; pour les pierres d'âme, identifiant du monstre, catégorie de pierre, prix, nombre d'offres, prix moyen et date. Aucune donnée de joueur (voir la règle 4 du README principal).
+Elle ne stocke **que** des prix : pour l'HDV, identifiant d'objet, prix des lots ×1/×10/×100, prix moyen, date du relevé ; pour les cartes TTG vues chez les marchands, identifiant de la carte, prix, quantité en vente, date, et le pseudo du marchand avec sa map et sa case (pour retrouver sa boutique) ; pour les pierres d'âme, identifiant du monstre, catégorie de pierre, prix, nombre d'offres, prix moyen et date. Aucune autre donnée de joueur (voir la règle 4 de REGLES.md).
 
 L'accès (lecture et écriture) exige le **code de groupe**, un secret stocké côté Cloudflare, jamais dans le code. Le dépôt peut donc rester public.
 
@@ -27,6 +27,17 @@ npx wrangler deploy                    # affiche l'adresse : https://dofus-bank-
 Ensuite, dans l'application : onglet **HDV** › **Partage entre amis** › collez l'adresse et le code, cochez **Activer le partage**, puis **Tester** et **Enregistrer**.
 
 Donnez l'adresse et le code à vos amis **en privé** (message privé, pas sur un salon public) : toute personne qui a les deux peut lire et écrire dans la base.
+
+## Mettre à jour le serveur (marchand des prix TTG)
+
+Une base créée avant la version 1.73 de l'application ne garde pas le marchand des cartes TTG. Depuis le dossier `server`, une seule fois :
+
+```powershell
+npx wrangler d1 execute dbm-hdv --remote --file=marchand.sql   # ajoute les colonnes du marchand (prix conservés)
+npx wrangler deploy
+```
+
+Les versions précédentes de l'application continuent de partager leurs prix, sans le marchand.
 
 ## Mettre à jour le serveur (partage des prix TTG et PDA)
 
