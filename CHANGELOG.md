@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.69.0 — 8 novembre 2026
+
+- **Mise à jour** : correction : une nouvelle version est détectée même quand GitHub limite ou refuse ses requêtes, et le téléchargement réessaie seul après une erreur passagère (504…).
+
 ## 1.68.0 — 8 novembre 2026
 
 - **FM** : correction : les lignes de l'objet sont rangées exactement comme dans l'infobulle du jeu.

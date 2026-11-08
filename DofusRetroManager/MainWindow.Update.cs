@@ -25,7 +25,7 @@ public partial class MainWindow
     /// Vérification au lancement, puis toutes les 30 secondes tant que l'application reste ouverte : une version publiée
     /// pendant la session s'affiche sans relancer. Les vérifications périodiques ne lisent que le numéro de la dernière
     /// version (UpdateChecker.LatestVersionAsync, hors API GitHub) ; l'API n'est appelée que pour une version nouvelle.
-    /// En cas d'échec, pause de 15 minutes.
+    /// En cas d'échec, pause de 5 minutes.
     /// </summary>
     void StartUpdateChecks()
     {
@@ -82,9 +82,9 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            // Une ligne par échec, pas toutes les 30 secondes : on réessaie dans 15 minutes
+            // Une ligne par échec, pas toutes les 30 secondes : on réessaie dans 5 minutes
             AddLog($"Vérification de mise à jour impossible : {ex.Message}");
-            _updateRetryAt = DateTime.Now.AddMinutes(15);
+            _updateRetryAt = DateTime.Now.AddMinutes(5);
         }
         finally { _updateChecking = false; }
     }

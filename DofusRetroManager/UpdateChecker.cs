@@ -48,12 +48,35 @@ public static class UpdateChecker
         using var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Head, ReleasesPage));
         if ((int)resp.StatusCode is < 300 or >= 400) resp.EnsureSuccessStatusCode();
         // https://github.com/…/releases/tag/v1.28.0
-        var tag = System.Text.RegularExpressions.Regex.Match(resp.Headers.Location?.ToString() ?? "", @"/tag/v?(\d+\.\d+\.\d+)$");
-        return tag.Success ? Normalize(Version.Parse(tag.Groups[1].Value)) : null;
+        var location = resp.Headers.Location?.ToString() ?? "";
+        var tag = System.Text.RegularExpressions.Regex.Match(location, @"/tag/v?(\d+\.\d+\.\d+)$");
+        if (tag.Success) return Normalize(Version.Parse(tag.Groups[1].Value));
+        if (location.EndsWith("/releases")) return null; // aucune release publiée
+        throw new HttpRequestException($"GitHub n'a pas indiqué la dernière version (code {(int)resp.StatusCode}).");
     }
 
-    /// <summary>Retourne la nouvelle version si elle est plus récente, sinon null. Lève une exception si GitHub est injoignable.</summary>
+    /// <summary>
+    /// Retourne la nouvelle version si elle est plus récente, sinon null. API GitHub indisponible (limite de requêtes,
+    /// erreur du serveur) : version lue sur la page « latest » et installateur à son adresse fixe, sans empreinte
+    /// (CheckWithoutApiAsync). Lève une exception si GitHub reste injoignable.
+    /// </summary>
     public static async Task<UpdateInfo?> CheckAsync()
+    {
+        try { return await CheckWithApiAsync(); }
+        catch (HttpRequestException) { return await CheckWithoutApiAsync(); }
+        catch (TaskCanceledException) { return await CheckWithoutApiAsync(); }
+    }
+
+    static async Task<UpdateInfo?> CheckWithoutApiAsync()
+    {
+        var latest = await LatestVersionAsync();
+        if (latest == null || latest <= Current) return null;
+        var tag = $"v{latest.ToString(3)}";
+        return new UpdateInfo(latest, $"https://github.com/{Repo}/releases/tag/{tag}",
+            $"https://github.com/{Repo}/releases/download/{tag}/{InstallerName}", null, 0);
+    }
+
+    static async Task<UpdateInfo?> CheckWithApiAsync()
     {
         using var http = NewClient(TimeSpan.FromSeconds(8));
         http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
@@ -109,6 +132,29 @@ public static class UpdateChecker
             catch (InvalidDataException) { }
         }
 
+        // Erreur passagère de GitHub (502, 503, 504…) ou coupure : jusqu'à 4 essais, de plus en plus espacés
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await DownloadOnceAsync(update, part, progress, cancel);
+                break;
+            }
+            catch (Exception ex) when (attempt < 4 && !cancel.IsCancellationRequested
+                && ex is HttpRequestException { StatusCode: null or >= System.Net.HttpStatusCode.InternalServerError } or IOException or TaskCanceledException)
+            {
+                progress.Report(0);
+                await Task.Delay(TimeSpan.FromSeconds(3 * attempt), cancel);
+            }
+        }
+
+        await VerifyAsync(part, update, cancel);
+        File.Move(part, path, overwrite: true);
+        return path;
+    }
+
+    static async Task DownloadOnceAsync(UpdateInfo update, string part, IProgress<double> progress, CancellationToken cancel)
+    {
         using (var http = NewClient(TimeSpan.FromMinutes(10)))
         using (var resp = await http.GetAsync(update.InstallerUrl, HttpCompletionOption.ResponseHeadersRead, cancel))
         {
@@ -125,11 +171,10 @@ public static class UpdateChecker
                 done += read;
                 if (total > 0) progress.Report((double)done / total);
             }
+            // Coupure en cours de route (taille annoncée non atteinte) : nouvel essai
+            if (resp.Content.Headers.ContentLength is { } expected && done != expected)
+                throw new IOException($"Téléchargement interrompu ({done:N0} octets sur {expected:N0}).");
         }
-
-        await VerifyAsync(part, update, cancel);
-        File.Move(part, path, overwrite: true);
-        return path;
     }
 
     /// <summary>Fichier incomplet ou altéré : on ne l'installe pas (taille, puis empreinte si GitHub la fournit).</summary>
