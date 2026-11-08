@@ -23,11 +23,11 @@ public sealed record FmChanceLine(int Characteristic, string Name, int Value, in
 ///   la rune ; q : poids actuel de l'objet ÷ poids de ses jets maximum.
 ///   SC = max(2, (100 − D) / 2) ; SN = min(50, 100 − SC), ou si D &gt; 100 : max(15, 50 − 0,375 (D − 100)),
 ///   en dépassement : max(5, 40 − 0,375 (D − 100)) ; EC = le reste.
-///   Over de plus de 101 de poids (W &gt; 101) : 0 % (SC et SN), la rune échoue toujours.
+///   Ligne en over (ou exotique) qui pèserait plus de 101 en tout (jet × poids par point) : 0 %, la rune échoue toujours.
 /// </summary>
 public static class FmChances
 {
-    /// <summary>Poids maximum au-delà du max d'une ligne (over) : au-dessus, la rune ne passe jamais.</summary>
+    /// <summary>Poids maximum d'une ligne au-delà de son max (over) ou exotique : au-dessus, la rune ne passe jamais.</summary>
     public const double MaxOverWeight = 101;
 
     public static List<FmChanceLine> Compute(GameData data, FmTracker fm, ItemInfo item, IReadOnlyDictionary<int, int> current,
@@ -64,8 +64,8 @@ public static class FmChances
     {
         int after = value + rune;
         bool over = after > max;
-        // Retro : une ligne ne peut pas dépasser son max (ou, exotique, exister) de plus de 101 de poids : rune impossible
-        if (over && (after - max) * w > MaxOverWeight) return (0, 0, 100, double.PositiveInfinity, true);
+        // Retro : une ligne au-delà de son max (ou exotique) ne peut pas peser plus de 101 en tout (ex. 4 CC = 120) : rune impossible
+        if (over && after * w > MaxOverWeight) return (0, 0, 100, double.PositiveInfinity, true);
         // Minimum du jet inconnu (jamais vu à l'HDV ni dans une banque) : seuil à 80 % du maximum
         double high = min is { } lo && lo < max ? lo + 0.8 * (max - lo) : 0.8 * max;
         double d = 5;

@@ -18,6 +18,8 @@ public sealed class FmEvent
     public double WeightLost { get; set; }
     /// <summary>Poids de la rune passée (0 si inconnue : le poids gagné en tient lieu).</summary>
     public double RuneWeight { get; set; }
+    /// <summary>Tentative d'« over » (la rune fait dépasser le max de la ligne) ou d'« exo » (ligne absente du modèle), sinon null.</summary>
+    public string? Attempt { get; set; }
     public double ReliquatBefore { get; set; }
     public double ReliquatAfter { get; set; }
 }
@@ -37,7 +39,7 @@ public sealed class FmItem
 /// pendant un atelier), calcule le poids gagné/perdu, classe le résultat et estime le reliquat.
 ///
 /// Modèle de reliquat (estimation, corrigeable à la main) :
-///   succès critique (gain sans perte)  : reliquat inchangé
+///   succès critique (gain sans perte)  : reliquat − poids de la rune s'il suffit, sinon inchangé
 ///   succès neutre (gain et perte)      : reliquat += poids perdu − poids de la rune (minimum 0)
 ///   échec (avec ou sans perte)         : reliquat += poids perdu − poids de la rune (minimum 0)
 ///   échec sans effet                   : inchangé
@@ -199,6 +201,7 @@ public sealed class FmTracker
     void RecordPass(List<FmStatChange> changes, string outcome, int? rune)
     {
         if (WorkItem() is not { } item) return;
+        var attempt = Attempt(item.TemplateId, _base, rune);
         item.Effects = _work!.Value.Effects;
         _base = item.Effects;
         _passCode = null;
@@ -207,8 +210,18 @@ public sealed class FmTracker
             Time = DateTime.Now, Changes = changes, Outcome = outcome, RuneTemplateId = rune,
             WeightGained = changes.Where(c => c.Delta > 0).Sum(c => c.Delta * Weight(c.Stat)),
             WeightLost = changes.Where(c => c.Delta < 0).Sum(c => -c.Delta * Weight(c.Stat)),
+            Attempt = attempt,
             RuneWeight = rune is { } r ? RuneBreaking.RuneWeight(_data.GetItem(r).Name) ?? 0 : 0,
         });
+    }
+
+    /// <summary>« exo » si la ligne de la rune est absente du modèle, « over » si la rune la ferait dépasser son max, sinon null.</summary>
+    string? Attempt(int templateId, string before, int? rune)
+    {
+        if (rune is not { } id || RuneBreaking.RuneOf(_data.GetItem(id).Name) is not { } r) return null;
+        int max = _data.GetItem(templateId).MaxStats.GetValueOrDefault(r.Characteristic);
+        int now = ItemStats.FromParsed(ParseStats(before)).GetValueOrDefault(r.Characteristic);
+        return max <= 0 ? "exo" : now + r.Value > max ? "over" : null;
     }
 
     /// <summary>Fiche de l'objet posé dans l'atelier, créée au besoin.</summary>
@@ -233,7 +246,8 @@ public sealed class FmTracker
     }
 
     /// <summary>
-    /// Met à jour le reliquat selon le résultat : succès critique, inchangé ; succès neutre ou échec (avec ou sans
+    /// Met à jour le reliquat selon le résultat : succès critique, le reliquat paie la rune s'il suffit (c'est lui qui
+    /// permet de passer un exo ou un over sans perte), sinon inchangé ; succès neutre ou échec (avec ou sans
     /// perte), reliquat + poids perdu − poids de la rune (minimum 0) : la rune est consommée même sans rien changer.
     /// </summary>
     static void ApplyReliquat(FmItem item, FmEvent ev)
@@ -245,7 +259,7 @@ public sealed class FmTracker
         double lost = Math.Floor(ev.WeightLost + 1e-6);
         item.Reliquat = ev.Outcome switch
         {
-            SuccesCritique => before,
+            SuccesCritique => before >= rune ? before - rune : before,
             SuccesNeutre or Echec or EchecSansEffet => Math.Max(0, before + lost - rune),
             _ => before,
         };

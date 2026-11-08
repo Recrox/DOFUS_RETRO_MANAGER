@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.77.0 — 8 novembre 2026
+
+- **FM** : Correction : le reliquat ne gonfle plus pendant les tentatives d’exo. Un succès critique utilise le reliquat pour payer la rune quand il suffit, comme en jeu.
+- **FM, historique** : les runes tentées en over ou en exo sont marquées « over » ou « exo » à côté de leur nom.
+- **FM, chances** : Correction : la limite d’over compte tout le poids de la ligne. Une ligne qui pèserait plus de 101 au-delà de son max (ex. 4 CC = 120) affiche 0 %.
+- **Superposition** : les infobulles (chances des runes, historique FM) s’affichent tout de suite.
+
 ## 1.76.0 — 8 novembre 2026
 
 - **FM, superposition** : le reliquat s’affiche en grand, sous le nom de l’objet. Au survol des chances d’une rune : % SC, % SN et % EC.

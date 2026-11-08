@@ -39,7 +39,7 @@ function fmHistory() {
       <span class="fm-badge ec">EC</span> ${n('EC')} <span class="muted">· ${h.length} rune(s)</span>` : ''}</div>
     ${table('FmHistoryGrid', [
       { h: '#', k: 'Index', num: true, f: r => `<span class="muted" title="${esc(r.Time)}">${r.Index}</span>` },
-      { h: 'Rune', k: 'Rune', f: r => `<span class="fm-rune">${itemImg(r.RuneId, 'sm')}<span class="strong">${esc(r.Rune)}</span></span>` },
+      { h: 'Rune', k: 'Rune', f: r => `<span class="fm-rune">${itemImg(r.RuneId, 'sm')}<span class="strong">${esc(r.Rune)}</span>${r.Attempt ? ` <span class="fm-exo" title="${r.Attempt === 'exo' ? 'Tentative d\x27exo : ligne absente du modèle' : 'Tentative d\x27over : au-delà du max de la ligne'}">${r.Attempt}</span>` : ''}</span>` },
       { h: '', k: 'Code', f: outcomeBadge },
       { h: 'Gains', k: 'Gains', f: r => fmChips(r.GainList, 'ok') },
       { h: 'Pertes', k: 'Losses', f: r => fmChips(r.LossList, 'bad') },

@@ -15,7 +15,7 @@ public sealed record FmItemOption(long Uid, string Label)
 }
 
 /// <summary>Passage de rune. Code : SC, SN, EC (échec avec perte) ou EC0 (échec sans perte visible).</summary>
-public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Rune, string Outcome, string Code,
+public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Rune, string? Attempt, string Outcome, string Code,
     string Gains, string Losses, string Weight, string Reliquat, IReadOnlyList<FmChange> GainList, IReadOnlyList<FmChange> LossList);
 
 /// <summary>Gain ou perte d'un passage : caractéristique (icône), valeur signée (« +3 ») et texte complet (survol).</summary>
@@ -114,6 +114,7 @@ public partial class MainWindow
                 ev.Time.ToString("HH:mm:ss"),
                 ev.RuneTemplateId ?? 0,
                 ev.RuneTemplateId is { } r ? _data.GetItem(r).Name : "?",
+                ev.Attempt,
                 ev.Outcome,
                 ev.Outcome switch
                 {
@@ -152,7 +153,7 @@ public partial class MainWindow
             l.Runes.Select(r => new FmRuneCell(r.RuneId, r.Rune, r.Value, Math.Round(r.Sc, 1), Math.Round(r.Sn, 1), Math.Round(r.Ec, 1), r.Over,
                 $"{r.Rune} (+{r.Value}) : {l.Value} → {l.Value + r.Value}{(r.Over ? (l.Max > 0 ? $" (au-dessus du max {l.Max})" : " (ligne exotique)") : "")}\n"
                 + $"SC {Pct(r.Sc)} % · SN {Pct(r.Sn)} % · EC {Pct(r.Ec)} %\n"
-                + (double.IsInfinity(r.D) ? $"Over de plus de {Fm.FmChances.MaxOverWeight:0} de poids : impossible" : $"Difficulté D = {r.D:0}"))).ToList())).ToList());
+                + (double.IsInfinity(r.D) ? $"Ligne en over de plus de {Fm.FmChances.MaxOverWeight:0} de poids : impossible" : $"Difficulté D = {r.D:0}"))).ToList())).ToList());
         FmChancesNote.Text = $"Niveau {info.Level} · poids de l'objet {Num(lines.Sum(l => l.Weight))}";
     }
 
