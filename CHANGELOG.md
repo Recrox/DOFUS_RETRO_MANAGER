@@ -2,6 +2,14 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.66.0 — 8 novembre 2026
+
+- **HDV, Mes échanges** : bouton « Vider » qui efface les lignes affichées (personnage, période et type choisis) ; les offres encore en vente sont gardées.
+- **HDV, Mes échanges** : correction : une offre posée dans un autre hôtel de vente n'est plus comptée « vendue hors ligne » ; une offre marquée ainsi à tort repasse en vente dès qu'elle est revue dans son HDV.
+- **FM** : poids des runes de Dofus Retro (% résistance 4, résistance 5, renvoi 30) au lieu de ceux de Dofus 2 ; ils sont affichés à titre indicatif et ne se modifient plus.
+- **FM** : les lignes de l'objet s'affichent dans l'ordre du jeu (Vitalité, Sagesse, Force…), y compris une ligne revenue ou exotique.
+- **FM** : superposition en jeu pendant la forgemagie : dernières runes passées et chances de chaque rune, à afficher ou non (onglet FM ou Switcheur).
+
 ## 1.65.0 — 7 novembre 2026
 
 - **FM** : correction : le résultat de chaque rune (succès critique, succès neutre, échec) est lu sur le message de fin du jeu ; à plusieurs runes par seconde, un résultat n'est plus attribué à la rune voisine.

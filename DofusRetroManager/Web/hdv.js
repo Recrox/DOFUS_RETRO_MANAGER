@@ -39,12 +39,15 @@ function tradesView() {
       if (t.st !== 'En vente' && t.ct) events.push({ t, at: t.ct, kind: t.st === 'Vendue' ? (t.u ? 'Vendue (hors ligne)' : 'Vendue') : t.st === 'Expirée' ? 'Expirée' : 'Retirée', cls: t.st === 'Vendue' ? 'ok' : 'muted', sign: t.st === 'Vendue' ? 1 : 0 });
     }
   }
-  const shown = events.filter(e => e.at >= since && (!f.k || e.kind.startsWith(f.k))).sort((a, b) => b.at - a.at).slice(0, 300);
+  const inView = events.filter(e => e.at >= since && (!f.k || e.kind.startsWith(f.k))).sort((a, b) => b.at - a.at), shown = inView.slice(0, 300);
+  // « Vider » : lignes des filtres choisis, sauf les offres encore en vente (toujours suivies)
+  const clear = [...new Set(inView.filter(e => e.t.st !== 'En vente' || e.t.k === 'Achat').map(e => e.t.i))];
   const kinds = [['', 'Tout'], ['Achat', 'Achats'], ['Mise en vente', 'Mises en vente'], ['Vendue', 'Ventes'], ['Retirée', 'Retraits'], ['Expirée', 'Expirées']];
 
   return `<div class="trades">
     <div class="filters"><span class="lbl">Personnage</span><select data-tf="c"><option value="">Tous</option>${chars.map(c => `<option ${c === f.c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
       <span class="lbl">Période</span><select data-tf="d">${[[1, '24 h'], [7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, l]) => `<option value="${v}" ${v === f.d ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="small ghost" data-act="trade-clear" data-list="${clear.join(',')}" data-n="${clear.length}" ${clear.length ? '' : 'disabled'} title="Effacer les lignes affichées (personnage, période et type choisis). Les offres encore en vente sont gardées.">🗑 Vider (${clear.length})</button>
       <span class="muted small" title="Achats : lot disparu d'une offre consultée et objet reçu au même moment, ou objet reçu dans la boutique d'un marchand. Ventes : message de vente du jeu (en jeu, ou à la connexion pour celles faites hors jeu), offre retirée sans retour de l'objet, ou absente à l'ouverture suivante du mode vente. Rien n'est envoyé hors de ce PC.">ⓘ d'où viennent ces chiffres</span></div>
     <div class="kpis">
       ${tile('Achats', k(spent), `${buys.length} lot(s)`, 'bad', 'Total payé à l\'HDV et chez les marchands')}

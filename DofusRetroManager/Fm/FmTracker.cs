@@ -50,7 +50,8 @@ public sealed class FmTracker
     static readonly TimeSpan RuneWindow = TimeSpan.FromSeconds(3);
 
     readonly GameData _data;
-    readonly Dictionary<int, double> _weights;
+    /// <summary>Poids par point de Retro, fixes (affichés dans l'onglet FM, non modifiables).</summary>
+    static Dictionary<int, double> _weights => DefaultWeights;
     /// <summary>Effet -> stat (effet bonus de référence). Un malus pointe vers son bonus (-Force -> +Force).</summary>
     readonly Dictionary<int, int> _statOfEffect = new();
     /// <summary>Stat -> effet malus correspondant, pour afficher « -3 en force ».</summary>
@@ -66,12 +67,10 @@ public sealed class FmTracker
     public event Action<string>? Log;
 
     static string FmPath => Path.Combine(GameData.AppDir, "fm.json");
-    public static string WeightsPath => Path.Combine(GameData.AppDir, "fm_poids.json");
 
     public FmTracker(GameData data)
     {
         _data = data;
-        _weights = LoadWeights();
 
         // Un bonus et son malus partagent la caractéristique ET le libellé (« +#1 en force » / « -#1 en force »).
         // La caractéristique seule ne suffit pas : Vitalité et « Vole PDV » ont la même.
@@ -345,7 +344,7 @@ public sealed class FmTracker
     }
 
     /// <summary>
-    /// Lignes de l'objet dans l'ordre du jeu (celui de ses effets) : stat (effet bonus), caractéristique (voir ItemStats,
+    /// Lignes de l'objet dans l'ordre du jeu : stat (effet bonus), caractéristique (voir ItemStats,
     /// 0 si inconnue) et valeur signée. Les effets sans valeur (signature…) sont ignorés.
     /// </summary>
     public List<(int Stat, int Characteristic, int Value)> Lines(string effects)
@@ -356,13 +355,16 @@ public sealed class FmTracker
             if (int.TryParse(part.Split('#')[0], NumberStyles.HexNumber, null, out var id) && _statOfEffect.GetValueOrDefault(id, id) is var s
                 && stats.ContainsKey(s) && !order.Contains(s))
                 order.Add(s);
+        // Ordre du jeu : celui des objets neufs (Vitalité, Sagesse, Force…), même pour une ligne revenue ou exotique que le
+        // serveur ajoute en fin de liste ; les stats inconnues gardent leur place, à la fin
         return order.Where(s => stats[s] != 0)
-            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s])).ToList();
+            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s]))
+            .OrderBy(l => ItemStats.Order(l.Item2)).ToList();
     }
 
-    // --- Poids des caractéristiques (modifiables dans l'onglet FM, « Poids des stats » ; enregistrés dans fm_poids.json) ---
+    // --- Poids des caractéristiques (affichés dans l'onglet FM, mode « Poids ») ---
 
-    /// <summary>Poids par point, indexés par effet « bonus ». Valeurs communautaires, à ajuster si besoin.</summary>
+    /// <summary>Poids par point de Dofus Retro (ceux du Brisage), indexés par effet « bonus ». Valeurs communautaires, à ajuster si besoin.</summary>
     static readonly Dictionary<int, double> DefaultWeights = new()
     {
         [111] = 100,  // PA
@@ -384,10 +386,11 @@ public sealed class FmTracker
         [115] = 30,   // Coups critiques
         [225] = 15,   // Dommages aux pièges
         [226] = 2,    // % dommages aux pièges
-        [220] = 10,   // Renvoi de dommages
-        [210] = 6, [211] = 6, [212] = 6, [213] = 6, [214] = 6, // % résistances
-        [240] = 2, [241] = 2, [242] = 2, [243] = 2, [244] = 2, // résistances fixes
+        [220] = 30,   // Renvoi de dommages
+        [210] = 4, [211] = 4, [212] = 4, [213] = 4, [214] = 4, // % résistances
+        [240] = 5, [241] = 5, [242] = 5, [243] = 5, [244] = 5, // résistances fixes
     };
+
 
     /// <summary>Rune de forgemagie de chaque stat (la plus petite), pour son icône dans l'écran « Poids des stats ».</summary>
     static readonly Dictionary<int, string> RuneOfStat = new()
@@ -400,59 +403,18 @@ public sealed class FmTracker
         [240] = "Rune Ré Terre", [241] = "Rune Ré Eau", [242] = "Rune Ré Air", [243] = "Rune Ré Feu", [244] = "Rune Ré Neutre",
     };
 
-    /// <summary>Stat de l'écran « Poids des stats » : rune (0 si inconnue), poids actuel et par défaut (null : aucun).</summary>
-    public sealed record WeightInfo(int Stat, int RuneId, string Rune, double Weight, double? Default);
+    /// <summary>Stat de l'écran « Poids des stats » : rune (0 si inconnue) et poids par point.</summary>
+    public sealed record WeightInfo(int Stat, int RuneId, string Rune, double Weight);
 
-    /// <summary>Stats pondérées, dans l'ordre des valeurs par défaut, puis celles ajoutées dans fm_poids.json.</summary>
-    public List<WeightInfo> WeightList() => DefaultWeights.Keys.Concat(_weights.Keys.Except(DefaultWeights.Keys))
+    /// <summary>Stats pondérées, dans l'ordre de la table.</summary>
+    public List<WeightInfo> WeightList() => DefaultWeights.Keys
         .Select(stat =>
         {
             var rune = RuneOfStat.GetValueOrDefault(stat, "");
-            return new WeightInfo(stat, rune.Length > 0 ? RuneBreaking.RuneId(_data, rune) ?? 0 : 0, rune,
-                Weight(stat), DefaultWeights.TryGetValue(stat, out var d) ? d : null);
+            return new WeightInfo(stat, rune.Length > 0 ? RuneBreaking.RuneId(_data, rune) ?? 0 : 0, rune, Weight(stat));
         })
         .ToList();
 
-    /// <summary>Nouveau poids par point d'une stat (null : valeur par défaut). Compte pour les runes suivantes.</summary>
-    public void SetWeight(int stat, double? weight)
-    {
-        if (weight is { } w) _weights[stat] = Math.Max(0, w);
-        else if (DefaultWeights.TryGetValue(stat, out var d)) _weights[stat] = d;
-        SaveWeights();
-        Changed?.Invoke();
-    }
-
-    public void ResetWeights()
-    {
-        _weights.Clear();
-        foreach (var (stat, w) in DefaultWeights) _weights[stat] = w;
-        SaveWeights();
-        Changed?.Invoke();
-    }
-
-    void SaveWeights()
-    {
-        try
-        {
-            Directory.CreateDirectory(GameData.AppDir);
-            File.WriteAllText(WeightsPath, JsonSerializer.Serialize(
-                _weights.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value), new JsonSerializerOptions { WriteIndented = true }));
-        }
-        catch (Exception ex) { Log?.Invoke("Sauvegarde des poids impossible : " + ex.Message); }
-    }
-
-    static Dictionary<int, double> LoadWeights()
-    {
-        var weights = new Dictionary<int, double>(DefaultWeights);
-        try
-        {
-            if (File.Exists(WeightsPath))
-                foreach (var (key, value) in JsonSerializer.Deserialize<Dictionary<string, double>>(File.ReadAllText(WeightsPath))!)
-                    if (int.TryParse(key, out var stat)) weights[stat] = value;
-        }
-        catch { }
-        return weights;
-    }
 
     // --- Persistance ---
 

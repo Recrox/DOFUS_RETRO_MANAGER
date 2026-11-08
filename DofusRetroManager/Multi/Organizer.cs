@@ -66,6 +66,9 @@ public sealed class OrganizerSettings
     public bool OverlayGroups { get; set; } = true;
     public bool OverlayHarvest { get; set; } = true;
     public bool OverlayRotation { get; set; } = true;
+    /// <summary>Forgemagie : dernières runes passées et chances de l'objet en cours (pendant une séance de FM).</summary>
+    public bool OverlayFmHistory { get; set; } = true;
+    public bool OverlayFmChances { get; set; }
     public double OverlayOpacity { get; set; } = 0.92;
     public double? OverlayLeft { get; set; }
     public double? OverlayTop { get; set; }

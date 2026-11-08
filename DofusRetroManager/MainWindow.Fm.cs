@@ -29,7 +29,7 @@ public sealed record FmChanceRow(int Char, string Name, int Value, string Min, i
     IReadOnlyList<FmRuneCell> Runes);
 
 /// <summary>Ligne de l'écran « Poids des stats » (onglet FM) : rune, stat, poids par point et valeur par défaut.</summary>
-public sealed record FmWeightRow(int Stat, int RuneId, string Rune, string Label, string Weight, string Default, bool Modified);
+public sealed record FmWeightRow(int Stat, int RuneId, string Rune, string Label, string Weight);
 
 public partial class MainWindow
 {
@@ -177,7 +177,7 @@ public partial class MainWindow
             _fm.Forget(uid);
     }
 
-    // --- Poids des stats : affichés à la place de l'historique, modifiables, pris en compte tout de suite ---
+    // --- Poids des stats : affichés à la place de l'historique (lecture seule) ---
 
     void FmWeights_Click(object sender, RoutedEventArgs e)
     {
@@ -192,41 +192,7 @@ public partial class MainWindow
     {
         if (_fm == null || _data == null) return;
         SetRows(FmWeightsGrid, _fm.WeightList().Select(w => new FmWeightRow(w.Stat, w.RuneId,
-            w.Rune.Length > 0 ? w.Rune : "—", _data.FormatEffect(w.Stat, 1), Num(w.Weight),
-            w.Default is { } d ? Num(d) : "—", w.Default != w.Weight)).ToList());
+            w.Rune.Length > 0 ? w.Rune : "—", _data.FormatEffect(w.Stat, 1), Num(w.Weight)
+            )).ToList());
     }
-
-    /// <summary>Saisie d'un poids : enregistrée en quittant le champ ou avec Entrée ; vide ou invalide : valeur par défaut.</summary>
-    void SetFmWeight(int stat, string text)
-    {
-        if (_fm == null) return;
-        text = text.Trim().Replace(',', '.');
-        if (text.Length == 0) { _fm.SetWeight(stat, null); return; }
-        if (double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) && v >= 0)
-            _fm.SetWeight(stat, v);
-        else
-        {
-            AddLog("Poids invalide : saisissez un nombre positif (ex. 0,25).");
-            RefreshFmWeights(); // la valeur précédente revient
-        }
-    }
-
-    void FmWeightBox_LostFocus(object sender, RoutedEventArgs e)
-    {
-        if (sender is TextBox { DataContext: FmWeightRow row } box && box.Text != row.Weight) SetFmWeight(row.Stat, box.Text);
-    }
-
-    void FmWeightBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key != System.Windows.Input.Key.Enter || sender is not TextBox { DataContext: FmWeightRow row } box) return;
-        e.Handled = true;
-        if (box.Text != row.Weight) SetFmWeight(row.Stat, box.Text);
-    }
-
-    void FmWeightReset_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.DataContext is FmWeightRow row) _fm?.SetWeight(row.Stat, null);
-    }
-
-    void FmWeightsReset_Click(object sender, RoutedEventArgs e) => _fm?.ResetWeights();
 }

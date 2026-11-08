@@ -18,19 +18,15 @@ const fmPct = v => v < 10 ? (Math.round(v * 10) / 10).toLocaleString('fr-FR') : 
 const OUTCOME = { SC: ['SC', 'sc'], SN: ['SN', 'sn'], EC: ['EC', 'ec'], EC0: ['EC', 'ec0'] };
 const outcomeBadge = r => `<span class="fm-badge ${OUTCOME[r.Code]?.[1] || 'ec'}" data-tip="${esc(r.Outcome)}">${OUTCOME[r.Code]?.[0] || '?'}</span>`;
 
-// Poids des stats, modifiables (Entrée ou sortie du champ)
+// Poids des stats de Retro (affichage seul)
 function fmWeights() {
   return `<div class="fm-weights">
-    <div class="filters"><span class="muted" data-tip="Poids d'un point de chaque stat : estimation du reliquat et chances des runes. Une valeur modifiée compte pour les runes suivantes.">Poids par point de stat ⓘ</span>
-      <button class="small" data-act="click" data-name="FmWeightsReset" title="Remettre tous les poids par défaut">↺ Tout rétablir</button></div>
+    <div class="filters"><span class="muted" data-tip="Poids d'un point de chaque stat dans Dofus Retro (valeurs communautaires) : estimation du reliquat et chances des runes.">Poids par point de stat ⓘ</span></div>
     ${table('FmWeightsGrid', [
       { h: '', f: r => itemImg(r.RuneId, 'sm') },
       { h: 'Rune', k: 'Rune', f: r => `<span class="strong">${esc(r.Rune)}</span>` },
       { h: 'Stat', k: 'Label' },
-      { h: 'Poids', f: r => `<input type="text" class="weight ${r.Modified ? 'modified' : ''}" data-fmweight="${r.Stat}"
-        data-fk="fmweight-${r.Stat}" value="${esc(r.Weight)}">` },
-      { h: 'Défaut', f: r => `<span class="muted">${esc(r.Default)}</span>` },
-      { h: '', f: r => r.Modified ? `<button class="small ghost" title="Revenir au poids par défaut" ${attrs({ act: 'row', grid: 'FmWeightsGrid', i: r._i, handler: 'FmWeightReset_Click' })}>↺</button>` : '' },
+      { h: 'Poids', k: 'Weight', num: true, f: r => `<span class="acc strong">${esc(r.Weight)}</span>` },
     ], { select: false })}</div>`;
 }
 
@@ -68,13 +64,21 @@ function fmChances() {
     ], { select: false, empty: 'Aucun objet.' })}`;
 }
 
+// Superposition en jeu : blocs FM affichés ou non (pendant une séance de forgemagie)
+function fmOverlayTogs() {
+  const tog = (n, ico, tip) => `<label class="tog" title="${tip}"><input type="checkbox" data-set="${n}" ${S[n]?.on ? 'checked' : ''}><span>${ico}</span></label>`;
+  const off = !S.OverlayEnabled?.on;
+  return `<span class="togs fm-overlay"><span class="lbl ${off ? 'muted' : ''}" title="Superposition en jeu${off ? ' : à activer dans l\'onglet Switcheur' : ''}">🖥</span>
+    ${tog('OverlayFmHistory', '📜', 'Superposition : dernières runes passées')}${tog('OverlayFmChances', '🎲', 'Superposition : chances des runes')}</span>`;
+}
+
 Object.assign(views, {
   fm() {
     const tpl = T('FmItemTpl'), view = local.fmView;
     const tab = (k, ico, label, tip) => `<button class="pill ${view === k ? 'on' : ''}" data-fmview="${k}" title="${tip}">${ico} ${label}</button>`;
     const stats = rows('FmStats');
     return `<div class="filters fm-top"><span class="lbl">Objet</span>${select('FmItemCombo', 'class="fm-select"')}
-        <span class="seg right">${tab('hist', '📜', 'Historique', 'Runes passées sur l\'objet')}${tab('chances', '🎲', 'Chances', 'Chances SC / SN / EC de chaque rune sur chaque ligne')}${tab('weights', '⚖', 'Poids', 'Poids des stats (reliquat et chances)')}</span></div>
+        <span class="right"></span>${fmOverlayTogs()}<span class="seg">${tab('hist', '📜', 'Historique', 'Runes passées sur l\'objet')}${tab('chances', '🎲', 'Chances', 'Chances SC / SN / EC de chaque rune sur chaque ligne')}${tab('weights', '⚖', 'Poids', 'Poids des stats (reliquat et chances)')}</span></div>
       <div class="split fm">
         <aside class="detail glass fm-item">
           <div class="fm-head">${tpl ? itemImg(tpl, 'fm-big') : ''}<div><h2 class="acc">${esc(T('FmItemName'))}</h2><div class="muted small">${esc(T('FmItemSub'))}</div></div></div>

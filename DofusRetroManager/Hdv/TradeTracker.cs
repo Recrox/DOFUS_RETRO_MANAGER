@@ -23,6 +23,11 @@ public sealed class Trade
     public DateTime? ClosedAt { get; set; }
     /// <summary>Vente constatée à l'ouverture du mode vente (offre disparue) : faite entre la dernière visite et ClosedAt.</summary>
     public bool SoldUnseen { get; set; }
+    /// <summary>
+    /// Offre : HDV où elle a été posée (« map|catégories »), vide si inconnu. Le mode vente ne liste que les offres de
+    /// l'HDV ouvert : une offre d'un autre HDV n'est pas vendue parce qu'elle n'y est pas.
+    /// </summary>
+    public string Hdv { get; set; } = "";
 
     public const string Purchase = "Achat", Listing = "Offre";
     public const string OnSale = "En vente", Sold = "Vendue", Withdrawn = "Retirée", Expired = "Expirée";
@@ -64,6 +69,8 @@ public sealed class TradeTracker
         public (long Id, (int Tpl, long?[] Prices) Old)? LastGone;
         public int[] LotSizes = [1, 10, 100];
         public double TaxPercent = 2;
+        /// <summary>Map actuelle et HDV ouvert en mode vente (« map|catégories d'objets »).</summary>
+        public string Map = "", HdvKey = "";
         /// <summary>Offres consultées en mode achat : ligne -> (objet, prix des lots ×1, ×10, ×100).</summary>
         public readonly Dictionary<long, (int Tpl, long?[] Prices)> Lines = new();
         /// <summary>Lots disparus d'une offre, en attente de l'objet dans l'inventaire.</summary>
@@ -92,6 +99,9 @@ public sealed class TradeTracker
 
     public void OnStreamClosed(string stream) => _windows.Remove(stream);
 
+    /// <summary>Nouvelle map (identifiant) : situe l'HDV ouvert ensuite.</summary>
+    public void OnMapChanged(string map) => Current.Map = map;
+
     /// <summary>Échange ouvert (« ECK11|1,10,100;…;2.0;… » : tailles des lots et taxe) ou fermé (-1).</summary>
     public void OnExchange(string character, int type, string args)
     {
@@ -101,9 +111,11 @@ public sealed class TradeTracker
         w.Exchange = type;
         w.Lines.Clear();
         w.Shop.Clear();
+        w.HdvKey = "";
         if (type is 10 or 11)
         {
             var f = args.Split(';');
+            if (type == 10 && f.Length > 1) w.HdvKey = w.Map + "|" + f[1];
             var sizes = f[0].Split(',').Select(s => int.TryParse(s, out var n) ? n : 0).ToArray();
             if (sizes.Length == 3 && sizes.All(n => n > 0)) w.LotSizes = sizes;
             if (f.Length > 2 && double.TryParse(f[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var tax))
@@ -232,7 +244,7 @@ public sealed class TradeTracker
             Add(new Trade
             {
                 Kind = Trade.Listing, Time = DateTime.Now, Character = character, ItemId = tpl, Quantity = qty, Price = price, ListingId = id,
-                Tax = (long)Math.Ceiling(price * w.TaxPercent / 100),
+                Tax = (long)Math.Ceiling(price * w.TaxPercent / 100), Hdv = w.HdvKey,
             });
         }
         else if (body[0] == '-' && long.TryParse(body.AsSpan(1), out var gone)
@@ -261,10 +273,23 @@ public sealed class TradeTracker
             current.Add((id, qty, tpl, price));
         }
         var now = DateTime.Now;
+        var key = Current.HdvKey;
+        // Offre crue vendue hors connexion mais encore listée (ancienne erreur, autre HDV) : elle est remise en vente
+        foreach (var t in _store.Trades.Where(t => t.Kind == Trade.Listing && t.State == Trade.Sold && t.SoldUnseen && t.Character == character
+                     && current.Any(c => c.Id == t.ListingId)))
+        {
+            t.State = Trade.OnSale;
+            t.ClosedAt = null;
+            t.SoldUnseen = false;
+        }
         foreach (var t in Active(character).ToList())
-            if (current.All(c => c.Id != t.ListingId)) Close(t, Trade.Sold, now, true);
+        {
+            if (current.Any(c => c.Id == t.ListingId)) { if (key.Length > 0) t.Hdv = key; }
+            // Seules les offres de cet HDV y sont listées : celles d'un autre HDV (ou d'un HDV inconnu) restent en vente
+            else if (key.Length > 0 && t.Hdv == key) Close(t, Trade.Sold, now, true);
+        }
         foreach (var c in current.Where(c => Active(character).All(t => t.ListingId != c.Id)))
-            Add(new Trade { Kind = Trade.Listing, Time = now, Character = character, ItemId = c.Tpl, Quantity = c.Qty, Price = c.Price, ListingId = c.Id }, save: false);
+            Add(new Trade { Kind = Trade.Listing, Time = now, Character = character, ItemId = c.Tpl, Quantity = c.Qty, Price = c.Price, ListingId = c.Id, Hdv = key }, save: false);
         Save();
         Changed?.Invoke();
     }
@@ -348,6 +373,15 @@ public sealed class TradeTracker
     public void Remove(Trade t)
     {
         if (!_store.Trades.Remove(t)) return;
+        Save();
+        Changed?.Invoke();
+    }
+
+    /// <summary>Vide plusieurs lignes d'un coup (« Vider » de Mes échanges).</summary>
+    public void RemoveAll(IEnumerable<Trade> trades)
+    {
+        var set = trades.ToHashSet();
+        if (_store.Trades.RemoveAll(set.Contains) == 0) return;
         Save();
         Changed?.Invoke();
     }

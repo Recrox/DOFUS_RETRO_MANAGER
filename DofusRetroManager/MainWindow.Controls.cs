@@ -224,6 +224,8 @@ public partial class MainWindow
     internal readonly WebToggle OverlayGroups = new() { Content = "Groupes de la map" };
     internal readonly WebToggle OverlayHarvest = new() { ToolTip = "Ressources de la map : disponibles, récoltées et repousse estimée", Content = "Récolte" };
     internal readonly WebToggle OverlayRotation = new() { Content = "Ordre de jeu" };
+    internal readonly WebToggle OverlayFmHistory = new() { ToolTip = "Dernières runes passées sur l'objet en cours de forgemagie", Content = "FM : historique" };
+    internal readonly WebToggle OverlayFmChances = new() { ToolTip = "Chances SC des runes sur chaque ligne de l'objet en cours de forgemagie", Content = "FM : chances" };
     internal readonly WebSlider OverlayOpacity = new() { Minimum = 40, Maximum = 100, Value = 92 };
     internal readonly WebText OverlayOpacityText = new() { Text = "92 %", ForegroundKey = "TextMuted" };
     internal readonly WebButton OverlayMove = new() { ToolTip = "Affiche la superposition pour la faire glisser à sa place, puis Verrouiller", Content = "Déplacer" };
@@ -240,7 +242,7 @@ public partial class MainWindow
     internal readonly WebButton FmSetReliquat = new() { ToolTip = "Remplace le reliquat estimé par la valeur saisie", Content = "Corriger" };
     internal readonly WebButton FmClear = new() { ToolTip = "Vide l'historique de cet objet et remet le reliquat à 0", Content = "Effacer l'historique" };
     internal readonly WebButton FmForget = new() { Content = "Oublier l'objet" };
-    internal readonly WebButton FmWeights = new() { ToolTip = "Affiche et modifie le poids de chaque stat, utilisé pour estimer le reliquat", Content = "Poids des stats" };
+    internal readonly WebButton FmWeights = new() { ToolTip = "Affiche le poids de chaque stat, utilisé pour estimer le reliquat", Content = "Poids des stats" };
     internal readonly WebList FmStats = new();
     internal readonly WebText FmItemSub = new();
     internal readonly WebText FmItemTpl = new();
@@ -249,7 +251,6 @@ public partial class MainWindow
     internal readonly WebList FmHistoryGrid = new();
     internal readonly WebText FmEmpty = new() { Text = "Ouvrez un atelier de forgemagie en jeu, posez l'objet et passez une rune : chaque passage s'affichera ici.", ForegroundKey = "TextMuted" };
     internal readonly WebControl FmWeightsPanel = new() { Visibility = Visibility.Collapsed };
-    internal readonly WebButton FmWeightsReset = new() { ToolTip = "Remet toutes les stats à leur poids par défaut", Content = "Tout rétablir" };
     internal readonly WebList FmWeightsGrid = new();
     internal readonly WebText ChronoTime = new() { Text = "00h00min00s", ForegroundKey = "AccentSolid" };
     internal readonly WebButton ChronoStart = new() { Content = "▶ Démarrer" };
@@ -467,6 +468,10 @@ public partial class MainWindow
         OverlayHarvest.Unchecked += OverlayOption_Changed;
         OverlayRotation.Checked += OverlayOption_Changed;
         OverlayRotation.Unchecked += OverlayOption_Changed;
+        OverlayFmHistory.Checked += OverlayOption_Changed;
+        OverlayFmHistory.Unchecked += OverlayOption_Changed;
+        OverlayFmChances.Checked += OverlayOption_Changed;
+        OverlayFmChances.Unchecked += OverlayOption_Changed;
         OverlayOpacity.ValueChanged += OverlayOpacity_Changed;
         OverlayMove.Click += OverlayMove_Click;
         OrganizerSaveOrder.Click += OrganizerSaveOrder_Click;
@@ -476,7 +481,6 @@ public partial class MainWindow
         FmClear.Click += FmClear_Click;
         FmForget.Click += FmForget_Click;
         FmWeights.Click += FmWeights_Click;
-        FmWeightsReset.Click += FmWeightsReset_Click;
         ChronoStart.Click += ChronoStart_Click;
         ChronoReset.Click += ChronoReset_Click;
         AreneGroup.SelectionChanged += AreneGroup_Changed;

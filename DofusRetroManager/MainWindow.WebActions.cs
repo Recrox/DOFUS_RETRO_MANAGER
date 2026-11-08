@@ -91,11 +91,7 @@ public partial class MainWindow
                         }
                         else ShowInHdv(shownItem);
                     }
-                    break;
-                case "fmweight":
-                    // Poids d'une stat saisi dans l'écran « Poids des stats » (onglet FM)
-                    SetFmWeight(index, m.GetProperty("value").GetString() ?? "");
-                    break;
+                    break;
                 case "select":
                     if (el is WebList grid && RowsOf(grid) is { } rows && index >= 0 && index < rows.Count) grid.SelectedItem = rows[index];
                     break;
@@ -126,6 +122,10 @@ public partial class MainWindow
                 case "trade-del":
                     // « Mes échanges » : ligne oubliée (rapprochement erroné)
                     ForgetTrade(index);
+                    break;
+                case "trade-clear":
+                    // « Mes échanges » : vider les lignes des filtres choisis (personnage, période, type)
+                    ForgetTrades(m.GetProperty("list").EnumerateArray().Select(x => x.GetInt32()).ToList());
                     break;
                 case "cell":
                     // Case cliquée sur la carte de la page : zone, points d'intérêt, ressources

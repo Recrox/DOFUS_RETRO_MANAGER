@@ -91,6 +91,7 @@ document.addEventListener('click', e => {
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
     case 'trade-del': post({ type: 'trade-del', index: +d.i }); break;
+    case 'trade-clear': local.confirm = { text: `Effacer ${d.n} ligne(s) de Mes échanges ?`, msg: { type: 'trade-clear', list: d.list.split(',').map(Number) } }; schedule(); break;
     case 'trade-kind': local.tf.k = d.k; schedule(); break;
     case 'book-close': local.book = null; schedule(); break;
     case 'book-fam': local.book.fam = +d.id; schedule(); break;
@@ -98,7 +99,7 @@ document.addEventListener('click', e => {
     case 'confirm': local.confirm = { name: d.name, text: d.text }; schedule(); break;
     case 'confirm-close': local.confirm = null; schedule(); break;
     case 'org-settings': local.orgHidden = !local.orgHidden; schedule(); break;
-    case 'confirm-ok': post({ type: 'click', name: local.confirm.name, confirmed: true }); local.confirm = null; schedule(); break;
+    case 'confirm-ok': post(local.confirm.msg || { type: 'click', name: local.confirm.name, confirmed: true }); local.confirm = null; schedule(); break;
     case 'carte-cat': {
       const k = +d.k;
       if (carte.shown.has(k)) carte.shown.delete(k); else carte.shown.add(k);
@@ -227,7 +228,6 @@ document.addEventListener('change', e => {
   if (el.dataset?.carte === 'sa') { carte.sa = +el.value; carte.sel = null; schedule(); return; }
   if (el.dataset?.carte === 'job') { carte.job = el.value; schedule(); return; }
   if (el.dataset?.carte === 'grid') { carte.grid = el.checked; carteView(); return; }
-  if (el.dataset?.fmweight != null) { post({ type: 'fmweight', index: +el.dataset.fmweight, value: el.value }); return; }
   if (el.dataset?.stat != null && el.type === 'checkbox') { post({ type: 'stat', index: +el.dataset.stat, field: 'on', value: el.checked }); return; }
   if (!el.dataset?.set) return;
   if (el.type === 'checkbox') post({ type: 'set', name: el.dataset.set, value: el.checked });

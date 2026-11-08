@@ -53,7 +53,7 @@ public partial class MainWindow
     static readonly HashSet<int> EffectIconChars = [17, 18, 19, 26, 33, 34, 35, 36, 37, 49, 80];
     /// <summary>Gestionnaires de clic sur une ligne que la page peut déclencher (le reste passe par les boutons nommés).</summary>
     static readonly HashSet<string> WebRowHandlers =
-        ["HuntDropsToggle_Click", "HuntAlertToggle_Click", "HuntAlertDelete_Click", "BankRecipes_Click", "OrganizerShow_Click", "OrganizerExclude_Click", "OrganizerMain_Click", "FmWeightReset_Click", "HuntSessionForget_Click"];
+        ["HuntDropsToggle_Click", "HuntAlertToggle_Click", "HuntAlertDelete_Click", "BankRecipes_Click", "OrganizerShow_Click", "OrganizerExclude_Click", "OrganizerMain_Click", "HuntSessionForget_Click"];
 
     async Task ShowWebUiAsync()
     {

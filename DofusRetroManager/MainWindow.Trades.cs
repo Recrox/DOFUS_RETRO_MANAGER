@@ -26,6 +26,7 @@ public partial class MainWindow
         _tracker.HdvSellList += (c, body) => Safe(() => _trades.OnSellList(c, body));
         _tracker.HdvSellMove += (c, body) => Safe(() => _trades.OnSellMove(c, body));
         _tracker.HdvSaleInfo += (c, code, args) => Safe(() => _trades.OnSaleInfo(c, code, args));
+        _tracker.MapChanged += map => Safe(() => _trades.OnMapChanged(map));
         _sniffer.StreamClosed += stream => Ui(() => _trades.OnStreamClosed(stream));
         _windowTimer.Tick += (_, _) => _trades.Tick();
     }
@@ -50,5 +51,13 @@ public partial class MainWindow
     void ForgetTrade(int index)
     {
         if (_trades != null && index >= 0 && index < _trades.Trades.Count) _trades.Remove(_trades.Trades[index]);
+    }
+
+    /// <summary>« Vider » : lignes affichées par les filtres de la page (positions dans la liste complète).</summary>
+    void ForgetTrades(IEnumerable<int> indexes)
+    {
+        if (_trades == null) return;
+        var all = _trades.Trades;
+        _trades.RemoveAll(indexes.Where(i => i >= 0 && i < all.Count).Select(i => all[i]).ToList());
     }
 }

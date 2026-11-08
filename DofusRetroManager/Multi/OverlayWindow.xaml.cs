@@ -9,15 +9,39 @@ namespace DofusRetroManager.Multi;
 public sealed record OverlayModel(string Title, string Stats, string Econome, IReadOnlyList<EconomeSpell> Spells,
     string GroupsTitle, IReadOnlyList<OverlayGroup> Groups, IReadOnlyList<OverlayTurn> Rotation,
     bool ShowEconome, bool ShowGroups, bool ShowRotation, System.Windows.Media.ImageSource? Icon = null,
-    string HarvestTitle = "", IReadOnlyList<Harvest.HarvestChip>? Harvest = null, bool ShowHarvest = false)
+    string HarvestTitle = "", IReadOnlyList<Harvest.HarvestChip>? Harvest = null, bool ShowHarvest = false,
+    string FmTitle = "", IReadOnlyList<OverlayFmRune>? FmHistory = null, IReadOnlyList<OverlayFmLine>? FmChances = null,
+    bool ShowFmHistory = false, bool ShowFmChances = false)
 {
+    public bool ShowFm => ShowFmHistory || ShowFmChances;
+
     /// <summary>Résumé comparable : la fenêtre n'est redessinée que si quelque chose a changé.</summary>
     public string Key => string.Join("|", Title, Stats, Econome, string.Join(",", Spells.Select(s => $"{s.Id}:{s.State}")),
         GroupsTitle, string.Join(",", Groups), string.Join(",", Rotation), ShowEconome, ShowGroups, ShowRotation, Icon,
-        HarvestTitle, string.Join(",", (Harvest ?? []).Select(h => h.Tooltip)), ShowHarvest);
+        HarvestTitle, string.Join(",", (Harvest ?? []).Select(h => h.Tooltip)), ShowHarvest,
+        FmTitle, string.Join(",", FmHistory ?? []), string.Join(",", (FmChances ?? []).Select(l => l.Key)), ShowFmHistory, ShowFmChances);
 }
 
 public sealed record OverlayGroup(string Monsters, string Info, bool Archi);
+
+/// <summary>Rune passée (superposition FM) : rune, résultat (SC, SN, EC, EC0), gains et pertes.</summary>
+public sealed record OverlayFmRune(int RuneId, string Code, string Gains, string Losses)
+{
+    public System.Windows.Media.ImageSource? Icon => Data.ItemIcons.Get(RuneId);
+    public string Badge => Code == "EC0" ? "EC" : Code;
+}
+
+/// <summary>Ligne de l'objet (superposition FM) : caractéristique, valeur / max et chance SC de chaque rune.</summary>
+public sealed record OverlayFmLine(int Characteristic, string Value, bool Over, IReadOnlyList<OverlayFmChance> Runes)
+{
+    public System.Windows.Media.ImageSource? Icon => Data.EffectIcons.Get(Characteristic);
+    public string Key => $"{Characteristic}:{Value}:{string.Join("/", Runes)}";
+}
+
+public sealed record OverlayFmChance(int RuneId, string Sc, bool Over)
+{
+    public System.Windows.Media.ImageSource? Icon => Data.ItemIcons.Get(RuneId);
+}
 
 /// <summary>
 /// Ligne de l'ordre de jeu. Life : points de vie en pourcentage (null : inconnus). Icon : tête du personnage (classe et sexe).

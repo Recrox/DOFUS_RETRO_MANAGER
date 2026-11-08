@@ -23,6 +23,8 @@ public partial class MainWindow
         OverlayGroups.IsChecked = _organizer.OverlayGroups;
         OverlayHarvest.IsChecked = _organizer.OverlayHarvest;
         OverlayRotation.IsChecked = _organizer.OverlayRotation;
+        OverlayFmHistory.IsChecked = _organizer.OverlayFmHistory;
+        OverlayFmChances.IsChecked = _organizer.OverlayFmChances;
         OverlayOpacity.Value = _organizer.OverlayOpacity * 100;
         _organizerLoading = false;
         _overlayTimer.Tick += (_, _) => { TrackForeground(); UpdateOverlayVisibility(); _overlay?.UpdateHitTest(); };
@@ -38,6 +40,8 @@ public partial class MainWindow
         _organizer.OverlayGroups = OverlayGroups.IsChecked == true;
         _organizer.OverlayHarvest = OverlayHarvest.IsChecked == true;
         _organizer.OverlayRotation = OverlayRotation.IsChecked == true;
+        _organizer.OverlayFmHistory = OverlayFmHistory.IsChecked == true;
+        _organizer.OverlayFmChances = OverlayFmChances.IsChecked == true;
         _organizer.Save();
         // Superposition désactivée : on ressort du mode déplacement
         if (!_organizer.OverlayEnabled && _overlay is { Locked: false }) OverlayMove_Click(sender, e);
@@ -159,6 +163,17 @@ public partial class MainWindow
         }).ToList();
 
         var harvest = HarvestLinesOf(me);
+
+        // Forgemagie : objet en cours, seulement pendant une séance (rune passée il y a moins de 10 min)
+        var fmItem = _fm?.CurrentUid is { } fmUid ? _fm.Items.GetValueOrDefault(fmUid) : null;
+        bool fmActive = fmItem != null && DateTime.Now - fmItem.LastUsed < TimeSpan.FromMinutes(10);
+        var fmTitle = fmActive ? $"FM · {FmItemName.Text} · reliquat {FmReliquat.Text}" : "";
+        var fmHistory = !fmActive ? [] : ((FmHistoryGrid.ItemsSource as IEnumerable<FmHistoryRow>) ?? []).Take(5)
+            .Select(r => new OverlayFmRune(r.RuneId, r.Code, r.Gains, r.Losses)).ToList();
+        var fmChances = !fmActive ? [] : ((FmChances.ItemsSource as IEnumerable<FmChanceRow>) ?? [])
+            .Select(r => new OverlayFmLine(r.Char, r.Exo ? $"{r.Value} exo" : $"{r.Value} / {r.Max}", r.Fill > 1 || r.Exo,
+                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc < 10 ? c.Sc.ToString("0.#") + "%" : $"{c.Sc:0}%", c.Over)).ToList()))
+            .ToList();
         static string N(int? v) => v?.ToString("N0") ?? "?";
         EnsureOverlay().Show(new OverlayModel(
             me?.Label ?? "Aucun personnage suivi",
@@ -172,6 +187,8 @@ public partial class MainWindow
             Data.CharacterIcons.Get(_hunt?.LookOf(me?.Name ?? "")),
             harvest.Count == 0 ? "Récolte · aucune ressource" : $"Récolte · {harvest.Sum(l => l.Available)} disponible(s)",
             harvest.Select(Harvest.HarvestTracker.Chip).ToList(),
-            _organizer.OverlayHarvest && me != null && _harvest?.MapOf(me.Stream) != null));
+            _organizer.OverlayHarvest && me != null && _harvest?.MapOf(me.Stream) != null,
+            fmTitle, fmHistory, fmChances, fmActive && _organizer.OverlayFmHistory && fmHistory.Count > 0,
+            fmActive && _organizer.OverlayFmChances && fmChances.Count > 0));
     }
 }
