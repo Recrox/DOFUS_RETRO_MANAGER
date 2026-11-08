@@ -13,8 +13,8 @@ Object.assign(views, {
         ${shown('IngredientChip') ? `<span class="chip accent">${esc(T('IngredientChipText'))}<button class="small ghost" data-act="click" data-name="IngredientChipClear">✕</button></span>` : ''}</div>
       <div class="split">
         ${table('RecipeGrid', [
-          { h: '', f: r => itemImg(r.Recipe?.ResultId) },
-          { h: 'Recette', k: 'Name', f: r => `<span class="strong">${esc(r.Name)}</span><div class="muted ellipsis" title="${esc(r.MissingText)}">${esc(r.MissingText ? 'Manque : ' + r.MissingText : r.Jobs)}</div>` },
+          { h: '', f: r => hdvLink(r.Recipe?.ResultId, itemImg(r.Recipe?.ResultId)) },
+          { h: 'Recette', k: 'Name', f: r => `${hdvLink(r.Recipe?.ResultId, esc(r.Name), 'strong')}<div class="muted ellipsis" title="${esc(r.MissingText)}">${esc(r.MissingText ? 'Manque : ' + r.MissingText : r.Jobs)}</div>` },
           { h: 'Niv.', k: 'Level', num: true },
           { h: 'Cases', k: 'Slots', num: true, f: r => `<span class="chip slots" title="${r.Slots} case(s) dans l'atelier">${r.Slots}</span>` },
           { h: 'Faisable', k: 'Craftable', num: true, f: r => r.Craftable > 0 ? `<span class="ok strong">×${r.Craftable}</span>` : `<span class="muted">${r.MissingKinds} manquant(s)</span>` },
@@ -28,6 +28,9 @@ Object.assign(views, {
   },
 });
 
+// Lien vers l'objet dans l'onglet HDV (comme le nom d'un objet dans Brisage mène à sa recette)
+const hdvLink = (id, html, cls = '') => id ? `<a class="item-link ${cls}" data-act="item-hdv" data-id="${id}" title="Voir cet objet à l'HDV">${html}</a>` : html;
+
 function recipeDetail(sel) {
   const tree = (list, path) => (list || []).map((g, i) => {
     const key = path + '/' + i, open = !!local.open[key];
@@ -36,7 +39,7 @@ function recipeDetail(sel) {
       <span class="ratio" style="color:${g.Brush || 'inherit'}">${esc(g.Ratio)}</span></div>
       ${g.HasChildren && open ? `<div class="children">${tree(g.Children, key)}</div>` : ''}`;
   }).join('');
-  return `<div class="head">${itemImg(sel.Recipe?.ResultId, 'lg')}<div><h2>${esc(T('DetailTitle'))}</h2><div class="sub">${esc(T('DetailSub'))}</div></div></div>
+  return `<div class="head">${hdvLink(sel.Recipe?.ResultId, itemImg(sel.Recipe?.ResultId, 'lg'))}<div><h2>${hdvLink(sel.Recipe?.ResultId, esc(T('DetailTitle')))}</h2><div class="sub">${esc(T('DetailSub'))}</div></div></div>
     ${shown('DetailCostPanel') ? `<div class="card">
       <div class="filters"><span class="lbl">Crafts</span>${input('DetailCraftCount', '', '80px')}${btn('DetailCraftMax', 'Max', 'small')}</div>
       <h3>${esc(T('DetailCostTitle'))}</h3><div class="big">${esc(T('DetailCost'))}</div>

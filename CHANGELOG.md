@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.70.0 — 8 novembre 2026
+
+- **Recettes** : un clic sur l'objet fabriqué (icône ou nom, dans la liste ou le détail) ouvre sa fiche à l'HDV.
+
 ## 1.69.0 — 8 novembre 2026
 
 - **Mise à jour** : correction : une nouvelle version est détectée même quand GitHub limite ou refuse ses requêtes, et le téléchargement réessaie seul après une erreur passagère (504…).
