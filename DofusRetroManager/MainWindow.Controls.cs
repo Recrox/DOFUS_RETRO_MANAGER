@@ -225,7 +225,8 @@ public partial class MainWindow
     internal readonly WebToggle OverlayHarvest = new() { ToolTip = "Ressources de la map : disponibles, récoltées et repousse estimée", Content = "Récolte" };
     internal readonly WebToggle OverlayRotation = new() { Content = "Ordre de jeu" };
     internal readonly WebToggle OverlayFmHistory = new() { ToolTip = "Dernières runes passées sur l'objet en cours de forgemagie", Content = "FM : historique" };
-    internal readonly WebToggle OverlayFmChances = new() { ToolTip = "Chances SC des runes sur chaque ligne de l'objet en cours de forgemagie", Content = "FM : chances" };
+    internal readonly WebCombo OverlayFmHistoryCount = new() { ToolTip = "Superposition : nombre de runes de l'historique affichées" };
+    internal readonly WebToggle OverlayFmChances = new() { ToolTip = "Chances de succès (SC + SN) des runes sur chaque ligne de l'objet en cours de forgemagie", Content = "FM : chances" };
     internal readonly WebSlider OverlayOpacity = new() { Minimum = 40, Maximum = 100, Value = 92 };
     internal readonly WebText OverlayOpacityText = new() { Text = "92 %", ForegroundKey = "TextMuted" };
     internal readonly WebButton OverlayMove = new() { ToolTip = "Affiche la superposition pour la faire glisser à sa place, puis Verrouiller", Content = "Déplacer" };
@@ -472,6 +473,7 @@ public partial class MainWindow
         OverlayFmHistory.Unchecked += OverlayOption_Changed;
         OverlayFmChances.Checked += OverlayOption_Changed;
         OverlayFmChances.Unchecked += OverlayOption_Changed;
+        OverlayFmHistoryCount.SelectionChanged += (s, e) => OverlayOption_Changed(s, e);
         OverlayOpacity.ValueChanged += OverlayOpacity_Changed;
         OverlayMove.Click += OverlayMove_Click;
         OrganizerSaveOrder.Click += OrganizerSaveOrder_Click;

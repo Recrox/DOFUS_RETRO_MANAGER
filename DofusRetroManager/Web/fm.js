@@ -45,11 +45,11 @@ function fmHistory() {
     ], { select: false, empty: T('FmEmpty') || 'Aucun passage de rune.' })}`;
 }
 
-// Chances : une ligne par stat de l'objet, ses runes avec la chance de succès critique en gros, la barre SC / SN / EC
+// Chances : une ligne par stat de l'objet, ses runes avec la chance de succès (SC + SN) en gros, la barre SC / SN / EC
 // dessous et le détail au survol ; au-dessus du max (ou ligne exotique) : cadre rouge
 function fmChances() {
   const cell = r => `<div class="fm-chance ${r.Over ? 'over' : ''}" data-tip="${esc(r.Tip)}">
-      ${itemImg(r.RuneId, 'sm')}<b>${fmPct(r.Sc)}%</b>
+      ${itemImg(r.RuneId, 'sm')}<b>${fmPct(r.Sc + r.Sn)}%</b>
       <span class="fm-bar"><i class="sc" style="width:${r.Sc}%"></i><i class="sn" style="width:${r.Sn}%"></i><i class="ec" style="width:${r.Ec}%"></i></span></div>`;
   return `<div class="fm-counts"><span class="muted" data-tip="Formule communautaire publiée pour Dofus (DoFocus), vérifiée sur ses exemples. Pour Retro c'est une estimation : elle utilise les poids des stats de l'onglet (⚖) et les runes de Retro. Le jet minimum vient des objets vus à l'HDV ou dans vos banques (sinon : 80 % du max).">${esc(T('FmChancesNote'))} ⓘ</span>
       <span class="fm-legend"><i class="sc"></i>SC <i class="sn"></i>SN <i class="ec"></i>EC</span></div>
@@ -69,7 +69,7 @@ function fmOverlayTogs() {
   const tog = (n, ico, tip) => `<label class="tog" title="${tip}"><input type="checkbox" data-set="${n}" ${S[n]?.on ? 'checked' : ''}><span>${ico}</span></label>`;
   const off = !S.OverlayEnabled?.on;
   return `<span class="togs fm-overlay"><span class="lbl ${off ? 'muted' : ''}" title="Superposition en jeu${off ? ' : à activer dans l\'onglet Switcheur' : ''}">🖥</span>
-    ${tog('OverlayFmHistory', '📜', 'Superposition : dernières runes passées')}${tog('OverlayFmChances', '🎲', 'Superposition : chances des runes')}</span>`;
+    ${tog('OverlayFmHistory', '📜', 'Superposition : dernières runes passées')}${select('OverlayFmHistoryCount', `class="fm-count" title="Superposition : nombre de runes de l'historique affichées"`)}${tog('OverlayFmChances', '🎲', 'Superposition : chances des runes')}</span>`;
 }
 
 Object.assign(views, {
@@ -82,7 +82,7 @@ Object.assign(views, {
       <div class="split fm">
         <aside class="detail glass fm-item">
           <div class="fm-head">${tpl ? itemImg(tpl, 'fm-big') : ''}<div><h2 class="acc">${esc(T('FmItemName'))}</h2><div class="muted small">${esc(T('FmItemSub'))}</div></div></div>
-          <div class="fm-effects">${stats.map(s => `<div class="fx ${s.Neg ? 'neg' : ''}" title="${esc(s.Range)}"><span>${esc(s.Text)}</span>${fxImg(s.Char)}</div>`).join('')
+          <div class="fm-effects">${stats.map(s => `<div class="fx ${s.Neg ? 'neg' : ''}" title="${esc(s.Range)}"><span>${esc(s.Text)}${s.Max ? ` <span class="fm-max">/${s.Max}</span>` : ''}</span>${fxImg(s.Char)}</div>`).join('')
             || '<div class="muted small">Posez l\'objet dans un atelier de forgemagie en jeu.</div>'}</div>
           <div class="fm-reliquat" data-tip="Estimation : gagné sur les pertes, consommé par les gains au-delà. Corrigez-le si besoin.">
             <span class="lbl">Reliquat</span><span class="huge">${esc(T('FmReliquat'))}</span>

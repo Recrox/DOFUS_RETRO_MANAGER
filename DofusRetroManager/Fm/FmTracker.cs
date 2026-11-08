@@ -355,11 +355,9 @@ public sealed class FmTracker
             if (int.TryParse(part.Split('#')[0], NumberStyles.HexNumber, null, out var id) && _statOfEffect.GetValueOrDefault(id, id) is var s
                 && stats.ContainsKey(s) && !order.Contains(s))
                 order.Add(s);
-        // Ordre du jeu : celui des objets neufs (Vitalité, Sagesse, Force…), même pour une ligne revenue ou exotique que le
-        // serveur ajoute en fin de liste ; les stats inconnues gardent leur place, à la fin
+        // Ordre du jeu : celui des effets de l'objet, tel que le serveur l'envoie et que le jeu l'affiche
         return order.Where(s => stats[s] != 0)
-            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s]))
-            .OrderBy(l => ItemStats.Order(l.Item2)).ToList();
+            .Select(s => (s, _data.Effects.TryGetValue(s, out var e) ? e.Characteristic : 0, stats[s])).ToList();
     }
 
     // --- Poids des caractéristiques (affichés dans l'onglet FM, mode « Poids ») ---

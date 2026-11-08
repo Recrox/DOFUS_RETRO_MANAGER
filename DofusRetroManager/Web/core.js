@@ -39,7 +39,7 @@ const TABS = [
     'OverlayRotation', 'OverlayFmHistory', 'OverlayFmChances', 'OverlayOpacity', 'OverlayOpacityText', 'OverlayMove', 'OrganizerSaveOrder', 'OrganizerResetOrder',
     'OrganizerOrderStatus'] },
   { key: 'fm', label: 'FM', watch: ['FmItemCombo', 'FmItemName', 'FmReliquat', 'FmReliquatInput', 'FmStats', 'FmItemSub', 'FmItemTpl', 'FmChances', 'FmChancesNote',
-    'FmHistoryGrid', 'FmEmpty', 'FmWeights', 'FmWeightsPanel', 'FmWeightsGrid', 'OverlayEnabled', 'OverlayFmHistory', 'OverlayFmChances'] },
+    'FmHistoryGrid', 'FmEmpty', 'FmWeights', 'FmWeightsPanel', 'FmWeightsGrid', 'OverlayEnabled', 'OverlayFmHistory', 'OverlayFmHistoryCount', 'OverlayFmChances'] },
   { key: 'carte', label: 'Carte', watch: ['CarteHarvestTitle', 'CarteHarvest', 'CarteHarvestList', 'CarteCellPanel', 'CarteCellTitle',
     'CarteCellInfo', 'CarteCellHarvest', 'CarteCellList'] },
   { key: 'journal', label: 'Journal', watch: ['LogBox', 'LogPacketsBox'] },

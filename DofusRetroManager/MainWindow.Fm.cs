@@ -19,7 +19,7 @@ public sealed record FmHistoryRow(int Index, string Time, int RuneId, string Run
     string Gains, string Losses, string Weight, string Reliquat);
 
 /// <summary>Ligne de l'objet, comme dans le jeu : texte (« +366 en initiative »), caractéristique (icône), malus, jet du modèle.</summary>
-public sealed record FmStatLine(int Char, string Text, bool Neg, string Range);
+public sealed record FmStatLine(int Char, string Text, bool Neg, string Range, int Max);
 
 /// <summary>Chances d'une rune, pour la page : pourcentages arrondis et explication au survol.</summary>
 public sealed record FmRuneCell(int RuneId, string Rune, int Value, double Sc, double Sn, double Ec, bool Over, string Tip);
@@ -94,7 +94,7 @@ public partial class MainWindow
             int max = info.MaxStats.GetValueOrDefault(l.Characteristic);
             var roll = _rolls.Of(info.Id, l.Characteristic);
             var range = max > 0 ? $"Jet : {(roll != null && roll.Min < max ? roll.Min + " à " : "jusqu'à ")}{max}" : l.Value > 0 ? "Ligne exotique" : "";
-            return new FmStatLine(l.Characteristic, _fm.Describe(l.Stat, l.Value), l.Value < 0, range);
+            return new FmStatLine(l.Characteristic, _fm.Describe(l.Stat, l.Value), l.Value < 0, range, l.Value > 0 ? max : 0);
         }).ToList());
         RefreshFmChances(info, item);
 
@@ -131,7 +131,10 @@ public partial class MainWindow
     {
         if (_fm == null || _data == null) return;
         var current = ItemStats.FromParsed(_fm.ParseStats(item.Effects));
-        var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min);
+        // Même ordre que l'objet dans le jeu ; les lignes du modèle absentes de l'objet à la fin
+        var order = _fm.Lines(item.Effects).Select(l => l.Characteristic).ToList();
+        var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min)
+            .OrderBy(l => order.IndexOf(l.Characteristic) is var i && i >= 0 ? i : int.MaxValue).ToList();
         static string Pct(double v) => v < 10 ? v.ToString("0.#") : v.ToString("0");
         SetRows(FmChances, lines.Select(l => new FmChanceRow(l.Characteristic, l.Name, l.Value, l.Min?.ToString() ?? "?", l.Max,
             l.Max > 0 ? Math.Clamp((double)l.Value / l.Max, 0, 1.2) : 0, Num(l.Weight), l.Exo,

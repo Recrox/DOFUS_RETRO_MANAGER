@@ -15,6 +15,8 @@ public partial class MainWindow
     OverlayWindow? _overlay;
     readonly DispatcherTimer _overlayTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
 
+    static readonly int[] FmHistoryCounts = [1, 3, 5, 8, 10, 15, 20];
+
     void InitOverlay()
     {
         _organizerLoading = true;
@@ -25,6 +27,8 @@ public partial class MainWindow
         OverlayRotation.IsChecked = _organizer.OverlayRotation;
         OverlayFmHistory.IsChecked = _organizer.OverlayFmHistory;
         OverlayFmChances.IsChecked = _organizer.OverlayFmChances;
+        OverlayFmHistoryCount.ItemsSource = FmHistoryCounts;
+        OverlayFmHistoryCount.SelectedItem = FmHistoryCounts.Contains(_organizer.OverlayFmHistoryCount) ? _organizer.OverlayFmHistoryCount : 5;
         OverlayOpacity.Value = _organizer.OverlayOpacity * 100;
         _organizerLoading = false;
         _overlayTimer.Tick += (_, _) => { TrackForeground(); UpdateOverlayVisibility(); _overlay?.UpdateHitTest(); };
@@ -42,6 +46,7 @@ public partial class MainWindow
         _organizer.OverlayRotation = OverlayRotation.IsChecked == true;
         _organizer.OverlayFmHistory = OverlayFmHistory.IsChecked == true;
         _organizer.OverlayFmChances = OverlayFmChances.IsChecked == true;
+        if (OverlayFmHistoryCount.SelectedItem is int fmCount) _organizer.OverlayFmHistoryCount = fmCount;
         _organizer.Save();
         // Superposition désactivée : on ressort du mode déplacement
         if (!_organizer.OverlayEnabled && _overlay is { Locked: false }) OverlayMove_Click(sender, e);
@@ -168,11 +173,11 @@ public partial class MainWindow
         var fmItem = _fm?.CurrentUid is { } fmUid ? _fm.Items.GetValueOrDefault(fmUid) : null;
         bool fmActive = fmItem != null && DateTime.Now - fmItem.LastUsed < TimeSpan.FromMinutes(10);
         var fmTitle = fmActive ? $"FM · {FmItemName.Text} · reliquat {FmReliquat.Text}" : "";
-        var fmHistory = !fmActive ? [] : ((FmHistoryGrid.ItemsSource as IEnumerable<FmHistoryRow>) ?? []).Take(5)
+        var fmHistory = !fmActive ? [] : ((FmHistoryGrid.ItemsSource as IEnumerable<FmHistoryRow>) ?? []).Take(_organizer.OverlayFmHistoryCount)
             .Select(r => new OverlayFmRune(r.RuneId, r.Code, r.Gains, r.Losses)).ToList();
         var fmChances = !fmActive ? [] : ((FmChances.ItemsSource as IEnumerable<FmChanceRow>) ?? [])
             .Select(r => new OverlayFmLine(r.Char, r.Exo ? $"{r.Value} exo" : $"{r.Value} / {r.Max}", r.Fill > 1 || r.Exo,
-                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc < 10 ? c.Sc.ToString("0.#") + "%" : $"{c.Sc:0}%", c.Over)).ToList()))
+                r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Over)).ToList()))
             .ToList();
         static string N(int? v) => v?.ToString("N0") ?? "?";
         EnsureOverlay().Show(new OverlayModel(

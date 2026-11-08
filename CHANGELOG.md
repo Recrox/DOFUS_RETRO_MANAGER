@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.67.0 — 8 novembre 2026
+
+- **FM, Chances** : correction : le pourcentage affiché est la chance de réussite (succès critique + succès neutre), aussi dans la superposition.
+- **FM** : correction : les lignes de l'objet suivent l'ordre affiché en jeu.
+- **FM** : le maximum du jet s'affiche à côté de chaque ligne de l'objet (« /200 »).
+- **FM, superposition** : nombre de runes de l'historique à afficher, au choix (à côté du bouton 📜) ; l'historique passe sous les chances.
+
 ## 1.66.0 — 8 novembre 2026
 
 - **HDV, Mes échanges** : bouton « Vider » qui efface les lignes affichées (personnage, période et type choisis) ; les offres encore en vente sont gardées.

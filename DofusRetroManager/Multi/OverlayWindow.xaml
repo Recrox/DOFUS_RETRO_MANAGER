@@ -179,27 +179,8 @@
             <!-- Forgemagie : objet en cours, dernières runes passées (la plus récente en haut) -->
             <TextBlock Text="{Binding FmTitle}" Style="{StaticResource Section}" TextTrimming="CharacterEllipsis"
                        Visibility="{Binding ShowFm, Converter={StaticResource Visible}}"/>
-            <ItemsControl ItemsSource="{Binding FmHistory}" Visibility="{Binding ShowFmHistory, Converter={StaticResource Visible}}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel Margin="0,0,0,2">
-                            <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="18" Height="18" Margin="0,0,4,0"/>
-                            <Border x:Name="Badge" DockPanel.Dock="Left" CornerRadius="3" Padding="4,0" Margin="0,0,5,0" Background="#2ECC71" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="Bold" Foreground="White"/>
-                            </Border>
-                            <TextBlock Text="{Binding Gains}" Foreground="#2ECC71" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Losses}" Foreground="#E74C3C" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                        </DockPanel>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Code}" Value="SN"><Setter TargetName="Badge" Property="Background" Value="#3B82F6"/></DataTrigger>
-                            <DataTrigger Binding="{Binding Code}" Value="EC"><Setter TargetName="Badge" Property="Background" Value="#E74C3C"/></DataTrigger>
-                            <DataTrigger Binding="{Binding Code}" Value="EC0"><Setter TargetName="Badge" Property="Background" Value="#B07070"/></DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <!-- Forgemagie : chaque ligne, valeur / max et chance de succès critique de ses runes (rouge : au-delà du max) -->
-            <ItemsControl ItemsSource="{Binding FmChances}" Visibility="{Binding ShowFmChances, Converter={StaticResource Visible}}" Margin="0,4,0,0">
+            <!-- Forgemagie : chaque ligne, valeur / max et chance de succès (SC + SN) de ses runes (rouge : au-delà du max) -->
+            <ItemsControl ItemsSource="{Binding FmChances}" Visibility="{Binding ShowFmChances, Converter={StaticResource Visible}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <DockPanel Margin="0,0,0,2">
@@ -224,6 +205,25 @@
                         </DockPanel>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding Over}" Value="True"><Setter TargetName="Val" Property="Foreground" Value="#E74C3C"/></DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding FmHistory}" Visibility="{Binding ShowFmHistory, Converter={StaticResource Visible}}" Margin="0,4,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="0,0,0,2">
+                            <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="18" Height="18" Margin="0,0,4,0"/>
+                            <Border x:Name="Badge" DockPanel.Dock="Left" CornerRadius="3" Padding="4,0" Margin="0,0,5,0" Background="#2ECC71" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                            <TextBlock Text="{Binding Gains}" Foreground="#2ECC71" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Losses}" Foreground="#E74C3C" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Code}" Value="SN"><Setter TargetName="Badge" Property="Background" Value="#3B82F6"/></DataTrigger>
+                            <DataTrigger Binding="{Binding Code}" Value="EC"><Setter TargetName="Badge" Property="Background" Value="#E74C3C"/></DataTrigger>
+                            <DataTrigger Binding="{Binding Code}" Value="EC0"><Setter TargetName="Badge" Property="Background" Value="#B07070"/></DataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
