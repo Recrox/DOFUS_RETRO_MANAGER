@@ -249,6 +249,7 @@ public partial class MainWindow
     internal readonly WebList FmChances = new();
     internal readonly WebText FmChancesNote = new();
     internal readonly WebList FmHistoryGrid = new();
+    internal readonly WebList FmItemsGrid = new();
     internal readonly WebText FmEmpty = new() { Text = "Ouvrez un atelier de forgemagie en jeu, posez l'objet et passez une rune : chaque passage s'affichera ici.", ForegroundKey = "TextMuted" };
     internal readonly WebControl FmWeightsPanel = new() { Visibility = Visibility.Collapsed };
     internal readonly WebList FmWeightsGrid = new();

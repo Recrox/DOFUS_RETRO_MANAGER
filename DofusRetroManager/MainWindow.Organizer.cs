@@ -122,7 +122,15 @@ public partial class MainWindow
         var saved = _pendingOrder ?? _organizer.Order;
         var missing = current.Where(n => !saved.Contains(n, StringComparer.OrdinalIgnoreCase)).ToList();
         if (missing.Count == 0 && _pendingOrder == null && saved.Count > 0) return;
-        _organizer.Order = saved.Concat(missing).ToList();
+        // Un personnage absent de l'ordre enregistré (connecté après) y prend sa place par initiative, pas la dernière
+        var order = saved.ToList();
+        foreach (var name in missing)
+        {
+            int? ini = InitiativeOfName(name);
+            int at = ini == null ? -1 : order.FindIndex(n => (InitiativeOfName(n) ?? int.MinValue) < ini);
+            order.Insert(at < 0 ? order.Count : at, name);
+        }
+        _organizer.Order = order;
         _pendingOrder = null;
         _organizer.Save();
         AddLog($"Groupe formé : ordre de jeu enregistré ({string.Join(", ", _organizer.Order)}).");
@@ -141,6 +149,9 @@ public partial class MainWindow
 
     /// <summary>Initiative du personnage : celle reçue du jeu, sinon la dernière connue (application relancée en jeu).</summary>
     int? InitiativeOf(GameWindow w) => CharacterOf(w)?.Initiative ?? KnownOf(w)?.Initiative;
+
+    int? InitiativeOfName(string name) => _windows.FirstOrDefault(w => string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase))
+        is { } w ? InitiativeOf(w) : _hunt?.KnownOf(name)?.Initiative;
 
     bool IsMain(GameWindow w) => w.Name.Length > 0 && string.Equals(w.Name, _organizer.MainCharacter, StringComparison.OrdinalIgnoreCase);
 

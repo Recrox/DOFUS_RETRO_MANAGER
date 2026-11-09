@@ -47,6 +47,7 @@ public partial class MainWindow
     {
         _fm = new Fm.FmTracker(data);
         _fm.Log += AddLog;
+        _fm.PriceOf = UnitPrice;
         _fm.Changed += RefreshFm;
         _tracker.CraftOpened += _fm.OnCraftOpened;
         _tracker.CraftItemSeen += _fm.OnCraftItemSeen;
@@ -65,6 +66,7 @@ public partial class MainWindow
     {
         if (_fm == null || _data == null) return;
         RefreshFmWeights();
+        RefreshFmItems();
         _fmUpdating = true;
         // Liste courte : le nom et le nombre de runes ; plusieurs exemplaires du même objet : la date les distingue
         var all = _fm.Items.Values.OrderByDescending(i => i.LastUsed).ToList();

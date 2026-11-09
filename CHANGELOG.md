@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.79.0 — 9 novembre 2026
+
+- **FM** : nouvelle vue « Objets » : tous vos objets forgemagés dans un tableau (runes, coût, exos, date), avec des cases à cocher pour en retirer plusieurs de l'historique d'un coup.
+- **FM** : coût total des runes passées sur chaque objet (prix HDV au moment du passage), affiché aussi sous le reliquat.
+- **FM** : nombre de tentatives d'exo PA, PM et PO sur chaque objet, et combien ont réussi.
+- **Switcheur** : correction : un personnage ajouté à un ordre de jeu figé (connecté après l'entrée en groupe) prend sa place selon son initiative au lieu de la dernière.
+
 ## 1.78.0 — 8 novembre 2026
 
 - **FM** : Correction : plusieurs objets du même modèle (ex. trois anneaux identiques) ont chacun leur fiche, même quand vous les échangez dans l’atelier sans le fermer.

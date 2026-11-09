@@ -20,6 +20,8 @@ public sealed class FmEvent
     public double RuneWeight { get; set; }
     /// <summary>Tentative d'« over » (la rune fait dépasser le max de la ligne) ou d'« exo » (ligne absente du modèle), sinon null.</summary>
     public string? Attempt { get; set; }
+    /// <summary>Prix unitaire de la rune à l'HDV au moment du passage (null : inconnu, le prix actuel en tient lieu).</summary>
+    public double? RunePrice { get; set; }
     public double ReliquatBefore { get; set; }
     public double ReliquatAfter { get; set; }
 }
@@ -69,6 +71,8 @@ public sealed class FmTracker
 
     public event Action? Changed;
     public event Action<string>? Log;
+    /// <summary>Prix unitaire d'une rune à l'HDV (relevés de l'onglet HDV), retenu à chaque passage.</summary>
+    public Func<int, double?>? PriceOf { get; set; }
 
     static string FmPath => Path.Combine(GameData.AppDir, "fm.json");
 
@@ -217,6 +221,7 @@ public sealed class FmTracker
             WeightLost = changes.Where(c => c.Delta < 0).Sum(c => -c.Delta * Weight(c.Stat)),
             Attempt = attempt,
             RuneWeight = rune is { } r ? RuneBreaking.RuneWeight(_data.GetItem(r).Name) ?? 0 : 0,
+            RunePrice = rune is { } p ? PriceOf?.Invoke(p) : null,
         });
     }
 
@@ -342,10 +347,14 @@ public sealed class FmTracker
         Changed?.Invoke();
     }
 
-    public void Forget(long uid)
+    public void Forget(long uid) => Forget([uid]);
+
+    /// <summary>Retire plusieurs objets et leur historique (cases cochées dans la liste des objets).</summary>
+    public void Forget(IEnumerable<long> uids)
     {
-        if (!Items.Remove(uid)) return;
-        if (CurrentUid == uid) CurrentUid = null;
+        int removed = uids.Count(Items.Remove);
+        if (removed == 0) return;
+        if (CurrentUid is { } cur && !Items.ContainsKey(cur)) CurrentUid = null;
         Save();
         Changed?.Invoke();
     }
