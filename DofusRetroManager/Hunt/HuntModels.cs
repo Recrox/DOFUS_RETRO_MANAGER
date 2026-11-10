@@ -175,6 +175,31 @@ sealed class HuntData
     public Dictionary<string, KnownCharacter> Known { get; set; } = new();
     /// <summary>Historique des sessions terminées (résumés, sans limite : les combats eux-mêmes sont limités à MaxFights).</summary>
     public List<SessionSummary> Sessions { get; set; } = new();
+    /// <summary>Objectif de farm de l'onglet Combat (null : aucun).</summary>
+    public FarmGoal? Farm { get; set; }
+}
+
+/// <summary>
+/// Objectif de farm (onglet Combat) : objet voulu, quantité, total obtenu par vos personnages depuis le début de
+/// l'objectif, et le décompte combat par combat.
+/// </summary>
+public sealed class FarmGoal
+{
+    public int ItemId { get; set; }
+    public int Target { get; set; }
+    public int Count { get; set; }
+    public int Fights { get; set; }
+    public bool Reached { get; set; }
+    public List<FarmStep> Steps { get; set; } = new();
+}
+
+/// <summary>Un combat de l'objectif : son numéro, la quantité obtenue (tous vos personnages) et le total après lui.</summary>
+public sealed class FarmStep
+{
+    public DateTime Time { get; set; }
+    public int Number { get; set; }
+    public int Got { get; set; }
+    public int Total { get; set; }
 }
 
 /// <summary>Totaux d'un personnage sur une session : combats, XP, kamas et objets obtenus (modèle -> quantité).</summary>

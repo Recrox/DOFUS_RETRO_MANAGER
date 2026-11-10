@@ -85,10 +85,12 @@ public partial class MainWindow
                     // Lien vers un objet : ingrédient d'une recette -> HDV, objet du brisage -> sa recette
                     if (m.TryGetProperty("id", out var shownId) && shownId.TryGetInt32(out var shownItem))
                     {
-                        if (m.TryGetProperty("tab", out var tab) && tab.GetString() == "recipe")
+                        var shownTab = m.TryGetProperty("tab", out var tab) ? tab.GetString() : null;
+                        if (shownTab == "recipe")
                         {
                             if (!ShowRecipeOf(shownItem)) AddLog($"{_data?.GetItem(shownItem).Name} : pas de recette.");
                         }
+                        else if (shownTab == "pda") ShowInPda(shownItem); // id : le monstre (onglet Ocre)
                         else ShowInHdv(shownItem);
                     }
                     break;
@@ -139,6 +141,10 @@ public partial class MainWindow
                 case "cell":
                     // Case cliquée sur la carte de la page : zone, points d'intérêt, ressources
                     ShowCarteCellInfo(m.GetProperty("sa").GetInt32(), m.GetProperty("x").GetInt32(), m.GetProperty("y").GetInt32());
+                    break;
+                case "minimap-res":
+                    // Ressources cochées dans l'onglet Carte : celles de la mini-carte en jeu
+                    SetMiniMapResources(m.GetProperty("keys").EnumerateArray().Select(x => x.GetInt32()));
                     break;
                 case "row":
                     var handler = m.GetProperty("handler").GetString();

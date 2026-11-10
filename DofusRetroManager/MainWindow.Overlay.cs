@@ -182,6 +182,7 @@ public partial class MainWindow
                 r.Runes.Select(c => new OverlayFmChance(c.RuneId, c.Sc + c.Sn < 10 ? (c.Sc + c.Sn).ToString("0.#") + "%" : $"{c.Sc + c.Sn:0}%", c.Sc + c.Sn < 50, c.Tip)).ToList()))
             .ToList();
         static string N(int? v) => v?.ToString("N0") ?? "?";
+        var farm = FarmOverlay();
         EnsureOverlay().Show(new OverlayModel(
             me?.Label ?? "Aucun personnage suivi",
             me == null ? "Changez de map en jeu"
@@ -196,6 +197,7 @@ public partial class MainWindow
             harvest.Select(Harvest.HarvestTracker.Chip).ToList(),
             _organizer.OverlayHarvest && me != null && _harvest?.MapOf(me.Stream) != null,
             fmTitle, fmHistory, fmChances, fmActive && _organizer.OverlayFmHistory && fmHistory.Count > 0,
-            fmActive && _organizer.OverlayFmChances && fmChances.Count > 0, fmActive ? FmReliquat.Text : ""));
+            fmActive && _organizer.OverlayFmChances && fmChances.Count > 0, fmActive ? FmReliquat.Text : "",
+            farm.Title, farm.Fill, farm.Steps, _hunt?.Farm is { } goal ? Data.ItemIcons.Get(goal.ItemId) : null));
     }
 }

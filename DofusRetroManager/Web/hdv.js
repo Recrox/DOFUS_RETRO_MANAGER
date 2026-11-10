@@ -104,7 +104,7 @@ Object.assign(views, {
         <aside class="detail glass">${sel ? `
           <div class="head">${itemImg(sel.ItemId, 'lg')}<div><h2>${esc(T('HdvDetailTitle'))}</h2></div></div>
           <div class="sub">${esc(T('HdvDetailSub'))}</div>
-          <h3>Évolution du prix unitaire</h3><div class="card">${chart(S.HdvChart?.pts)}</div>
+          <h3>Évolution du prix unitaire</h3><div class="card">${chart(S.HdvChart?.pts, 'HdvChart')}</div>
           <h3>Historique des relevés</h3>
           ${rows('HdvHistory').map(h => `<div class="card"><b>${esc(h.When)}</b><div class="lots">${[['×1', h.Lot1], ['×10', h.Lot10], ['×100', h.Lot100]].map(([l, v]) => `<span><b>${l}</b><span class="muted">${esc(v)}</span></span>`).join('')}</div></div>`).join('') || '<div class="muted">Aucun relevé.</div>'}
           ${btn('HdvForget', 'Oublier ce prix', 'ghost')}` : '<div class="empty">Sélectionnez un objet.</div>'}</aside>

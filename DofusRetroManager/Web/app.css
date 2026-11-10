@@ -224,3 +224,8 @@ pre.log { flex: 1; min-height: 0; margin: 0; overflow: auto; padding: 14px; font
 .stat-chip.on { background: var(--accent); color: #fff; }
 .stat-chip.on i { color: #fff; }
 .stat-chip.neg { color: var(--bad, #e5484d); }
+
+/* Graphique d'historique agrandi (⤢) */
+.chart-sum .pbtn { margin-left: auto; }
+.modal.chart-modal { width: min(980px, 100%); }
+svg.chart.big { max-height: none; }

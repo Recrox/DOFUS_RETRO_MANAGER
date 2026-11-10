@@ -22,6 +22,31 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Onglet Ocre, âme cliquée : ouvre l'onglet PDA (prix relevés) sur la pierre de ce monstre, de sa catégorie
+    /// (celle dont l'onglet Ocre affiche le prix), les filtres remis à zéro.
+    /// </summary>
+    void ShowInPda(int monsterId)
+    {
+        if (_data == null || _pda == null) return;
+        var m = _data.GetMonster(monsterId);
+        PdaSource.SelectedIndex = 0;
+        PdaCategory.SelectedIndex = 0;
+        if (_pda.Prices.Values.All(p => p.MonsterId != monsterId)) PdaShowAll.IsChecked = true;
+        PdaSearch.Text = m.Name;
+        ApplyPdaFilters();
+        PdaTab.IsSelected = true;
+        var rows = (PdaGrid.ItemsSource as IEnumerable<PdaRow>)?.Where(r => r.MonsterId == monsterId).ToList() ?? [];
+        // La pierre dont l'onglet Ocre affiche le prix, sinon celle de la catégorie du monstre
+        var key = OcrePrice(monsterId)?.Key;
+        var category = m.IsArchi ? Hdv.PdaTracker.Archi : m.IsBoss ? Hdv.PdaTracker.Donjon : Hdv.PdaTracker.Monstre;
+        if ((rows.FirstOrDefault(r => r.Key == key) ?? rows.FirstOrDefault(r => r.Category == category) ?? rows.FirstOrDefault()) is { } row)
+        {
+            PdaGrid.SelectedItem = row;
+            PdaGrid.ScrollIntoView(row);
+        }
+    }
+
     /// <summary>Ouvre l'onglet Recettes sur la recette de l'objet, les filtres remis à zéro (rien si l'objet ne se fabrique pas).</summary>
     bool ShowRecipeOf(int itemId)
     {

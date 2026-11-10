@@ -11,15 +11,19 @@ public sealed record OverlayModel(string Title, string Stats, string Econome, IR
     bool ShowEconome, bool ShowGroups, bool ShowRotation, System.Windows.Media.ImageSource? Icon = null,
     string HarvestTitle = "", IReadOnlyList<Harvest.HarvestChip>? Harvest = null, bool ShowHarvest = false,
     string FmTitle = "", IReadOnlyList<OverlayFmRune>? FmHistory = null, IReadOnlyList<OverlayFmLine>? FmChances = null,
-    bool ShowFmHistory = false, bool ShowFmChances = false, string FmReliquat = "")
+    bool ShowFmHistory = false, bool ShowFmChances = false, string FmReliquat = "",
+    string FarmTitle = "", double FarmFill = 0, IReadOnlyList<string>? FarmSteps = null, System.Windows.Media.ImageSource? FarmIcon = null)
 {
     public bool ShowFm => ShowFmHistory || ShowFmChances;
+    public bool ShowFarm => FarmTitle.Length > 0;
+    public double FarmWidth => 276 * FarmFill;
 
     /// <summary>Résumé comparable : la fenêtre n'est redessinée que si quelque chose a changé.</summary>
     public string Key => string.Join("|", Title, Stats, Econome, string.Join(",", Spells.Select(s => $"{s.Id}:{s.State}")),
         GroupsTitle, string.Join(",", Groups), string.Join(",", Rotation), ShowEconome, ShowGroups, ShowRotation, Icon,
         HarvestTitle, string.Join(",", (Harvest ?? []).Select(h => h.Tooltip)), ShowHarvest,
-        FmTitle, string.Join(",", FmHistory ?? []), string.Join(",", (FmChances ?? []).Select(l => l.Key)), ShowFmHistory, ShowFmChances, FmReliquat);
+        FmTitle, string.Join(",", FmHistory ?? []), string.Join(",", (FmChances ?? []).Select(l => l.Key)), ShowFmHistory, ShowFmChances, FmReliquat,
+        FarmTitle, string.Join(",", FarmSteps ?? []));
 }
 
 public sealed record OverlayGroup(string Monsters, string Info, bool Archi);

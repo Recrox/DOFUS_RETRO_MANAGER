@@ -172,3 +172,11 @@ main:has(.combat-split) { overflow-y: auto; }
 .session-detail .ellipsis { display: inline-block; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
 .session-detail .ico { width: 24px; height: 24px; }
 .session-hist tbody tr { cursor: pointer; }
+/* Objectif de farm : décompte compact dans la barre d'actions, formulaire sous l'en-tête */
+.farm-goal { display: flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; background: var(--glass); white-space: nowrap; }
+.farm-goal b { font-size: 14px; }
+.farm-goal.done b { color: var(--ok); }
+.farm-bar { width: 70px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.farm-bar i { display: block; height: 100%; background: var(--accent); }
+.farm-goal.done .farm-bar i { background: var(--ok); }
+.farm-form { margin: 4px 0; }

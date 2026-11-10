@@ -31,6 +31,7 @@ const TABS = [
   { key: 'combat', label: 'Combat', watch: ['HuntCharacterBox', 'HuntIcons', 'HuntLevel', 'HuntGroupLevel', 'HuntWisdom', 'HuntProspection',
     'HuntGroupProspection', 'HuntSound', 'HuntVolume', 'HuntVolumeText', 'HuntStatus', 'HuntAlertBanner', 'OverlayEnabled', 'OverlayEconome', 'HuntMap', 'HuntGroupGrid', 'HuntEmpty',
     'HuntSession', 'HuntPauseSession', 'HuntProjection', 'HuntLearned', 'HuntArchiGrid', 'HuntFightGrid', 'HuntFightsGroup', 'HuntDropsTitle', 'HuntDropGrid', 'HuntArchiPopup',
+    'FarmItem', 'FarmSuggest', 'FarmTarget', 'FarmStatus', 'FarmState',
     'HuntAlertsToggle', 'HuntAlertMonster', 'HuntAlertSuggest', 'HuntAlertCount', 'HuntAlertMin', 'HuntAlertMax', 'HuntAlertStatus', 'HuntAlertList',
     'ChronoTime', 'ChronoStart', 'ChronoReset', 'ChronoFights', 'ChronoGains', 'ChronoRate', 'ChronoGrid', 'AreneChallenges',
     'AreneOtherChallenges', 'AreneGroup', 'AreneGroupEdit', 'AreneGroupName', 'AreneGroupStatus', 'AreneGroupMembers', 'HuntSessionGrid', 'HuntSessionDetailTitle', 'HuntSessionChars', 'HuntSessionDrops', 'HuntSessionMobs'] },
@@ -40,7 +41,7 @@ const TABS = [
     'OrganizerOrderStatus'] },
   { key: 'fm', label: 'FM', watch: ['FmItemCombo', 'FmItemName', 'FmReliquat', 'FmReliquatInput', 'FmStats', 'FmItemSub', 'FmItemTpl', 'FmChances', 'FmChancesNote',
     'FmHistoryGrid', 'FmItemsGrid', 'FmEmpty', 'FmWeights', 'FmWeightsPanel', 'FmWeightsGrid', 'OverlayEnabled', 'OverlayFmHistory', 'OverlayFmHistoryCount', 'OverlayFmChances'] },
-  { key: 'carte', label: 'Carte', watch: ['CarteHarvestTitle', 'CarteHarvest', 'CarteHarvestList', 'CarteCellPanel', 'CarteCellTitle',
+  { key: 'carte', label: 'Carte', watch: ['MiniMapEnabled', 'MiniMapMove', 'CarteHarvestTitle', 'CarteHarvest', 'CarteHarvestList', 'CarteCellPanel', 'CarteCellTitle',
     'CarteCellInfo', 'CarteCellHarvest', 'CarteCellList'] },
   { key: 'journal', label: 'Journal', watch: ['LogBox', 'LogPacketsBox'] },
 ];
@@ -121,9 +122,10 @@ const posLink = (text, go, cls = '') => !text ? '' : go
 // restent en haut, marqués ▲.
 const fmtShort = n => n >= 1e6 ? (n / 1e6).toFixed(n < 1e7 ? 1 : 0).replace('.', ',').replace(',0', '') + ' M'
   : n >= 1e4 ? Math.round(n / 1e3) + ' k' : fmt(n);
-function chart(points) {
+// name : contrôle du graphique (HdvChart…) : bouton ⤢ pour l'agrandir dans une fenêtre ; big : graphique agrandi
+function chart(points, name = '', big = false) {
   if (!points?.length) return '<div class="empty">Aucun relevé pour l\'instant.</div>';
-  const W = 360, H = 170, L = 42, R = 12, Tp = 12, B = 22;
+  const W = big ? 900 : 360, H = big ? 380 : 170, L = 42, R = 12, Tp = 12, B = 22;
   const sorted = points.slice().sort((a, b) => a[0] - b[0]);
   const ps = sorted.map(p => p[1]).sort((a, b) => a - b);
   const q = k => ps[Math.min(ps.length - 1, Math.floor(k * (ps.length - 1)))];
@@ -148,7 +150,7 @@ function chart(points) {
   let grid = '';
   for (let p = p0; p <= p1 + step / 2; p += step)
     grid += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(p)}" y2="${y(p)}"/><text class="axis" x="${L - 5}" y="${y(p) + 3}" text-anchor="end">${fmtShort(p)}</text>`;
-  const nx = t1 === t0 ? 1 : Math.min(4, days.size);
+  const nx = t1 === t0 ? 1 : Math.min(big ? 10 : 4, days.size);
   for (let i = 0; i < nx; i++) {
     const t = nx === 1 ? t0 : t0 + (t1 - t0) * i / (nx - 1), a = nx === 1 ? 'middle' : i === 0 ? 'start' : i === nx - 1 ? 'end' : 'middle';
     grid += `<text class="axis" x="${x(t)}" y="${H - 6}" text-anchor="${a}">${d(t)}</text>`;
@@ -164,13 +166,23 @@ function chart(points) {
   const sum = `<div class="chart-sum"><span title="Prix le plus bas relevé">Min <b>${fmtShort(ps[0])}</b></span>
     <span title="Prix médian des relevés">Méd. <b>${fmtShort(med)}</b></span>
     <span title="Dernier relevé : ${dh(last[0])}">Dernier <b>${fmtShort(last[1])}</b></span>
-    <span class="muted" title="Nombre de relevés">${sorted.length} rel.</span></div>`;
-  return `${sum}<svg class="chart" viewBox="0 0 ${W} ${H}">
+    <span class="muted" title="Nombre de relevés">${sorted.length} rel.</span>${name && !big ? `<button class="pbtn" data-act="chart-zoom" data-name="${name}" data-tip="Agrandir le graphique">⤢</button>` : ''}</div>`;
+  return `${sum}<svg class="chart${big ? ' big' : ''}" viewBox="0 0 ${W} ${H}">
     <defs><linearGradient id="chartGrad" x1="0" x2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
     <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity=".3"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs>
     ${grid}${area}${best.length > 1 ? `<polyline class="line" points="${line}"/>` : ''}
     ${sorted.slice(0, -1).map(p => dot(p, '')).join('')}${dot(last, 'last')}
   </svg>`;
+}
+
+// Graphique agrandi (bouton ⤢) : fenêtre par-dessus la page, fermée au changement d'onglet
+function chartZoom() {
+  const z = local.chartZoom;
+  if (!z || z.tab !== (S.MainTabs?.i ?? 0)) return '';
+  const title = { HdvChart: T('HdvDetailTitle'), PdaChart: T('PdaDetailTitle'), TtgMerchantChart: 'Prix de la carte' }[z.name] || 'Évolution du prix';
+  return `<div class="modal-back" data-act="chart-close"><div class="modal glass chart-modal" data-act="none">
+      <div class="row"><h2 class="ellipsis">${esc(title)}</h2><button class="small ghost right" data-act="chart-close">✕</button></div>
+      <div class="modal-body">${chart(S[z.name]?.pts, z.name, true)}</div></div></div>`;
 }
 
 // --- Rendu ---

@@ -86,6 +86,16 @@ public sealed partial class HuntTracker
 
     public void SaveAlerts() => Save();
 
+    /// <summary>Objectif de farm (onglet Combat) ; null : aucun.</summary>
+    public FarmGoal? Farm
+    {
+        get => _store.Farm;
+        set { _store.Farm = value; Save(); Changed?.Invoke(); }
+    }
+
+    /// <summary>Objectif de farm atteint à la fin d'un combat de ce personnage.</summary>
+    public event Action<FarmGoal, HuntCharacter>? FarmReached;
+
     public int SoundVolume
     {
         get => _store.SoundVolume;

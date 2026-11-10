@@ -99,6 +99,7 @@ public partial class MainWindow
     internal readonly WebButton HdvForget = new() { Content = "Oublier ce prix" };
     internal readonly WebList HdvHistory = new();
     internal readonly WebTab TtgTab = new() { Header = "TTG" };
+    internal readonly WebTab PdaTab = new() { Header = "PDA" };
     internal readonly WebTextBox TtgSearch = new();
     internal readonly WebCombo TtgRarity = new();
     internal readonly WebCombo TtgCharacter = new() { ToolTip = "Cartes de la banque et de l'inventaire de ce personnage (dernière banque connue pour ceux qui ne sont pas connectés), ou de tous" };
@@ -170,6 +171,19 @@ public partial class MainWindow
     internal readonly WebButton HuntAlertTest = new() { Content = "Tester le son" };
     internal readonly WebText HuntAlertStatus = new() { ForegroundKey = "TextMuted" };
     internal readonly WebList HuntAlertList = new();
+    // Objectif de farm (MainWindow.Farm.cs)
+    internal readonly WebTextBox FarmItem = new() { ToolTip = "Objet à farmer, ex. Pierre de diamant" };
+    /// <summary>Noms d'objets proposés pendant la saisie (séparés par « | »).</summary>
+    internal readonly WebText FarmSuggest = new();
+    internal readonly WebTextBox FarmTarget = new() { Text = "50" };
+    internal readonly WebButton FarmStart = new() { Content = "Objectif" };
+    internal readonly WebButton FarmReset = new() { Content = "Arrêter" };
+    internal readonly WebText FarmStatus = new() { ForegroundKey = "TextMuted" };
+    /// <summary>Objectif en cours, pour la page (JSON : objet, nom, total, quantité voulue, derniers combats) ; vide : aucun.</summary>
+    internal readonly WebText FarmState = new();
+    // Mini-carte de récolte en superposition (MainWindow.MiniMap.cs)
+    internal readonly WebToggle MiniMapEnabled = new() { ToolTip = "Mini-carte posée sur le jeu : votre map au centre, les ressources choisies autour", Content = "Mini-carte en jeu" };
+    internal readonly WebButton MiniMapMove = new() { Content = "Déplacer" };
     internal readonly WebButton EconomeReset = new() { ToolTip = "Efface les sorts lancés (sinon fait automatiquement à l'entrée en combat)", Content = "Remettre à zéro" };
     internal readonly WebText EconomeStatus = new();
     internal readonly WebList EconomeSpells = new();
@@ -297,7 +311,7 @@ public partial class MainWindow
         MainTabs.Add(new WebTab { Header = "Brisage" });
         MainTabs.Add(HdvTab);
         MainTabs.Add(TtgTab);
-        MainTabs.Add(new WebTab { Header = "PDA" });
+        MainTabs.Add(PdaTab);
         MainTabs.Add(new WebTab { Header = "Ocre" });
         MainTabs.Add(new WebTab { Header = "Combat" });
         MainTabs.Add(new WebTab { Header = "Switcheur" });

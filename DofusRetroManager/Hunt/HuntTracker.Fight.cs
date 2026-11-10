@@ -112,8 +112,30 @@ public sealed partial class HuntTracker
         else ResumeSession(fight.Time.AddSeconds(-fight.DurationSeconds));
         _store.Fights.Add(fight);
         if (_store.Fights.Count > MaxFights) _store.Fights.RemoveRange(0, _store.Fights.Count - MaxFights);
+        bool reached = CountFarm(fight);
         Save();
         Log?.Invoke($"Combat terminé ({c.Label}) : {fight.Xp:N0} XP, {fight.Kamas:N0} kamas, {fight.Drops.Sum(d => d.Quantity)} objet(s).");
         Changed?.Invoke();
+        if (reached) FarmReached?.Invoke(_store.Farm!, c);
+    }
+
+    /// <summary>Objectif de farm : quantités de l'objet ajoutées ; vrai si l'objectif vient d'être atteint.</summary>
+    bool CountFarm(FightRecord fight)
+    {
+        if (_store.Farm is not { } goal) return false;
+        int got = fight.Drops.Where(d => d.ItemId == goal.ItemId).Sum(d => d.Quantity);
+        // Même combat vu par plusieurs de vos personnages (une fin de combat par fenêtre, à quelques secondes) : une seule étape
+        var step = goal.Steps.LastOrDefault();
+        if (step == null || (fight.Time - step.Time).TotalSeconds > 10)
+        {
+            goal.Steps.Add(step = new FarmStep { Time = fight.Time, Number = ++goal.Fights });
+            if (goal.Steps.Count > 100) goal.Steps.RemoveAt(0);
+        }
+        step.Got += got;
+        goal.Count += got;
+        step.Total = goal.Count;
+        if (goal.Reached || goal.Count < goal.Target) return false;
+        goal.Reached = true;
+        return true;
     }
 }

@@ -154,6 +154,23 @@
                 </ItemsControl>
             </StackPanel>
 
+            <!-- Objectif de farm (onglet Combat) : objet, total / quantité voulue, barre et derniers combats -->
+            <StackPanel Visibility="{Binding ShowFarm, Converter={StaticResource Visible}}">
+                <TextBlock Text="Objectif" Style="{StaticResource Section}"/>
+                <DockPanel>
+                    <Image DockPanel.Dock="Left" Source="{Binding FarmIcon}" Width="24" Height="24" Margin="0,0,6,0"/>
+                    <TextBlock Text="{Binding FarmTitle}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                </DockPanel>
+                <Border Height="5" CornerRadius="2.5" Margin="0,4,0,3" Background="{DynamicResource Border}">
+                    <Border Width="{Binding FarmWidth}" HorizontalAlignment="Left" CornerRadius="2.5" Background="{DynamicResource AccentSolid}"/>
+                </Border>
+                <ItemsControl ItemsSource="{Binding FarmSteps}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding}" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/></DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
             <!-- Récolte : ressources de la map, disponibles et récoltées -->
             <StackPanel Visibility="{Binding ShowHarvest, Converter={StaticResource Visible}}">
                 <TextBlock Text="{Binding HarvestTitle}" Style="{StaticResource Section}"/>

@@ -73,6 +73,11 @@ public sealed class OrganizerSettings
     public double OverlayOpacity { get; set; } = 0.92;
     public double? OverlayLeft { get; set; }
     public double? OverlayTop { get; set; }
+    /// <summary>Mini-carte de récolte posée sur le jeu (onglet Carte) : activée, position, ressources montrées (filtres de la carte).</summary>
+    public bool MiniMapEnabled { get; set; }
+    public double? MiniMapLeft { get; set; }
+    public double? MiniMapTop { get; set; }
+    public List<int> MiniMapResources { get; set; } = new();
 
     static string Path => System.IO.Path.Combine(GameData.AppDir, "organizer.json");
 

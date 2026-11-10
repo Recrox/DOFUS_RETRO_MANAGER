@@ -2,6 +2,14 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.80.0 — 10 novembre 2026
+
+- **Combat** : objectif de farm (bouton 🎯) : choisissez un objet et une quantité (ex. 50 Pierres de diamant) ; chaque fin de combat ajoute ce qu'ont obtenu vos personnages, avec le décompte combat par combat, dans l'onglet et dans la superposition en jeu. Une bulle et un son préviennent quand la quantité est atteinte.
+- **Carte** : mini-carte en jeu : une petite carte posée sur le jeu, centrée sur la map de votre personnage (suivie à chaque changement de map), avec les ressources cochées (ex. Frêne) sur les maps visitées, et la plus proche hors de la vue.
+- **HDV, TTG, PDA** : bouton ⤢ pour agrandir le graphique d'historique des prix.
+- **Ocre** : un clic sur une âme du détail ouvre l'onglet PDA sur sa pierre.
+- **Installation** : correction : l'icône des raccourcis (bureau, menu Démarrer) devenait une feuille blanche après une mise à jour.
+
 ## 1.79.0 — 9 novembre 2026
 
 - **FM** : nouvelle vue « Objets » : tous vos objets forgemagés dans un tableau (runes, coût, exos, date), avec des cases à cocher pour en retirer plusieurs de l'historique d'un coup.

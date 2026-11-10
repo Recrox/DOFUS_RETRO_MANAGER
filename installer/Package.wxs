@@ -53,7 +53,7 @@
       <Directory Id="AppMenuFolder" Name="Dofus Retro Manager">
         <Component Id="StartMenuShortcuts">
           <Shortcut Id="StartMenuShortcut" Name="Dofus Retro Manager" Description="Banque et recettes Dofus Retro"
-                    Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+                    Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" />
           <Shortcut Id="UninstallShortcut" Name="Désinstaller Dofus Retro Manager" Description="Supprime Dofus Retro Manager"
                     Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
           <RemoveFolder Id="RemoveAppMenuFolder" On="uninstall" />
@@ -66,7 +66,7 @@
     <StandardDirectory Id="DesktopFolder">
       <Component Id="DesktopShortcut">
         <Shortcut Id="DesktopShortcut" Name="Dofus Retro Manager" Description="Banque et recettes Dofus Retro"
-                  Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+                  Target="[#AppExe]" WorkingDirectory="INSTALLFOLDER" />
         <RegistryValue Root="HKCU" Key="Software\DofusRetroManager" Name="DesktopShortcut"
                        Type="integer" Value="1" KeyPath="yes" />
       </Component>

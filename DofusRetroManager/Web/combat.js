@@ -42,6 +42,27 @@ function groupMembers() {
   return block('Dans le groupe', all.filter(m => m.on)) + block('Autres personnages', all.filter(m => !m.on));
 }
 
+// Objectif de farm : décompte (icône, total / voulu, barre ; derniers combats au survol), ou formulaire (🎯)
+function farmBlock() {
+  let g = null;
+  try { g = T('FarmState') ? JSON.parse(T('FarmState')) : null; } catch { }
+  const form = () => {
+    const item = input('FarmItem', 'Objet (ex. Pierre de diamant)', '200px').replace('<input ', '<input list="farm-items" autocomplete="off" ');
+    return `<div class="filters farm-form">${item}<datalist id="farm-items">${T('FarmSuggest').split('|').filter(Boolean).map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+      <span class="lbl">×</span>${input('FarmTarget', '', '56px')}
+      <button class="small primary" data-act="click" data-name="FarmStart" title="Compter cet objet à chaque fin de combat de vos personnages ; bulle et son quand la quantité est atteinte">Lancer</button>
+      ${T('FarmStatus') ? `<span class="muted small">${esc(T('FarmStatus'))}</span>` : ''}</div>`;
+  };
+  if (!g) return local.open.farm ? form() : '';
+  const tip = `${g.n} · ${g.f} combat(s)` + (g.s.length ? '\n' + g.s.map(s => `Combat ${s.n} : +${s.g} → ${s.t}/${g.t}`).join('\n') : '');
+  const last = g.s[0];
+  return `<div class="farm-goal ${g.c >= g.t ? 'done' : ''}" data-tip="${esc(tip)}">${itemImg(g.id, 'sm')}
+      <b>${fmt(g.c)}</b><span class="muted">/ ${fmt(g.t)}</span>
+      <span class="farm-bar"><i style="width:${Math.min(100, g.c / Math.max(1, g.t) * 100)}%"></i></span>
+      ${last ? `<span class="muted small">C${last.n} +${last.g}</span>` : ''}
+      <a class="item-link muted" data-act="click" data-name="FarmReset" title="Arrêter l'objectif">✕</a></div>`;
+}
+
 // Réglages de l'onglet, regroupés dans un panneau repliable (⚙) : alertes archi-monstres, alertes monstres, groupes
 function combatSettings() {
   // Nom du monstre : liste déroulante des noms proposés par l'application pendant la saisie
@@ -295,12 +316,14 @@ Object.assign(views, {
           ${ist(saImg, 'HuntWisdom', 'Sagesse')}${ist(ppImg, 'HuntProspection', 'Prospection')}${ist(group(ppImg), 'HuntGroupProspection', 'Prospection du groupe', 'acc')}
         </div>
         <div class="combat-actions">
+          ${T('FarmState') ? farmBlock() : `<button class="small ibtn ${local.open.farm ? 'primary' : ''}" data-act="open" data-key="farm" data-tip="Objectif de farm : un objet et une quantité, comptés à chaque fin de combat">🎯</button>`}
           <span class="lbl">Session</span>
           ${ibtn('HuntNewSession', '↺', 'Nouvelle session : la session en cours passe dans l\'historique')}
           ${ibtn('HuntPauseSession', esc(pause.split(' ')[0]), pause.slice(pause.indexOf(' ') + 1) + ' : le temps ne compte plus dans la rentabilité, un combat la relance')}
           <button class="small ${settings ? 'primary' : ''}" data-act="open" data-key="combatSettings" data-tip="Alertes archi-monstres, alertes monstres, groupes du chronomètre">⚙ Réglages <span class="flags">${flags}</span></button>
         </div>
       </div>
+      ${!T('FarmState') && local.open.farm ? farmBlock() : ''}
       ${settings ? combatSettings() : ''}
       ${T('HuntStatus') ? `<div class="alert">${esc(T('HuntStatus'))}</div>` : ''}
       ${T('HuntAlertBanner') ? `<div class="notice">${esc(T('HuntAlertBanner'))}</div>` : ''}

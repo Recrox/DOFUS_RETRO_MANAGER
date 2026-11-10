@@ -50,7 +50,7 @@ function render() {
   const scroll = [...document.querySelectorAll('.table-wrap, .detail, .modal-body')].map(e => e.scrollTop);
 
   const html = header() + banner() + tabs(active)
-    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail();
+    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail() + chartZoom();
   const app = document.getElementById('app');
   if (local.noMorph) app.innerHTML = html; else morphHtml(app, html);
 
@@ -103,13 +103,18 @@ document.addEventListener('click', e => {
     case 'carte-cat': {
       const k = +d.k;
       if (carte.shown.has(k)) carte.shown.delete(k); else carte.shown.add(k);
+      // Ressources (filtres ≥ 100000) : aussi celles de la mini-carte en jeu
+      if (k >= 100000) post({ type: 'minimap-res', keys: [...carte.shown].filter(x => x >= 100000) });
       schedule();
       break;
     }
     case 'carte-go': { const h = carte.list[+d.i]; carteSelect(h); if (h) post({ type: 'cell', sa: h.sa, x: h.x, y: h.y }); break; }
     case 'carte-fit': carteFit(); break;
+    case 'chart-zoom': local.chartZoom = { name: d.name, tab: S.MainTabs?.i ?? 0 }; schedule(); break;
+    case 'chart-close': local.chartZoom = null; schedule(); break;
     case 'item-hdv': post({ type: 'show', tab: 'hdv', id: +d.id }); break;
     case 'item-recipe': post({ type: 'show', tab: 'recipe', id: +d.id }); break;
+    case 'item-pda': post({ type: 'show', tab: 'pda', id: +d.id }); break;
     case 'goto': case 'goto-me': {
       // Repère à montrer une fois la carte chargée (carteMount) ; vos personnages sont déjà marqués
       const g = d.act === 'goto' ? JSON.parse(d.g) : null;

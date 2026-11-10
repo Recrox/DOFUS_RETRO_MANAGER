@@ -21,7 +21,7 @@ Object.assign(views, {
         ], { empty: T('OcreSummary') || 'Aucune étape.' })}
         <aside class="detail glass">${sel ? `<h2 class="acc">${esc(T('OcreDetailTitle'))}</h2>
           <div class="muted" style="white-space:pre-line">${esc(T('OcreDetailSub'))}</div>
-          <div class="lines">${rows('OcreSouls').map(s => `<div class="card" style="display:flex;gap:8px;align-items:center;padding:6px 8px;margin-top:6px">
+          <div class="lines">${rows('OcreSouls').map(s => `<div class="card ocre-soul" data-act="item-pda" data-id="${s.MonsterId}" title="Voir sa pierre dans l'onglet PDA" style="display:flex;gap:8px;align-items:center;padding:6px 8px;margin-top:6px;cursor:pointer">
             ${itemImg(s.StoneTemplate, 'sm')}<div style="flex:1;min-width:0"><b class="${s.Owned ? 'ok' : ''}">${esc(s.Name)}</b>
             <div class="muted small">${esc(s.Kind)} · niv. ${esc(s.Level)}${s.Where ? ' · ' + esc(s.Where) : ''}</div></div>
             <span class="acc strong">${esc(s.PriceText)}</span></div>`).join('')}</div>` : '<div class="empty">Sélectionnez une étape.</div>'}</aside>

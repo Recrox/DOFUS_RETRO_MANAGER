@@ -22,7 +22,7 @@ Object.assign(views, {
           { h: 'Où', k: 'Where' },
         ], { empty: T('PdaEmpty') || 'Rien à afficher.' })}
         <aside class="detail glass">${sel ? `${detailHead(itemImg(sel.StoneTemplate, 'lg'), 'PdaDetailTitle', 'PdaDetailSub')}
-          <h3>Évolution du prix</h3><div class="card">${chart(S.PdaChart?.pts)}</div>
+          <h3>Évolution du prix</h3><div class="card">${chart(S.PdaChart?.pts, 'PdaChart')}</div>
           <button class="ghost" data-act="click" data-name="PdaForget">Oublier ce prix</button>` : '<div class="empty">Sélectionnez un monstre.</div>'}</aside>
       </div>`;
   },

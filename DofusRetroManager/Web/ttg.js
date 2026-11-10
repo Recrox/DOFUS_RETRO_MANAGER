@@ -68,7 +68,7 @@ Object.assign(views, {
           { h: 'Vu', k: 'SeenAt', f: r => `<span class="muted">${esc(r.Seen)}</span>` },
         ], { empty: T('TtgEmpty') || 'Aucune carte à afficher.' })}
         <aside class="detail glass">${detailHead(sel ? itemImg(sel.ItemId, 'lg') : '', 'TtgDetailTitle', 'TtgDetailSub')}
-          ${sel ? `<div class="card">${chart(S.TtgMerchantChart?.pts)}</div>${select('TtgOffersMode')}<h3>${esc(T('TtgOffersTitle'))}</h3>
+          ${sel ? `<div class="card">${chart(S.TtgMerchantChart?.pts, 'TtgMerchantChart')}</div>${select('TtgOffersMode')}<h3>${esc(T('TtgOffersTitle'))}</h3>
           ${rows('TtgOffers').map(o => `<div class="card"><div class="filters" style="justify-content:space-between"><b class="acc">${esc(o.Price)}<span class="muted"> · ${o.Quantity} en vente</span></b>
             <span class="muted" style="font-size:11px">${esc(o.Seen)}</span></div><div class="strong" ${shareTip(o.Merchant)}>${esc(o.Merchant)}</div>
             ${o.Where ? `<div style="font-size:11.5px">${posLink(o.Where, o.Goto)}</div>` : ''}</div>`).join('') || '<div class="muted">Aucune offre.</div>'}
