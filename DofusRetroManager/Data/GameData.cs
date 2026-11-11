@@ -12,9 +12,9 @@ public sealed partial class GameData
 {
     const string DefaultDataUrl = "https://dofusretro.cdn.ankama.com/static-data/612/";
     const string Lang = "fr";
-    static readonly string[] Files = ["items", "crafts", "skills", "jobs", "effects", "monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "npc"];
+    static readonly string[] Files = ["items", "crafts", "skills", "jobs", "effects", "monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg"];
     /// <summary>Fichiers dont l'absence n'empêche pas de démarrer (ajoutés après coup, peut-être pas encore en cache).</summary>
-    static readonly string[] Optional = ["monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "npc"];
+    static readonly string[] Optional = ["monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg"];
     /// <summary>Type d'objet « Objet de Quête » : ne tombe que pendant la quête.</summary>
     const int QuestItemType = 24;
 
@@ -55,10 +55,6 @@ public sealed partial class GameData
     public Dictionary<int, string> HintCategories { get; } = new();
     /// <summary>Catégorie ajoutée aux points d'intérêt pour les maisons (fichier de langue « houses » : porte de chaque maison).</summary>
     public const int HouseCategory = 100;
-    /// <summary>Noms des PNJ (fichier de langue « npc » : N.d[id].n). Leur position n'est pas dans les fichiers du jeu.</summary>
-    public Dictionary<int, string> Npcs { get; } = new();
-    /// <summary>Map intérieure d'une maison -> nom de la maison (fichier « houses » : H.m[map] = maison).</summary>
-    public Dictionary<int, string> HouseOfMap { get; } = new();
     /// <summary>Ressources récoltables (arbres, minerais, céréales, poissons…) par identifiant d'objet interactif.</summary>
     public Dictionary<int, HarvestResource> Resources { get; } = new();
     /// <summary>Graphisme posé sur une case de map (calque d'objets 2) -> objet interactif (fichier « interactiveobjects »).</summary>
@@ -284,18 +280,7 @@ public sealed partial class GameData
                     foreach (var hid in cells.Values.Select(v => ((int)Avm1.ToNum(v)).ToString()).Distinct())
                         if (houses.GetValueOrDefault(hid) is AsObject house)
                             data.Hints.Add(new MapHint(Avm1.ToStr(house.GetValueOrDefault("n")).Trim(), HouseCategory, 0, map));
-            if (H.GetValueOrDefault("m") is AsObject inside)
-                foreach (var (mk, hv) in inside)
-                    if (int.TryParse(mk, out var mapId) && houses.GetValueOrDefault(((int)Avm1.ToNum(hv)).ToString()) is AsObject house)
-                        data.HouseOfMap[mapId] = Avm1.ToStr(house.GetValueOrDefault("n")).Trim();
         }
-
-        // PNJ : N.d[id] = { n: nom, a: actions }
-        if (paths.TryGetValue("npc", out var npcPath)
-            && Avm1.Run(await File.ReadAllBytesAsync(npcPath)).GetValueOrDefault("N") is AsObject N && N.GetValueOrDefault("d") is AsObject npcs)
-            foreach (var (k, v) in npcs)
-                if (v is AsObject o && int.TryParse(k, out var nid))
-                    data.Npcs[nid] = Avm1.ToStr(o.GetValueOrDefault("n")).Trim();
 
         // Challenges : FC[id] = { n: nom, d: règle }
         if (paths.TryGetValue("fightChallenge", out var fcPath)

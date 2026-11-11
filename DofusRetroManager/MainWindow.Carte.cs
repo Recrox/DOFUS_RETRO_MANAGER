@@ -61,8 +61,6 @@ public partial class MainWindow
         var houses = here.Count(h => h.Category == GameData.HouseCategory);
         var names = here.Where(h => h.Category != GameData.HouseCategory).Select(h => h.Name).Distinct().ToList();
         if (houses > 0) names.Add(houses == 1 ? "1 maison" : $"{houses} maisons");
-        // PNJ vus sur les maps de cette case (intérieurs compris)
-        names.AddRange(_carteNpcHints.Where(h => h.Map.SuperArea == superArea && h.Map.X == x && h.Map.Y == y).Select(h => "💬 " + h.Name).Distinct());
         CarteCellInfo.Text = names.Count > 0 ? string.Join(" · ", names) : "";
         CarteCellInfo.ToolTip = here.Count == 0 ? null : string.Join("\n", here.Select(h => h.Name).Distinct())
             + (houses > 0 ? "\nPrix des maisons : pas disponible pour l'instant." : "");
@@ -134,7 +132,6 @@ public partial class MainWindow
         var cats = new List<object> { new { k = ZaapFilter, n = "Zaaps", i = Icon(_data.Hints.FirstOrDefault(h => CarteFilterOf(h) == ZaapFilter)) } };
         cats.AddRange(_data.HintCategories.OrderBy(c => c.Key)
             .Select(c => new { k = c.Key, n = c.Value, i = Icon(_data.Hints.FirstOrDefault(h => CarteFilterOf(h) == c.Key)) }));
-        cats.Add(new { k = NpcFilter, n = "PNJ", i = "carte/npc.png" }); // PNJ vus sur les maps visitées (MainWindow.Npcs.cs)
         _carteWebJson = System.Text.Json.JsonSerializer.Serialize(new
         {
             tiles = areas.ToDictionary(sa => sa.ToString(), sa => CarteTiles(sa)
@@ -189,7 +186,6 @@ public partial class MainWindow
         }
         else if (hint.Success) png = Png(WorldMap.HintIcon(int.Parse(hint.Groups[1].Value)), 48);
         else if (path == "carte/house.png") png = Png(HouseIcon, 48);
-        else if (path == "carte/npc.png") png = Png(NpcIcon, 48);
         return _carteWebFiles[path] = png;
     }
 

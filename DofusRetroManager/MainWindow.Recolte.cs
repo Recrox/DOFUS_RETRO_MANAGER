@@ -96,10 +96,10 @@ public partial class MainWindow
         {
             jobs,
             maps = _carteResourceMaps,
-            hints = _carteResourceHints.Where(h => h.Map.SuperArea is 0 or 3).Select(h => (object)new
+            hints = _carteResourceHints.Where(h => h.Map.SuperArea is 0 or 3).Select(h => new
             {
                 n = h.Name, k = h.Category, i = $"icon/item/{h.Gfx}.png", x = h.Map.X, y = h.Map.Y, sa = h.Map.SuperArea, l = h.Map.Label,
-            }).Concat(CarteNpcHintsJson()), // PNJ vus sur les maps visitées (filtre « PNJ »)
+            }),
         });
     }
 }

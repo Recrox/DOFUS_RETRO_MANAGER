@@ -33,8 +33,7 @@ Le trafic capturé contient des informations sensibles : nom de compte, ticket d
 - Exception, pour les onglets Combat et TTG : sont aussi lus la map (`GDM`, `GM`), les caractéristiques du personnage (`As`), les fins de combat (`GE`), le groupe (`PM`, `PV`), les sorts du personnage (`SL`), l'entrée en combat (`GJK`) et les sorts lancés et attaques à l'arme (`GA` de type 300, 302 et 303, y compris ceux envoyés par le client du joueur, pour savoir quelle fenêtre joue). Ces messages contiennent aussi des noms de joueurs. On n'en garde que :
   - les groupes de monstres de la map (modèles, niveaux, étoiles) ;
   - les joueurs en mode marchand (pseudo et case) : pour une boutique consultée, ils sont enregistrés avec ses prix de cartes TTG (pseudo, map et case), et ne sont partagés qu’avec le partage des prix entre amis, s’il est activé (voir plus bas) ;
-  - les PNJ de la map (modèle du PNJ et case, onglet Carte : voir plus bas) ;
-  - aucun autre sprite (joueurs…) ;
+  - aucun autre sprite (joueurs, PNJ…) ;
   - la sagesse et la prospection du personnage ;
   - la ligne du personnage en fin de combat (XP, kamas, objets) et les monstres affrontés ;
   - le niveau et la prospection des membres du groupe, jamais leur nom ;
@@ -48,7 +47,6 @@ Le trafic capturé contient des informations sensibles : nom de compte, ticket d
   - l'identifiant des challenges du combat et leur résultat (`Gd`, onglet Combat : chronomètre), rien d'autre.
 - Pour les notifications de l'onglet Switcheur sont aussi lus la demande d'échange (ERK : seul l'identifiant du destinataire, pour savoir si elle vise le personnage de la fenêtre) et l'invitation de groupe (PIK : seul le nom de l'invité, comparé à celui du personnage ; celui de l'invitant n'est pas lu). Rien n'en est gardé, journalisé ni affiché d'autre que « Demande d'échange » ou « Invitation de groupe ».
 - Pour la récolte (onglet Carte, superposition) sont aussi lus la version et la clé de lecture de la map (`GDM`, déjà lu pour la map), qui servent à lire ses ressources dans le fichier de la map du client installé, et l'état des objets interactifs de la map (`GDF` : numéro de case et état, rien d'autre). On n'en garde, dans `recolte.json`, que les ressources de chaque map visitée (case et type), la clé de la map et les temps de repousse observés. Ce sont des données du jeu, pas du joueur : elles restent sur ce PC et ne sont **jamais partagées** (règle 5).
-- Pour les PNJ de la carte (onglet Carte) sont aussi lus les sprites de PNJ de la map (`GM`, déjà lu, sprites de type -4 : modèle du PNJ et case, rien d'autre). On n'en garde, dans `pnj.json`, que le modèle, la map et la case de chaque PNJ vu ; le nom vient du fichier de langue du jeu. Ce sont des données du jeu, pas du joueur : elles restent sur ce PC, ne sont **jamais partagées** ni journalisées.
 
   Ces messages ne sont **jamais journalisés**, ni dans `packets.log` ni dans le journal de l'application, et rien n'en sort de la machine.
 - **Aucune donnée du joueur ne sort de la machine** : pas de télémétrie, pas d'envoi de la banque ni de l'inventaire. Les seules requêtes réseau autorisées sont :

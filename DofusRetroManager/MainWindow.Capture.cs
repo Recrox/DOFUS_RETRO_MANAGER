@@ -31,7 +31,6 @@ public partial class MainWindow
             if (_merchants != null) _merchants.Stream = stream;
             if (_trades != null) _trades.Stream = stream;
             if (_harvest != null) _harvest.Stream = stream;
-            if (_npcs != null) _npcs.Stream = stream;
             try { _tracker.Handle(stream, msg); TryIdentify(stream); }
             catch (Exception ex) { AddLog($"Paquet ignoré ({ex.Message}) : {msg[..Math.Min(80, msg.Length)]}"); }
         });
