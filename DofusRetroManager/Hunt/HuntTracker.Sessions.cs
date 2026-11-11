@@ -66,21 +66,22 @@ public sealed partial class HuntTracker
         var counted = new List<FightRecord>();
         foreach (var f in fights)
         {
-            Add(s.Total, f);
+            AddGains(s.Total, f);
             var name = f.Character.Length > 0 ? f.Character : "?";
             if (!s.Characters.TryGetValue(name, out var c)) s.Characters[name] = c = new();
-            Add(c, f);
+            c.Fights++;
+            AddGains(c, f);
             AddMonsters(c, f);
-            // Même combat qu'un autre de vos personnages (groupés ou non) : ses monstres sont déjà comptés
+            // Même combat qu'un autre de vos personnages (groupés ou non) : ce combat et ses monstres sont déjà comptés
             if (counted.Any(g => SameFight(g, f))) continue;
             counted.Add(f);
+            s.Total.Fights++;
             AddMonsters(s.Total, f);
         }
         return s;
 
-        static void Add(SessionTotals t, FightRecord f)
+        static void AddGains(SessionTotals t, FightRecord f)
         {
-            t.Fights++;
             t.Xp += f.Xp;
             t.Kamas += f.Kamas;
             foreach (var d in f.Drops) t.Drops[d.ItemId] = t.Drops.GetValueOrDefault(d.ItemId) + d.Quantity;
@@ -90,6 +91,15 @@ public sealed partial class HuntTracker
         {
             foreach (var m in f.Monsters) t.Monsters[m.Id] = t.Monsters.GetValueOrDefault(m.Id) + 1;
         }
+    }
+
+    /// <summary>Nombre de combats distincts : un combat fait par plusieurs de vos personnages ne compte qu'une fois.</summary>
+    public static int CountFights(IEnumerable<FightRecord> fights)
+    {
+        var counted = new List<FightRecord>();
+        foreach (var f in fights)
+            if (!counted.Any(g => SameFight(g, f))) counted.Add(f);
+        return counted.Count;
     }
 
     /// <summary>Deux fins de combat de personnages différents à 15 s près, contre les mêmes monstres : le même combat.</summary>
@@ -103,10 +113,16 @@ public sealed partial class HuntTracker
     /// </summary>
     void FillSessionMonsters()
     {
+        // Total de combats compté une fois par personnage (avant 1.84) : recompté si les combats sont encore gardés
+        foreach (var s in _store.Sessions.Where(s => s.Characters.Count > 1 && s.Total.Fights == s.Characters.Values.Sum(c => c.Fights)))
+        {
+            var fights = _store.Fights.Where(f => f.Time >= s.Start && f.Time <= s.End).ToList();
+            if (fights.Count == s.Total.Fights) s.Total.Fights = CountFights(fights);
+        }
         foreach (var s in _store.Sessions.Where(s => s.Total.Fights > 0 && s.Total.Monsters.Count == 0))
         {
             var fights = _store.Fights.Where(f => f.Time >= s.Start && f.Time <= s.End).ToList();
-            if (fights.Count != s.Total.Fights) continue;
+            if (fights.Count != s.Characters.Values.Sum(c => c.Fights)) continue;
             var again = Summarize(fights, s.Start, s.End, s.Seconds, s.Rebuilt);
             s.Total.Monsters = again.Total.Monsters;
             foreach (var (name, c) in s.Characters)

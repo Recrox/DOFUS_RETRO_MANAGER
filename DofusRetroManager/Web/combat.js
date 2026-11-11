@@ -104,10 +104,21 @@ function combatSettings() {
 function sessionDetail() {
   if (!local.sessDetail || TABS[S.MainTabs?.i ?? 0]?.key !== 'combat' || !T('HuntSessionDetailTitle')) return '';
   const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1], kills = rows('HuntSessionMobs');
+  const kpi = (v, l, tip, cls = '') => `<div class="sess-kpi ${cls}" data-tip="${esc(tip)}"><b>${v}</b><span>${l}</span></div>`;
+  const kpis = row ? `<div class="sess-kpis">
+      ${kpi(esc(row.Duration), 'Durée', 'Durée hors pauses')}
+      ${kpi(fmt(row.Fights), 'Combats', 'Un combat fait par plusieurs de vos personnages compte une fois · ' + row.Characters + ' personnage(s)')}
+      ${row.Kills != null ? kpi(fmt(row.Kills), 'Mobs', 'Monstres tués') : ''}
+      ${kpi(fmt(row.Xp), 'XP', 'XP / h : ' + fmt(row.XpPerHour))}
+      ${kpi(kamas(row.Kamas), 'Kamas', 'Kamas ramassés')}
+      ${kpi(kamas(row.Drops), 'Drops', 'Drops au prix HDV actuel')}
+      ${kpi(kamas(row.Total), 'Total', 'Kamas + drops', 'acc')}
+      ${kpi(kamas(row.PerHour), '/ heure', 'Total par heure', 'acc')}</div>` : '';
   return `<div class="modal-back" data-act="sess-close"><div class="modal glass wide" data-act="none">
-      <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><button class="small ghost right" data-act="sess-close">✕</button></div>
-      <div class="sub">${esc(T('HuntSessionDetailTitle'))}</div>
+      <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><span class="sub">${esc(T('HuntSessionDetailTitle'))}</span>
+        <button class="small ghost right" data-act="sess-close">✕</button></div>
       <div class="modal-body session-detail">
+        ${kpis}
         <p class="section-title">Par personnage</p>
         ${table('HuntSessionChars', [
           { h: '', f: r => r.Gfx ? `<img class="ico" src="icon/head/${r.Gfx}.png" alt="">` : '' },
@@ -115,20 +126,22 @@ function sessionDetail() {
           { h: 'Combats', k: 'Fights', num: true, f: r => fmt(r.Fights) },
           { h: 'Mobs', k: 'Kills', num: true, f: r => r.Kills == null ? '—' : fmt(r.Kills) },
           { h: 'XP', k: 'Xp', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${fmt(r.Xp)}</span>` },
-          { h: 'Kamas', k: 'Kamas', num: true, f: r => fmt(r.Kamas) },
-          { h: 'Drops', k: 'Drops', num: true, f: r => fmt(r.Drops) },
-          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${fmt(r.Total)}</span>` },
-          { h: '/ h', k: 'PerHour', num: true, f: r => fmt(r.PerHour) },
+          { h: 'Kamas', k: 'Kamas', num: true, f: r => kamas(r.Kamas) },
+          { h: 'Drops', k: 'Drops', num: true, f: r => kamas(r.Drops) },
+          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${kamas(r.Total)}</span>` },
+          { h: '/ h', k: 'PerHour', num: true, f: r => kamas(r.PerHour) },
         ], { select: false, empty: 'Aucun personnage.' })}
-        <p class="section-title" style="margin-top:12px">Monstres tués${kills.length ? ' · ' + fmt(kills.reduce((a, m) => a + m.Count, 0)) : ''}</p>
-        <div class="sess-mobs">${kills.length ? mobs(kills) : '<span class="muted small">Inconnus pour cette session (gardée avant leur décompte).</span>'}</div>
-        <p class="section-title" style="margin-top:12px">Objets obtenus</p>
+        <p class="section-title">Monstres tués${kills.length ? ' · ' + fmt(kills.reduce((a, m) => a + m.Count, 0)) : ''}</p>
+        <div class="sess-mobs">${kills.length ? kills.map(m => `<div class="sess-mob" data-tip="${esc(m.Name + ' ×' + m.Count)}">
+            <img src="icon/monster/${m.Id}.png" alt="" loading="lazy"><b>×${fmt(m.Count)}</b><span>${esc(m.Name)}</span></div>`).join('')
+          : '<span class="muted small">Inconnus pour cette session (gardée avant leur décompte).</span>'}</div>
+        <p class="section-title">Objets obtenus</p>
         ${table('HuntSessionDrops', [
           { h: '', f: r => itemImg(r.ItemId, 'sm') },
           { h: 'Objet', k: 'Name', f: r => `<span class="strong ellipsis" data-tip="${esc(r.Who)}">${esc(r.Name)}</span>` },
           { h: 'Qté', k: 'Quantity', num: true, f: r => fmt(r.Quantity) },
-          { h: 'Prix u.', k: 'Unit', num: true, f: r => fmt(r.Unit) },
-          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${fmt(r.Total)}</span>` },
+          { h: 'Prix u.', k: 'Unit', num: true, f: r => kamas(r.Unit) },
+          { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${kamas(r.Total)}</span>` },
         ], { select: false, empty: 'Aucun objet obtenu.' })}
         <div class="muted small">Drops au prix HDV actuel (sinon prix marchand) · qui a obtenu chaque objet : au survol de son nom.</div>
       </div></div></div>`;
@@ -153,8 +166,8 @@ function sessionCard() {
     ], { empty: 'Aucune session : chaque fin de combat s\'ajoute à la session en cours.' })}</div>
     <div class="muted small">Tous les personnages · drops au prix HDV actuel · clic sur une session : son détail · ≈ : reconstituée (pauses inconnues).</div>`, tabsHtml, 'glass card session');
   return panel('session', 'Rentabilité', `<div class="lines">${esc(T('HuntSession'))}</div>
-    ${rows('HuntProjection').length ? `<table class="proj"><thead><tr><th>Sur</th><th class="num">XP</th><th class="num">Kamas</th><th class="num">Drops (HDV)</th><th class="num">Total kamas</th></tr></thead><tbody>
-      ${rows('HuntProjection').map(p => `<tr><td class="strong">${esc(p.Span)}</td><td class="num">${fmt(p.Xp)}</td><td class="num">${fmt(p.Kamas)}</td><td class="num">${fmt(p.Drops)}</td><td class="num acc strong">${fmt(p.Total)}</td></tr>`).join('')}</tbody></table>` : ''}
+    ${rows('HuntProjection').length ? `<table class="proj"><thead><tr><th>Sur</th><th class="num">XP</th><th class="num">Kamas</th><th class="num">Drops (HDV)</th><th class="num">Total</th></tr></thead><tbody>
+      ${rows('HuntProjection').map(p => `<tr><td class="strong">${esc(p.Span)}</td><td class="num">${fmt(p.Xp)}</td><td class="num">${kamas(p.Kamas)}</td><td class="num">${kamas(p.Drops)}</td><td class="num acc strong">${kamas(p.Total)}</td></tr>`).join('')}</tbody></table>` : ''}
     <div class="muted small" style="margin-top:6px">${esc(T('HuntLearned'))}</div>`, tabsHtml, 'glass card session');
 }
 
@@ -299,7 +312,7 @@ Object.assign(views, {
     // Caractéristiques en icônes du jeu (tête du personnage, sagesse et prospection de sa fiche) ; le libellé et le détail au survol
     const head = Number(T('HuntIcons').split('|')[0]);
     const headImg = head ? `<img class="ico" src="icon/head/${head}.png" alt="">` : '<span class="glyph">Niv</span>';
-    const group = img => `<span class="grp">${img}<i>👥</i></span>`;
+    const group = `<img class="ico" src="icon/stat/Group.png" alt="">`; // icône de groupe du jeu
     const ist = (img, name, label, cls = '') => `<div class="istat" data-tip="${esc(label + (S[name]?.tt ? ' — ' + S[name].tt : ''))}">${img}<b class="${cls}">${esc(T(name))}</b></div>`;
     const statImg = n => `<img class="ico" src="icon/stat/${n}.png" alt="">`;
     const saImg = statImg('Wisdom'), ppImg = statImg('PP');
@@ -312,8 +325,8 @@ Object.assign(views, {
     return `<div class="combat-top">
         <div class="stat-row">
           ${char?.items?.length ? `<span data-tip="Personnage affiché">${select('HuntCharacterBox')}</span>` : ''}
-          ${ist(headImg, 'HuntLevel', 'Niveau')}${ist(group(headImg), 'HuntGroupLevel', 'Niveau du groupe', 'acc')}
-          ${ist(saImg, 'HuntWisdom', 'Sagesse')}${ist(ppImg, 'HuntProspection', 'Prospection')}${ist(group(ppImg), 'HuntGroupProspection', 'Prospection du groupe', 'acc')}
+          ${ist(headImg, 'HuntLevel', 'Niveau')}${ist(group, 'HuntGroupLevel', 'Niveau du groupe', 'acc')}
+          ${ist(saImg, 'HuntWisdom', 'Sagesse')}${ist(ppImg, 'HuntProspection', 'Prospection')}${ist(`<span class="grp">${ppImg}<img src="icon/stat/Group.png" alt=""></span>`, 'HuntGroupProspection', 'Prospection du groupe', 'acc')}
         </div>
         <div class="combat-actions">
           ${T('FarmState') ? farmBlock() : `<button class="small ibtn ${local.open.farm ? 'primary' : ''}" data-act="open" data-key="farm" data-tip="Objectif de farm : un objet et une quantité, comptés à chaque fin de combat">🎯</button>`}

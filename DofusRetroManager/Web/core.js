@@ -61,6 +61,9 @@ watchTab(0);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 // Milliers séparés par une espace insécable ordinaire (l'espace fine du format français n'existe pas dans la police)
 const fmt = n => n == null ? '—' : Math.round(n).toLocaleString('fr-FR').replace(/\s/g, ' ');
+// Montant en kamas : nombre suivi du symbole des kamas du jeu
+const KAMA = '<img class="kama" src="icon/stat/Kama.png" alt="" title="kamas">';
+const kamas = n => n == null ? '—' : `<span class="kamas">${fmt(n)}${KAMA}</span>`;
 const pct = n => n == null ? '—' : (n > 0 ? '+' : '') + Math.round(n * 100) + ' %';
 const T = n => S[n]?.t ?? '';
 const shown = n => S[n] != null && S[n].v !== false;

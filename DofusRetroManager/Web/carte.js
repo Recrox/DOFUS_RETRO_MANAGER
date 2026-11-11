@@ -208,7 +208,9 @@ function carteMount() {
   const host = document.getElementById('carte-host'), D = S._carte;
   if (!host || !D) return;
   if (!carte.el || carte.built !== carte.sa) carteBuild(D);
-  host.appendChild(carte.el);
+  // Le cadre est gardé d'un rendu à l'autre : la carte précédente (autre continent) est retirée, pas recouverte
+  [...host.children].forEach(c => c !== carte.el && c.remove());
+  if (carte.el.parentNode !== host) host.appendChild(carte.el);
   const layer = carte.el.querySelector('.carte-markers');
   if (layer) {
     const players = (S._cartePos || []).filter(p => p.sa === carte.sa);

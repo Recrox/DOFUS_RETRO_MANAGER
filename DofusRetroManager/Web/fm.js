@@ -81,7 +81,12 @@ const fmExo = r => `<span class="fm-exos">${FM_EXO.map(([k, c, n]) => `<span cla
 local.fmSel ??= new Set();
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-fm]');
-  if (!a) return;
+  if (!a) {
+    // Clic ailleurs sur la ligne : l'objet devient l'objet choisi (fiche à gauche), sans changer de vue
+    const uid = e.target.closest('.fm-items tbody tr')?.querySelector('[data-uid]')?.dataset.uid;
+    if (uid) { post({ type: 'fm-open', uid: +uid }); schedule(); }
+    return;
+  }
   const list = rows('FmItemsGrid'), sel = local.fmSel;
   switch (a.dataset.fm) {
     case 'open': post({ type: 'fm-open', uid: +a.dataset.uid }); local.fmView = 'hist'; break;
@@ -99,8 +104,8 @@ function fmItems() {
   const total = list.reduce((s, r) => s + r.Cost, 0);
   return `<div class="fm-counts"><label class="check"><input type="checkbox" data-fm="all" ${all ? 'checked' : ''}>Tout</label>
       <button class="small ghost" data-fm="forget" ${sel.size ? '' : 'disabled'} title="Retirer les objets cochés et leur historique">🗑 ${sel.size || ''}</button>
-      <span class="right muted" title="Coût total des runes passées sur ces objets">${list.length} objet(s) · 💰 ${fmKamas(total)}</span></div>
-    ${table('FmItemsGrid', [
+      <span class="right muted" title="Coût total des runes passées sur ces objets">${list.length} objet(s) · ${fmKamas(total)}${KAMA}</span></div>
+    <div class="fm-items">${table('FmItemsGrid', [
       { h: '', f: r => `<input type="checkbox" data-fm="check" data-uid="${r.Uid}" ${sel.has(r.Uid) ? 'checked' : ''}>` },
       { h: 'Objet', k: 'Name', f: r => `<a class="fm-rune ${r.Current ? 'acc' : ''}" data-fm="open" data-uid="${r.Uid}" title="Voir l'historique de ${esc(r.Name)} (niv. ${r.Level})">${itemImg(r.TemplateId, 'sm')}<span class="ellipsis strong">${esc(r.Name)}</span></a>` },
       { h: 'Runes', k: 'Runes', num: true, f: r => `<span title="SC ${r.Sc} · SN ${r.Sn} · EC ${r.Ec}">${r.Runes}</span>` },
@@ -108,7 +113,7 @@ function fmItems() {
       { h: 'Coût', k: 'Cost', num: true, f: fmCost },
       { h: 'Exo', k: 'Exo', f: fmExo },
       { h: 'Date', k: 'LastTicks', num: true, f: r => `<span class="muted">${esc(r.Last)}</span>` },
-    ], { select: false, empty: 'Aucun objet forgemagé.' })}`;
+    ], { select: false, empty: 'Aucun objet forgemagé.' })}</div>`;
 }
 
 // Superposition en jeu : blocs FM affichés ou non (pendant une séance de forgemagie)
@@ -134,7 +139,7 @@ Object.assign(views, {
           <div class="fm-reliquat" data-tip="Estimation : gagné sur les pertes, consommé par les gains au-delà. Corrigez-le si besoin.">
             <span class="lbl">Reliquat</span><span class="huge">${esc(T('FmReliquat'))}</span>
             <span class="fm-fix">${input('FmReliquatInput', 'Valeur', '74px')}<button class="small" data-act="click" data-name="FmSetReliquat" title="Remplacer le reliquat estimé par la valeur saisie">✓</button></span></div>
-          ${cur ? `<div class="fm-sum"><span class="lbl">💰</span>${fmCost(cur)}<span class="lbl" title="Tentatives d'exo PA / PM / PO">Exo</span>${fmExo(cur)}</div>` : ''}
+          ${cur ? `<div class="fm-sum"><span class="lbl">${KAMA}</span>${fmCost(cur)}<span class="lbl" title="Tentatives d'exo PA / PM / PO">Exo</span>${fmExo(cur)}</div>` : ''}
           <div class="fm-actions">
             <button class="small ghost" data-act="confirm" data-name="FmClear" data-text="Effacer l'historique de cet objet et remettre son reliquat à 0 ?" title="Effacer l'historique et remettre le reliquat à 0">🗑 Historique</button>
             <button class="small ghost" data-act="confirm" data-name="FmForget" data-text="Retirer cet objet et tout son historique de la liste ?" title="Retirer l'objet de la liste">✕ Oublier</button></div>

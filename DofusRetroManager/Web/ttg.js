@@ -15,7 +15,7 @@ function ttgBook() {
   const short = n => n == null ? '' : n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + ' M' : n >= 1e4 ? Math.round(n / 1000) + ' K' : fmt(n);
   const card = c => `<div class="book-card s${c.State} ${c.Shiny ? 'shiny' : ''}" data-tip="${esc(c.Tip)}">
       <small class="muted">#${c.Number}</small>${c.State > 0 && c.ArtItem ? itemImg(c.ArtItem, 'card') : '<div class="book-blank"></div>'}
-      <b>${esc(c.Name)}</b><span class="stars">${stars(c.Rarity)}</span><span class="acc strong price">${c.Price != null ? fmt(c.Price) + ' k' : ''}</span></div>`;
+      <b>${esc(c.Name)}</b><span class="stars">${stars(c.Rarity)}</span><span class="acc strong price">${c.Price != null ? kamas(c.Price) : ''}</span></div>`;
   return `<div class="modal-back" data-act="book-close"><div class="modal glass book" data-act="none">
       <div class="row"><h2>Collection de ${esc(B.Owner)}</h2><button class="small ghost right" data-act="book-close">✕</button></div>
       <div class="book-pages">

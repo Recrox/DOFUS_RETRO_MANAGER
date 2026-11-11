@@ -2,6 +2,16 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.84.0 — 11 novembre 2026
+
+- **Interface** : barres de réglages plus soignées dans tous les onglets : contrôles de même hauteur, cases à cocher en pastilles colorées une fois cochées, listes avec chevron, champs de recherche avec loupe, boutons de vue (Mes échanges, Classeur…) mieux mis en avant.
+- **FM** : un clic sur une ligne de la liste des objets choisit cet objet (fiche à gauche, ligne surlignée) ; un clic sur son nom ouvre toujours son historique.
+- **Combat** : le détail d'une session est plus lisible : chiffres clés en tuiles, monstres tués en grandes illustrations avec leur nombre et leur nom.
+- **Combat** : Correction : un combat fait par plusieurs de vos personnages ne compte plus qu'une fois dans le total des combats d'une session.
+- **Combat** : le niveau et la prospection du groupe s'affichent avec l'icône de groupe du jeu.
+- **Kamas** : les montants s'affichent avec le symbole des kamas du jeu et des espaces lisibles entre les milliers (Combat, HDV, TTG, Brisage, FM).
+- **Carte** : Correction : changer de carte (Continent amaknien, Incarnam, Souterrains) remplace bien l'ancienne au lieu de les superposer.
+
 ## 1.83.0 — 11 novembre 2026
 
 - **Carte** : nouvelle vue « Souterrains » : égouts de Bonta et de Brâkmar et autres souterrains, en plan (une case par map), avec leurs ressources et la position de vos personnages.

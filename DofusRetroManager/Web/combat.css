@@ -16,7 +16,7 @@
 .istat .glyph { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--hover);
   font-size: 11px; font-weight: 800; color: var(--muted); }
 .grp { position: relative; display: inline-flex; }
-.grp i { position: absolute; right: -6px; bottom: -4px; font-size: 11px; font-style: normal; line-height: 1; }
+.grp img:last-child { position: absolute; right: -6px; bottom: -4px; width: 14px; height: 14px; }
 .stat-row .sep { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--line); }
 .icheck { display: inline-flex; cursor: pointer; }
 .icheck input { display: none; }
@@ -168,7 +168,21 @@ main:has(.combat-split) { overflow-y: auto; }
 /* Détail d'une session (fenêtre par-dessus la page) : plus large, deux tableaux qui défilent chacun */
 .modal.wide { width: min(980px, 100%); }
 .session-detail { gap: 6px; }
-.session-detail .table-wrap { flex: none; max-height: 34vh; }
+.session-detail .section-title { margin: 10px 0 2px; }
+.session-detail .table-wrap { flex: none; max-height: 30vh; }
+.modal .row .sub { font-size: 12px; opacity: .75; }
+/* Chiffres clés de la session : tuiles */
+.sess-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+.sess-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 10px; background: var(--hover); min-width: 0; }
+.sess-kpi b { font-size: 16px; white-space: nowrap; }
+.sess-kpi > span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
+.sess-kpi.acc b { color: var(--accent-solid); }
+/* Monstres tués : grande illustration, nombre et nom */
+.sess-mobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; max-height: 26vh; overflow: auto; }
+.sess-mob { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: 10px; background: var(--hover); min-width: 0; }
+.sess-mob img { width: 56px; height: 56px; object-fit: contain; }
+.sess-mob b { font-size: 13px; color: var(--accent-solid); }
+.sess-mob span { max-width: 100%; font-size: 11px; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .session-detail .ellipsis { display: inline-block; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
 .session-detail .ico { width: 24px; height: 24px; }
 .session-hist tbody tr { cursor: pointer; }

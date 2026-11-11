@@ -50,11 +50,11 @@ function tradesView() {
       <button class="small ghost" data-act="trade-clear" data-list="${clear.join(',')}" data-n="${clear.length}" ${clear.length ? '' : 'disabled'} title="Effacer les lignes affichées (personnage, période et type choisis). Les offres encore en vente sont gardées.">🗑 Vider (${clear.length})</button>
       <span class="muted small" title="Achats : lot disparu d'une offre consultée et objet reçu au même moment, ou objet reçu dans la boutique d'un marchand. Ventes : message de vente du jeu (en jeu, ou à la connexion pour celles faites hors jeu), offre retirée sans retour de l'objet, ou absente à l'ouverture suivante du mode vente. Rien n'est envoyé hors de ce PC.">ⓘ d'où viennent ces chiffres</span></div>
     <div class="kpis">
-      ${tile('Achats', k(spent), `${buys.length} lot(s)`, 'bad', 'Total payé à l\'HDV et chez les marchands')}
-      ${tile('Ventes', k(earned), `${sold.length} offre(s) vendue(s)`, 'ok', 'Offres vendues sur la période (prix demandé)')}
-      ${tile('Taxes HDV', k(taxes), `${listed.length} mise(s) en vente`, '', 'Taxe payée à la mise en vente (estimée d\'après le taux de l\'HDV)')}
-      ${tile('Bilan', (net > 0 ? '+' : '') + k(net), 'ventes − achats − taxes', net >= 0 ? 'ok' : 'bad')}
-      ${tile('En vente', k(sum(onSale)), `${onSale.length} offre(s) en cours`, 'acc', 'Offres encore en vente (toutes dates)')}
+      ${tile('Achats', kamas(spent), `${buys.length} lot(s)`, 'bad', 'Total payé à l\'HDV et chez les marchands')}
+      ${tile('Ventes', kamas(earned), `${sold.length} offre(s) vendue(s)`, 'ok', 'Offres vendues sur la période (prix demandé)')}
+      ${tile('Taxes HDV', kamas(taxes), `${listed.length} mise(s) en vente`, '', 'Taxe payée à la mise en vente (estimée d\'après le taux de l\'HDV)')}
+      ${tile('Bilan', (net > 0 ? '+' : '') + kamas(net), 'ventes − achats − taxes', net >= 0 ? 'ok' : 'bad')}
+      ${tile('En vente', kamas(sum(onSale)), `${onSale.length} offre(s) en cours`, 'acc', 'Offres encore en vente (toutes dates)')}
     </div>
     <div class="split trades-split">
       <div class="table-wrap"><table><thead><tr><th></th><th>Date</th><th>Objet</th><th class="num">Qté</th><th class="num">Prix / u</th><th class="num">Total</th><th>Perso</th><th></th></tr></thead><tbody>

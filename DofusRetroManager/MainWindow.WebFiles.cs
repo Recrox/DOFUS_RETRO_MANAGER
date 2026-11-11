@@ -96,11 +96,17 @@ public partial class MainWindow
             return (png, "image/png");
         }
         // Caractéristiques de la fiche du personnage (sagesse, prospection…), lues dans l'interface du client
-        var stat = Regex.Match(path, @"^icon/stat/(Wisdom|PP|Init|Vita)\.png$");
+        // Kama : symbole des kamas ; Group : icône « Amis » du bandeau du jeu (deux personnages), pour le groupe
+        var stat = Regex.Match(path, @"^icon/stat/(Wisdom|PP|Init|Vita|Kama|Group)\.png$");
         if (stat.Success)
         {
             if (!_webIcons.TryGetValue(path, out var png))
-                _webIcons[path] = png = Png(StatIcons.Get(stat.Groups[1].Value), 64);
+                _webIcons[path] = png = Png(StatIcons.Get(stat.Groups[1].Value switch
+                {
+                    "Kama" => "KamaSymbol",
+                    "Group" => "UI_BannerFriendsIcon",
+                    var n => n,
+                }), 64);
             return (png, "image/png");
         }
         // Effets d'objet (onglet FM) : icône de l'infobulle de l'objet en jeu (voir CharacteristicIcons)

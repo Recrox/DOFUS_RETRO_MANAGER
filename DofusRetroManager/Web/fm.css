@@ -54,7 +54,7 @@
   background-clip: text; color: transparent; line-height: 1.1; margin: 2px 0 8px; }
 @media (max-width: 860px) { .split.fm { grid-template-columns: minmax(0, 1fr); } .fm-top { flex-wrap: wrap; } }
 .fm-max { color: var(--muted); font-weight: 400; font-size: 0.9em; }
-.fm-overlay .fm-count { padding: 2px 4px; font-size: 12px; }
+.fm-overlay .fm-count { padding: 2px 18px 2px 6px; font-size: 12px; background-position: right 5px center; }
 .fm-chips { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; }
 .fm-chg { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
 .fm-chg .fx-ico { width: 16px; height: 16px; }
@@ -71,3 +71,6 @@
 .fm-exos .ok { color: var(--ok); font-size: 11px; margin-left: 2px; }
 .fm-counts .right { margin-left: auto; }
 .fm-main .fm-rune .ellipsis { max-width: 180px; }
+/* Objets forgemagés : clic sur la ligne pour choisir l'objet ; l'objet choisi est surligné */
+.fm-items tbody tr { cursor: pointer; }
+.fm-items tbody tr:has(.fm-rune.acc) td { background: var(--hover); }

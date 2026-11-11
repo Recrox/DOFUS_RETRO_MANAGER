@@ -236,12 +236,8 @@ public partial class MainWindow
                     .Select(c => $"{c.Key} ×{c.Value.Drops[d.Key]}")),
             })
             .OrderByDescending(r => r.Total ?? -1).ThenBy(r => r.Name).ToList());
-        double total = s.Total.Kamas + Drops(s.Total);
-        var minutes = s.Seconds / 60;
-        HuntSessionDetailTitle.Text = $"{s.Start:dd'/'MM HH:mm} → {s.End:HH:mm} · "
-            + (minutes >= 60 ? $"{(int)(minutes / 60)} h {(int)(minutes % 60):00}" : $"{minutes:0} min")
-            + $" · {s.Total.Fights:N0} combat(s) · {s.Total.Xp:N0} XP · {Kamas(total)} ({Kamas(total / hours)} / h)"
-            + (s.Rebuilt ? " · reconstituée (pauses inconnues)" : "");
+        // Dates seulement : les totaux (durée, combats, XP, kamas) sont affichés en tuiles d'après la ligne de la session
+        HuntSessionDetailTitle.Text = $"{s.Start:dd'/'MM HH:mm} → {s.End:HH:mm}" + (s.Rebuilt ? " · reconstituée (pauses inconnues)" : "");
     }
 
     void HuntSessionForget_Click(object sender, RoutedEventArgs e)
@@ -524,7 +520,7 @@ public partial class MainWindow
             + $"{xpTotal:N0} XP · {kamasTotal:N0} kamas · drops {Kamas(dropsTotal)}"
             + (unpriced > 0 ? $" ({unpriced} objet(s) sans prix HDV, comptés 0)" : "")
             + (allSession.Select(f => f.Character).Distinct().Count() > 1
-                ? $"\nTous les personnages : {allSession.Count} combat(s) · {allSession.Sum(f => f.Kamas):N0} kamas · drops {Kamas(allSession.Sum(Value))}"
+                ? $"\nTous les personnages : {HuntTracker.CountFights(allSession)} combat(s) · {allSession.Sum(f => f.Kamas):N0} kamas · drops {Kamas(allSession.Sum(Value))}"
                 : "");
         HuntProjection.ItemsSource = session.Count == 0 ? null : new[] { 30, 60, 120 }.Select(span =>
         {
