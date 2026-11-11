@@ -65,10 +65,14 @@ export default {
 
     if (url.pathname === '/merchant') {
       const valid = items.filter(it => isValidMerchant(it, now));
-      // Chaque relevé est conservé ; un relevé déjà reçu (même carte, date et prix) est ignoré
+      // Chaque relevé est conservé ; un relevé déjà reçu (même carte, date et prix) est ignoré, sauf pour
+      // y ajouter le marchand qui lui manquait (il est alors redistribué)
       const insert = env.DB.prepare(
-        `INSERT OR IGNORE INTO merchant_prices (tpl, price, qty, seen_at, received_at, merchant, map, cell)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`);
+        `INSERT INTO merchant_prices (tpl, price, qty, seen_at, received_at, merchant, map, cell)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+         ON CONFLICT (tpl, seen_at, price) DO UPDATE SET merchant = excluded.merchant, map = excluded.map,
+           cell = excluded.cell, received_at = excluded.received_at
+         WHERE merchant_prices.merchant IS NULL AND excluded.merchant IS NOT NULL`);
       if (valid.length > 0)
         await env.DB.batch([
           ...valid.map(it => insert.bind(it.tpl, it.price, it.qty, it.seenAt, now, it.merchant ?? null, it.map ?? null, it.cell ?? null)),
@@ -110,7 +114,7 @@ function isValidHdv(it, now) {
 function isValidMerchant(it, now) {
   return !!it && isId(it.tpl) && isDate(it.seenAt, now) && it.price != null && isPrice(it.price)
     && Number.isInteger(it.qty) && it.qty >= 0 && it.qty <= 1_000_000
-    && (it.merchant == null || (typeof it.merchant === "string" && /^[p{L}p{N}-[] ]{1,40}$/u.test(it.merchant)))
+    && (it.merchant == null || (typeof it.merchant === "string" && /^[\p{L}\p{N}\-\[\] ]{1,40}$/u.test(it.merchant)))
     && (it.map == null || isId(it.map)) && (it.cell == null || (Number.isInteger(it.cell) && it.cell >= 0 && it.cell < 2000));
 }
 

@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.81.0 — 11 novembre 2026
+
+- **TTG** : Correction : la position des boutiques relevée par vos amis (pseudo du marchand, map et case) est maintenant partagée ; vos relevés des 30 derniers jours sont renvoyés une fois au serveur du groupe (qui doit être mis à jour).
+
 ## 1.80.0 — 10 novembre 2026
 
 - **Combat** : objectif de farm (bouton 🎯) : choisissez un objet et une quantité (ex. 50 Pierres de diamant) ; chaque fin de combat ajoute ce qu'ont obtenu vos personnages, avec le décompte combat par combat, dans l'onglet et dans la superposition en jeu. Une bulle et un son préviennent quand la quantité est atteinte.

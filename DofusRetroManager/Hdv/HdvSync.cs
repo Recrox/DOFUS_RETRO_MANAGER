@@ -16,6 +16,10 @@ public sealed class SyncSettings
     public string GroupKey { get; set; } = "";
     /// <summary>Horloge du serveur lors de la dernière lecture : on ne redemande que les nouveautés.</summary>
     public long LastPull { get; set; }
+    /// <summary>
+    /// Relevés TTG avec marchand renvoyés une fois : avant la 1.81, le serveur refusait le pseudo du marchand.
+    /// </summary>
+    public bool MerchantsResent { get; set; }
 }
 
 /// <summary>
@@ -60,6 +64,14 @@ public sealed class HdvSync
         _merchants.Observed += (tpl, s) => Queue(() => _merchantOutbox.Add((tpl, s)));
         _pda.Observed += p => Queue(() => _pdaOutbox[p.Key] = p);
         if (Settings.Enabled) SetStatus("Partage activé.");
+        if (Settings.Enabled && !Settings.MerchantsResent) QueueMerchants(DateTime.Now.AddDays(-30), withMerchantOnly: true);
+    }
+
+    void QueueMerchants(DateTime since, bool withMerchantOnly = false)
+    {
+        foreach (var m in _merchants.Prices.Values)
+            foreach (var s in m.History.Where(s => !s.Shared && s.Time > since && (!withMerchantOnly || s.Merchant != null)))
+                _merchantOutbox.Add((m.TemplateId, s));
     }
 
     bool OutboxEmpty => _outbox.Count == 0 && _merchantOutbox.Count == 0 && _pdaOutbox.Count == 0;
@@ -80,9 +92,7 @@ public sealed class HdvSync
             var since = DateTime.Now.AddDays(-30);
             foreach (var p in _hdv.Prices.Values.Where(p => !p.Shared && p.SeenAt > since))
                 _outbox[p.TemplateId] = p;
-            foreach (var m in _merchants.Prices.Values)
-                foreach (var s in m.History.Where(s => !s.Shared && s.Time > since))
-                    _merchantOutbox.Add((m.TemplateId, s));
+            QueueMerchants(since);
             foreach (var p in _pda.Prices.Values.Where(p => !p.Shared && p.SeenAt > since))
                 _pdaOutbox[p.Key] = p;
         }
@@ -167,6 +177,7 @@ public sealed class HdvSync
             if (ok == false) return;
             _merchantOutbox.RemoveRange(0, batch.Count);
             if (ok == true) sent += batch.Count;
+            if (ok == true && _merchantOutbox.Count == 0 && !Settings.MerchantsResent) { Settings.MerchantsResent = true; Save(); }
         }
 
         if (_pdaOutbox.Count > 0)
