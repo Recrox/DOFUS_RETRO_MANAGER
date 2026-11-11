@@ -325,14 +325,12 @@ public partial class MainWindow
         BankTypeFilter.SelectionChanged += BankFilter_Changed;
         RecipeSearch.TextChanged += Filters_Changed;
         JobFilter.SelectionChanged += Filters_Changed;
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Faisables maintenant" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Faisables ou il manque 1 ingrédient" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Il manque au plus 2 ingrédients" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Utilisant au moins 1 de mes ressources" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Toutes les recettes" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Rentables (bénéfice positif)" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Coût et vente connus" });
-        ModeFilter.Items.Add(new ComboBoxItem { Content = "Meilleure marge" });
+        // Modes de l'onglet Recettes (boutons de la page, dans cet ordre : voir recettes.js)
+        ModeFilter.Items.Add(new ComboBoxItem { Content = "Faisables" });
+        ModeFilter.Items.Add(new ComboBoxItem { Content = "Presque" });
+        ModeFilter.Items.Add(new ComboBoxItem { Content = "Mes ressources" });
+        ModeFilter.Items.Add(new ComboBoxItem { Content = "Rentables" });
+        ModeFilter.Items.Add(new ComboBoxItem { Content = "Toutes" });
         ModeFilter.SelectedIndex = 0;
         ModeFilter.SelectionChanged += Filters_Changed;
         SellMin.TextChanged += Filters_Changed;

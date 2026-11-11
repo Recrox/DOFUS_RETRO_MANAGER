@@ -51,7 +51,7 @@ Object.assign(views, {
     return `<div class="filters">${input('TtgSearch', 'Rechercher une carte…', '220px')}<span class="lbl">Rareté</span>${select('TtgRarity')}<span class="lbl">Personnage</span>${select('TtgCharacter')}
         <span class="lbl">Afficher</span>${select('TtgShow')}${check('TtgShowAll', 'Toutes les cartes du jeu')}
         <span class="lbl">Période</span>${input('TtgDaysBox', '', '56px')}<span class="lbl">jours</span>
-        <button class="small" data-act="book" title="Votre collection présentée comme le livre du jeu : familles, raretés, cartes rangées, possédées et manquantes (personnage choisi)">📖 Classeur</button>
+        <button class="small" data-act="book" title="Votre collection présentée comme le livre du jeu : familles, raretés, cartes rangées, possédées et manquantes (personnage choisi)">${ico('book')}Classeur</button>
         <span class="chip">${esc(T('TtgCount'))}</span>${T('TtgCollection') ? `<span class="chip accent">${esc(T('TtgCollection'))}</span>` : ''}${T('TtgMissing') ? `<span class="chip accent">${esc(T('TtgMissing'))}</span>` : ''}</div>
       <div class="split">
         ${table('TtgGrid', [

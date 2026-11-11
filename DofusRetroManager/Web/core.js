@@ -264,6 +264,21 @@ const TAB_TIPS = {
   windows: "Passer d'un personnage à l'autre (multi-compte)", fm: 'Forgemagie : runes passées et reliquat',
   carte: "Carte du monde et points d'intérêt", journal: "Messages de l'application",
 };
+// Icônes des boutons (même trait que les onglets) : ico('trades') devant le libellé d'un bouton
+const BTN_ICONS = {
+  trades: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><path d="M14 7l3-3 3 3M17 4v6"/>',
+  book: '<path d="M2.5 5.5C5 4.5 8.5 4.5 12 6.5c3.5-2 7-2 9.5-1v13c-2.5-1-6-1-9.5 1-3.5-2-7-2-9.5-1z"/><path d="M12 6.5v13"/><path d="M5.5 9h3.5M5.5 12h3.5M15 9h3.5"/>',
+  history: '<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7.5V12l3 2"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6"/><path d="M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7"/>',
+  forget: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+  craft: '<path d="M14 6l4 4"/><path d="M3 21l9-9"/><path d="M12.5 4.5l7 7-3 3-7-7z"/>',
+  almost: '<path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 3-3 4-5 5"/>',
+  owned: '<path d="M4 8l8-4.5L20 8v8l-8 4.5L4 16z"/><path d="M4 8l8 4.5L20 8M12 12.5v8"/>',
+  profit: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  all: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+};
+const ico = key => `<svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+  stroke-linejoin="round" aria-hidden="true">${BTN_ICONS[key] || ''}</svg>`;
 const tabIcon = key => `<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
   stroke-linejoin="round" aria-hidden="true">${TAB_ICONS[key] || ''}</svg>`;
 

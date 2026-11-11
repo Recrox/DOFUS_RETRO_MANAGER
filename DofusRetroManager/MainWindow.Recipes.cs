@@ -89,13 +89,11 @@ public partial class MainWindow
         {
             0 => q.Where(r => r.Craftable > 0),
             1 => q.Where(r => r.MissingKinds <= 1),
-            2 => q.Where(r => r.MissingKinds <= 2),
-            3 => q.Where(r => r.UsesOwned),
-            5 or 7 => q.Where(r => r.Profit > 0),
-            6 => q.Where(r => r.Profit != null),
+            2 => q.Where(r => r.UsesOwned),
+            3 => q.Where(r => r.Profit > 0),
             _ => q
         };
-        var profitMode = ModeFilter.SelectedIndex >= 5;
+        var profitMode = ModeFilter.SelectedIndex == 3;
         SellMinPanel.Visibility = profitMode ? Visibility.Visible : Visibility.Collapsed;
         if (profitMode && long.TryParse(new string(SellMin.Text.Where(char.IsDigit).ToArray()), out var sellMin) && sellMin > 0)
             q = q.Where(r => r.Sell >= sellMin);
@@ -110,8 +108,7 @@ public partial class MainWindow
                 || r.Recipe.Ingredients.Any(i => Contains(_data!.GetItem(i.ItemId).Name, search)));
 
         // Modes « rentabilité » : les plus gros bénéfices (ou marges) en haut ; sinon les faisables d'abord
-        var ordered = ModeFilter.SelectedIndex == 7 ? q.OrderByDescending(r => r.Margin).ThenByDescending(r => r.Profit).ThenBy(r => r.Name)
-            : profitMode ? q.OrderByDescending(r => r.Profit).ThenBy(r => r.Name)
+        var ordered = profitMode ? q.OrderByDescending(r => r.Profit).ThenBy(r => r.Name)
             : q.OrderByDescending(r => r.Craftable > 0).ThenBy(r => r.MissingKinds).ThenByDescending(r => r.Level).ThenBy(r => r.Name);
         var list = ordered.Select((r, i) => r with { Index = i + 1 }).ToList();
         var selected = (RecipeGrid.SelectedItem as RecipeRow)?.Recipe;

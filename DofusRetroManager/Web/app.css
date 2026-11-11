@@ -256,3 +256,10 @@ input[type="search"]:not([placeholder=""]) { padding-left: 30px;
 .filters label.check:has(input:checked) { color: var(--accent-solid); border-color: var(--accent-solid);
   background: color-mix(in srgb, var(--accent-solid) 14%, var(--glass-strong)); }
 .filters label.check input { width: 16px; height: 16px; border-radius: 5px; }
+/* Icône d'un bouton (ico() de core.js) */
+.btn-ico { width: 16px; height: 16px; flex: none; }
+button.small:has(.btn-ico), .pill:has(.btn-ico) { display: inline-flex; align-items: center; gap: 6px; }
+/* Boutons groupés (un seul choisi) : collés dans un même cadre */
+.seg.modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-sm); background: var(--glass-strong); border: 1px solid var(--line-strong); }
+.filters .seg.modes button.small { height: calc(var(--ctl-h) - 6px); border-color: transparent; background: transparent; }
+.filters .seg.modes button.small.primary { background: var(--accent); color: #fff; }

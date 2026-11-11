@@ -103,7 +103,7 @@ function fmItems() {
   const all = list.length > 0 && list.every(r => sel.has(r.Uid));
   const total = list.reduce((s, r) => s + r.Cost, 0);
   return `<div class="fm-counts"><label class="check"><input type="checkbox" data-fm="all" ${all ? 'checked' : ''}>Tout</label>
-      <button class="small ghost" data-fm="forget" ${sel.size ? '' : 'disabled'} title="Retirer les objets cochés et leur historique">🗑 ${sel.size || ''}</button>
+      <button class="small ghost" data-fm="forget" ${sel.size ? '' : 'disabled'} title="Retirer les objets cochés et leur historique">${ico('trash')}${sel.size || ''}</button>
       <span class="right muted" title="Coût total des runes passées sur ces objets">${list.length} objet(s) · ${fmKamas(total)}${KAMA}</span></div>
     <div class="fm-items">${table('FmItemsGrid', [
       { h: '', f: r => `<input type="checkbox" data-fm="check" data-uid="${r.Uid}" ${sel.has(r.Uid) ? 'checked' : ''}>` },
@@ -130,7 +130,7 @@ Object.assign(views, {
     const tab = (k, ico, label, tip) => `<button class="pill ${view === k ? 'on' : ''}" data-fmview="${k}" title="${tip}">${ico} ${label}</button>`;
     const stats = rows('FmStats'), cur = rows('FmItemsGrid').find(r => r.Current);
     return `<div class="filters fm-top"><span class="lbl">Objet</span>${select('FmItemCombo', 'class="fm-select"')}
-        <span class="right"></span>${fmOverlayTogs()}<span class="seg">${tab('items', '🗂', 'Objets', 'Tous les objets forgemagés : coût, exos PA / PM / PO')}${tab('hist', '📜', 'Historique', 'Runes passées sur l\'objet')}${tab('chances', '🎲', 'Chances', 'Chances SC / SN / EC de chaque rune sur chaque ligne')}${tab('weights', '⚖', 'Poids', 'Poids des stats (reliquat et chances)')}</span></div>
+        <span class="right"></span>${fmOverlayTogs()}<span class="seg">${tab('items', ico('all'), 'Objets', 'Tous les objets forgemagés : coût, exos PA / PM / PO')}${tab('hist', ico('history'), 'Historique', 'Runes passées sur l\'objet')}${tab('chances', '🎲', 'Chances', 'Chances SC / SN / EC de chaque rune sur chaque ligne')}${tab('weights', '⚖', 'Poids', 'Poids des stats (reliquat et chances)')}</span></div>
       <div class="split fm">
         <aside class="detail glass fm-item">
           <div class="fm-head">${tpl ? itemImg(tpl, 'fm-big') : ''}<div><h2 class="acc">${esc(T('FmItemName'))}</h2><div class="muted small">${esc(T('FmItemSub'))}</div></div></div>
@@ -141,8 +141,8 @@ Object.assign(views, {
             <span class="fm-fix">${input('FmReliquatInput', 'Valeur', '74px')}<button class="small" data-act="click" data-name="FmSetReliquat" title="Remplacer le reliquat estimé par la valeur saisie">✓</button></span></div>
           ${cur ? `<div class="fm-sum"><span class="lbl">${KAMA}</span>${fmCost(cur)}<span class="lbl" title="Tentatives d'exo PA / PM / PO">Exo</span>${fmExo(cur)}</div>` : ''}
           <div class="fm-actions">
-            <button class="small ghost" data-act="confirm" data-name="FmClear" data-text="Effacer l'historique de cet objet et remettre son reliquat à 0 ?" title="Effacer l'historique et remettre le reliquat à 0">🗑 Historique</button>
-            <button class="small ghost" data-act="confirm" data-name="FmForget" data-text="Retirer cet objet et tout son historique de la liste ?" title="Retirer l'objet de la liste">✕ Oublier</button></div>
+            <button class="small ghost" data-act="confirm" data-name="FmClear" data-text="Effacer l'historique de cet objet et remettre son reliquat à 0 ?" title="Effacer l'historique et remettre le reliquat à 0">${ico('history')}Effacer</button>
+            <button class="small ghost" data-act="confirm" data-name="FmForget" data-text="Retirer cet objet et tout son historique de la liste ?" title="Retirer l'objet de la liste">${ico('forget')}Oublier</button></div>
         </aside>
         <div class="fm-main">${view === 'weights' ? fmWeights() : view === 'items' ? fmItems() : view === 'chances' ? fmChances() : fmHistory()}</div>
       </div>`;

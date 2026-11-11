@@ -140,6 +140,8 @@ document.addEventListener('click', e => {
     case 'toggle': post({ type: 'toggle', name: d.name, index: +d.i }); break;
     // Case réglée à une valeur précise (boutons « l'un ou l'autre », ex. Perso / Groupe)
     case 'set-on': post({ type: 'set', name: d.name, value: d.v === 'true' }); break;
+    // Liste choisie par des boutons (ex. modes de l'onglet Recettes) : élément n° v
+    case 'set-i': post({ type: 'set', name: d.name, value: +d.v }); break;
     case 'open': local.open[d.key] = !local.open[d.key]; schedule(); break;
     // Panneau réduit (min) ou agrandi (max, un seul à la fois) ; un nouveau clic le remet en place. Gardé dans le navigateur
     case 'panel': {

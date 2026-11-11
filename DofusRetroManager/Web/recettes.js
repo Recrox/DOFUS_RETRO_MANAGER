@@ -5,9 +5,9 @@ Object.assign(views, {
   recipes() {
     const slots = (S.SlotFilters?.items || []).map((s, i) => `<button class="pill ${s.on ? 'on' : ''}" data-act="toggle" data-name="SlotFilters" data-i="${i}">${esc(s.t)}</button>`).join('');
     const sel = rows('RecipeGrid')[S.RecipeGrid?.sel ?? -1];
-    return `<div class="filters">${input('RecipeSearch', 'Recette, type ou ingrédient…', '240px')}${select('JobFilter')}${select('ModeFilter')}
+    return `<div class="filters">${input('RecipeSearch', 'Recette, type ou ingrédient…', '240px')}${select('JobFilter')}${recipeModes()}
         ${shown('SellMinPanel') ? `<span class="lbl">Vente min.</span>${input('SellMin', '', '110px')}` : ''}
-        <span class="lbl">Niveau</span>${input('LevelMin', '', '60px')}<span class="lbl">à</span>${input('LevelMax', '', '60px')}</div>
+        <span class="lbl">Niveau</span>${input('LevelMin', '', '64px')}<span class="lbl">à</span>${input('LevelMax', '', '64px')}</div>
       <div class="filters"><span class="lbl">Cases</span>${slots}${check('IncludeInventory', 'Inclure l\'inventaire')}
         ${T('InventoryHint') ? colored('InventoryHint') : ''}<span class="chip">${esc(T('RecipeCount'))}</span>
         ${shown('IngredientChip') ? `<span class="chip accent">${esc(T('IngredientChipText'))}<button class="small ghost" data-act="click" data-name="IngredientChipClear">✕</button></span>` : ''}</div>
@@ -48,4 +48,19 @@ function recipeDetail(sel) {
       ${T('DetailProfitOwned') ? `<div class="strong">${colored('DetailProfitOwned')}</div>` : ''}</div>` : ''}
     ${shown('DetailStatsPanel') && rows('DetailStats').length ? `<h3>Caractéristiques (max.)</h3><div class="stats">${rows('DetailStats').map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
     <h3>Ingrédients</h3>${tree(rows('DetailIngredients'), 'r' + sel.Recipe?.ResultId)}`;
+}
+
+// Modes de la liste (ordre de ModeFilter) : boutons avec icône, l'explication au survol
+const RECIPE_MODES = [
+  ['craft', 'Recettes faisables tout de suite avec vos ressources'],
+  ['almost', 'Faisables, ou il ne manque qu\'un ingrédient'],
+  ['owned', 'Recettes utilisant au moins une de vos ressources'],
+  ['profit', 'Bénéfice positif (vente HDV − coût des ingrédients), les plus rentables en haut'],
+  ['all', 'Toutes les recettes, les faisables en haut'],
+];
+function recipeModes() {
+  const s = S.ModeFilter;
+  if (!s?.items) return '';
+  return `<span class="seg modes">${s.items.map((t, i) => `<button class="small ${i === s.i ? 'primary' : ''}" data-act="set-i" data-name="ModeFilter" data-v="${i}"
+    title="${esc(RECIPE_MODES[i]?.[1] || t)}">${ico(RECIPE_MODES[i]?.[0])}${esc(t)}</button>`).join('')}</span>`;
 }

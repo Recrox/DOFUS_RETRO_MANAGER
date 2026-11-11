@@ -79,7 +79,7 @@ Object.assign(views, {
     const sel = rows('HdvGrid')[S.HdvGrid?.sel ?? -1];
     return `<div class="filters">${input('HdvSearch', 'Rechercher un objet…', '260px')}${select('HdvTypeFilter')}
         ${check('HdvShowAll', 'Tous les objets du jeu')}<span class="chip">${esc(T('HdvCount'))}</span>
-        <button class="small ${local.trades ? 'primary' : ''}" data-act="trades" title="Achats et ventes de vos personnages (HDV et marchands)">📊 Mes échanges</button>
+        <button class="small ${local.trades ? 'primary' : ''}" data-act="trades" title="Achats et ventes de vos personnages (HDV et marchands)">${ico('trades')}Mes échanges</button>
         <span class="right"></span><span title="Partager vos relevés de prix avec votre groupe">${btn('ShareToggle', 'Partage entre amis', 'small')}</span>
         <span title="Récupère tout de suite les derniers prix du groupe">${btn('ShareSync', 'Synchroniser', 'small')}</span></div>
       ${shown('SharePanel') ? `<div class="card share-panel" title="Seuls l'objet, ses prix et la date du relevé sont envoyés (aucun nom, personnage ni banque).">

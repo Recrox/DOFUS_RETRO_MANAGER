@@ -2,6 +2,12 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.85.0 — 11 novembre 2026
+
+- **Banque** : les objets sont triés par défaut par valeur HDV, du plus cher au moins cher.
+- **Recettes** : cinq modes clairs en boutons avec icône (Faisables, Presque, Mes ressources, Rentables, Toutes) au lieu d'une longue liste.
+- **HDV, TTG, FM** : vraies icônes pour Mes échanges, Classeur, Objets, Historique, Effacer et Oublier.
+
 ## 1.84.0 — 11 novembre 2026
 
 - **Interface** : barres de réglages plus soignées dans tous les onglets : contrôles de même hauteur, cases à cocher en pastilles colorées une fois cochées, listes avec chevron, champs de recherche avec loupe, boutons de vue (Mes échanges, Classeur…) mieux mis en avant.

@@ -1,5 +1,6 @@
 'use strict';
 // Onglet Banque
+local.sort.BankGrid ??= { k: 'Value', dir: -1 }; // par défaut : valeur HDV, de la plus chère à la moins chère
 
 Object.assign(views, {
   bank() {
