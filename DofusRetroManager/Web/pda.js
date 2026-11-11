@@ -5,7 +5,7 @@ Object.assign(views, {
   pda() {
     const sel = rows('PdaGrid')[S.PdaGrid?.sel ?? -1];
     return `<div class="filters">${input('PdaSearch', 'Monstre ou race…', '220px')}<span class="lbl">Afficher</span>${select('PdaSource')}${shown('PdaCharacter') ? `<span class="lbl">Personnage</span>${select('PdaCharacter')}` : ''}
-        <span class="lbl">Catégorie</span>${select('PdaCategory')}${check('PdaShowAll', 'Tous les monstres du jeu')}
+        <span class="lbl">Catégorie</span>${select('PdaCategory')}<span class="lbl">Période</span>${input('PdaDaysBox', '', '56px')}<span class="lbl">jours</span>${check('PdaShowAll', 'Tous les monstres du jeu')}
         <span class="chip">${esc(T('PdaCount'))}</span>${T('PdaValue') ? `<span class="chip accent">${esc(T('PdaValue'))}</span>` : ''}</div>
       <div class="split">
         ${table('PdaGrid', [
@@ -15,6 +15,7 @@ Object.assign(views, {
           { h: 'Race', k: 'Race' },
           { h: 'Catégorie', k: 'Category' },
           { h: 'Prix', k: 'Price', num: true, f: r => `<span class="acc strong">${fmt(r.Price)}</span>` },
+          { h: `Min ${esc(T('PdaDaysBox') || '7')} j`, k: 'Best', num: true, f: r => `<span title="Prix le plus bas relevé sur la période">${fmt(r.Best)}</span>` },
           { h: 'Moyen', k: 'Average', num: true, f: r => fmt(r.Average) },
           { h: 'Offres', k: 'Offers', num: true, f: r => r.Offers ?? '' },
           seenCol,

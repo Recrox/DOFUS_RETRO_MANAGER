@@ -7,7 +7,7 @@ namespace DofusRetroManager;
 
 /// <summary>Ligne de l'onglet PDA : un monstre (prix relevé à l'HDV) ou une pierre possédée.</summary>
 public sealed record PdaRow(string Key, int MonsterId, int StoneTemplate, string Name, string Level, int LevelSort, string Race,
-    string Category, long? Price, long? Average, int? Offers, string Seen, DateTime SeenAt, int Owned, string Where)
+    string Category, long? Price, long? Average, int? Offers, string Seen, DateTime SeenAt, int Owned, string Where, long? Best = null)
 {
     public int Index { get; init; }
 }
@@ -105,6 +105,11 @@ public partial class MainWindow
         PdaPrice? BestPrice(List<int> monsters, string category) => monsters.Distinct()
             .Select(id => _pda.Prices.GetValueOrDefault(PdaTracker.Key(id, category))).Where(p => p?.Price != null).MaxBy(p => p!.Price);
 
+        // Prix le plus bas relevé sur la période choisie (archi-monstres : les prix varient beaucoup d'un jour à l'autre)
+        int days = int.TryParse(PdaDaysBox.Text, out var d) && d > 0 ? Math.Min(d, 365) : 7;
+        var since = DateTime.Now.AddDays(-days);
+        long? BestOf(string key) => _pda.Prices.GetValueOrDefault(key)?.History.Where(s => s.Time >= since && s.Price != null).Min(s => s.Price);
+
         List<PdaRow> rows;
         if (PdaSource.SelectedIndex == 0)
         {
@@ -152,7 +157,7 @@ public partial class MainWindow
             .Where(r => category == "Toutes" || r.Category == category)
             .Where(r => search.Length == 0 || Contains(r.Name, search) || Contains(r.Race, search))
             .OrderByDescending(r => r.Price ?? -1).ThenByDescending(r => r.LevelSort).ThenBy(r => r.Name)
-            .Select((r, i) => r with { Index = i + 1 })
+            .Select((r, i) => r with { Index = i + 1, Best = BestOf(r.Key) })
             .ToList();
         var selected = (PdaGrid.SelectedItem as PdaRow)?.Key;
         SetRows(PdaGrid, list);

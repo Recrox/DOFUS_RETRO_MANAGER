@@ -120,6 +120,7 @@ public partial class MainWindow
     internal readonly WebList TtgOffers = new();
     internal readonly WebChart TtgMerchantChart = new();
     internal readonly WebTextBox PdaSearch = new() { ToolTip = "Nom d'un monstre ou d'une race" };
+    internal readonly WebTextBox PdaDaysBox = new() { Text = "7", ToolTip = "Période (jours) du prix le plus bas relevé : colonne « Min »" };
     internal readonly WebCombo PdaSource = new();
     internal readonly WebText PdaCharacterLabel = new() { Visibility = Visibility.Collapsed, Text = "Personnage" };
     internal readonly WebCombo PdaCharacter = new() { Visibility = Visibility.Collapsed, ToolTip = "Pierres de la banque et de l'inventaire de ce personnage (dernière banque connue pour ceux qui ne sont pas connectés)" };
@@ -386,6 +387,7 @@ public partial class MainWindow
         TtgOffersMode.SelectedIndex = 0;
         TtgOffersMode.SelectionChanged += TtgFilters_Changed;
         PdaSearch.TextChanged += PdaFilters_Changed;
+        PdaDaysBox.TextChanged += PdaFilters_Changed;
         PdaSource.Items.Add(new ComboBoxItem { Content = "Prix relevés à l'HDV" });
         PdaSource.Items.Add(new ComboBoxItem { Content = "Mes pierres (banque et inventaire)" });
         PdaSource.SelectedIndex = 0;

@@ -125,6 +125,10 @@ public partial class MainWindow
                     // « Mes échanges » : ligne oubliée (rapprochement erroné)
                     ForgetTrade(index);
                     break;
+                case "trade-sold":
+                    // « Mes échanges » : offre vendue hors ligne, validée à la main par le joueur
+                    if (_trades != null && index >= 0 && index < _trades.Trades.Count) _trades.MarkSold(_trades.Trades[index]);
+                    break;
                 case "trade-clear":
                     // « Mes échanges » : vider les lignes des filtres choisis (personnage, période, type)
                     ForgetTrades(m.GetProperty("list").EnumerateArray().Select(x => x.GetInt32()).ToList());

@@ -369,6 +369,12 @@ public sealed class TradeTracker
         Changed?.Invoke();
     }
 
+    /// <summary>Offre vendue hors ligne que le jeu n'a pas annoncée : validée à la main (« ✓ » de Mes échanges).</summary>
+    public void MarkSold(Trade t)
+    {
+        if (t.Kind == Trade.Listing && t.State == Trade.OnSale) Close(t, Trade.Sold, DateTime.Now, true);
+    }
+
     /// <summary>Oublie une ligne du tableau de bord (erreur de rapprochement).</summary>
     public void Remove(Trade t)
     {

@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         InitPda(_data);
         InitHunt(_data);
         InitHarvest(_data);
+        InitNpcs(_data);
         InitFarm();
         InitMiniMap();
         InitOcre(_data);

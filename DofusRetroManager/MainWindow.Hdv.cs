@@ -31,7 +31,9 @@ public partial class MainWindow
             Refresh(); // coût, vente et bénéfice des recettes, puis banque, brisage, TTG…
             ShowTtgDetail();
             RecipeGrid_SelectionChanged(RecipeGrid, null!); // coûts du détail de la recette
+            RefreshFmItems(); // coût des runes passées (onglet FM)
         };
+        RefreshFmItems(); // FM est prêt avant l'HDV : son coût n'avait encore aucun prix
         _tracker.HdvOffers += _hdv.OnOffers;
         _tracker.HdvAverage += _hdv.OnAverage;
         _tracker.HdvOfferMove += _hdv.OnOfferMove;

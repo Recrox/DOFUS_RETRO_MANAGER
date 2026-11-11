@@ -2,6 +2,15 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.82.0 — 11 novembre 2026
+
+- **FM** : Correction : le coût des runes passées s'affiche dès le lancement de l'application (il restait « ? » jusqu'au relevé d'un prix).
+- **FM** : les exos PM et PO s'affichent avec l'icône de leur rune, comme l'exo PA.
+- **FM** : une ligne retombée à 0 reste affichée (à 0), dans l'onglet comme dans la superposition en jeu.
+- **HDV** : Mes échanges : bouton ✓ pour marquer vendue une offre vendue pendant que vous n'étiez pas en ligne.
+- **Carte** : nouveau filtre « PNJ » : les PNJ vus sur les maps que vous visitez (intérieurs de maisons et souterrains de Bonta et Brâkmar compris) apparaissent sur la carte avec leur nom, et la recherche les trouve.
+- **PDA** : choix d'une période (en jours) et colonne du prix le plus bas relevé sur cette période, utile pour les archi-monstres.
+
 ## 1.81.0 — 11 novembre 2026
 
 - **TTG** : Correction : la position des boutiques relevée par vos amis (pseudo du marchand, map et case) est maintenant partagée ; vos relevés des 30 derniers jours sont renvoyés une fois au serveur du groupe (qui doit être mis à jour).

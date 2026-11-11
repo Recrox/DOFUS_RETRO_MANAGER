@@ -146,7 +146,8 @@ public partial class MainWindow
         var current = ItemStats.FromParsed(_fm.ParseStats(item.Effects));
         // Même ordre que l'objet dans le jeu ; les lignes du modèle absentes de l'objet à la fin
         var order = _fm.Lines(item.Effects).Select(l => l.Characteristic).ToList();
-        var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min)
+        var seen = item.History.SelectMany(e => e.Changes).Select(c => _fm.Characteristic(c.Stat)).Where(c => c > 0).Distinct();
+        var lines = Fm.FmChances.Compute(_data, _fm, info, current, c => _rolls.Of(info.Id, c)?.Min, seen)
             .OrderBy(l => order.IndexOf(l.Characteristic) is var i && i >= 0 ? i : int.MaxValue)
             .ThenByDescending(l => ItemStats.All.FirstOrDefault(s => s.Characteristic == l.Characteristic) is { } s ? _fm.Priority(s.Effects[0]) : 0)
             .ToList();

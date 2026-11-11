@@ -72,9 +72,10 @@ const fmKamas = n => n >= 1e6 ? (Math.round(n / 1e4) / 100).toLocaleString('fr-F
 const fmCostTip = r => `Coût des runes passées : ${fmt(r.Cost)} kamas (prix HDV au passage, sinon prix actuel)`
   + (r.Unpriced ? `\n${r.Unpriced} rune(s) sans prix connu : consultez-les à l'HDV` : '');
 const fmCost = r => `<span class="fm-cost" data-tip="${esc(fmCostTip(r))}">${r.Cost || !r.Unpriced ? fmKamas(r.Cost) : '?'}${r.Unpriced ? '<sup>+?</sup>' : ''}</span>`;
-// Tentatives d'exo PA / PM / PO : icône de la caractéristique, nombre, réussies en vert
+const runeFxImg = c => `<img class="fx-ico" src="icon/rune/${c}.png" alt="" loading="lazy">`;
+// Tentatives d'exo PA / PM / PO : icône de la rune, nombre, réussies en vert
 const FM_EXO = [['Pa', 1, 'PA'], ['Pm', 23, 'PM'], ['Po', 19, 'PO']];
-const fmExo = r => `<span class="fm-exos">${FM_EXO.map(([k, c, n]) => `<span class="fm-chg ${r['Exo' + k] ? '' : 'muted'}" title="Exo ${n} : ${r['Exo' + k]} tentative(s), ${r['Exo' + k + 'Ok']} réussie(s)">${fxImg(c)}${r['Exo' + k]}${r['Exo' + k + 'Ok'] ? `<b class="ok">✓${r['Exo' + k + 'Ok']}</b>` : ''}</span>`).join('')}</span>`;
+const fmExo = r => `<span class="fm-exos">${FM_EXO.map(([k, c, n]) => `<span class="fm-chg ${r['Exo' + k] ? '' : 'muted'}" title="Exo ${n} : ${r['Exo' + k]} tentative(s), ${r['Exo' + k + 'Ok']} réussie(s)">${runeFxImg(c)}${r['Exo' + k]}${r['Exo' + k + 'Ok'] ? `<b class="ok">✓${r['Exo' + k + 'Ok']}</b>` : ''}</span>`).join('')}</span>`;
 
 // Objets forgemagés : un par ligne, cases à cocher pour en retirer plusieurs ; clic sur le nom : son historique
 local.fmSel ??= new Set();

@@ -31,13 +31,14 @@ public static class FmChances
     public const double MaxOverWeight = 101;
 
     public static List<FmChanceLine> Compute(GameData data, FmTracker fm, ItemInfo item, IReadOnlyDictionary<int, int> current,
-        Func<int, int?> minOf)
+        Func<int, int?> minOf, IEnumerable<int>? seen = null)
     {
         double PointWeight(int c) => ItemStats.All.FirstOrDefault(s => s.Characteristic == c) is { } s ? fm.Weight(s.Effects[0]) : 0;
 
         // Lignes : celles du modèle (positives), puis les exotiques de l'objet, dans l'ordre des caractéristiques
         var chars = item.MaxStats.Where(kv => kv.Value > 0).Select(kv => kv.Key)
             .Concat(current.Where(kv => kv.Value > 0).Select(kv => kv.Key))
+            .Concat(seen ?? []) // lignes que l'objet a eues (exo retombée à 0) : affichées à 0
             .Distinct().OrderBy(ItemStats.Order).ToList();
 
         double maxWeight = item.MaxStats.Where(kv => kv.Value > 0).Sum(kv => kv.Value * PointWeight(kv.Key));

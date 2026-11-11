@@ -114,6 +114,16 @@ public partial class MainWindow
             }
             return (png, "image/png");
         }
+        // Plus petite rune d'une caractéristique (exos PA / PM / PO de l'onglet FM)
+        var rune = Regex.Match(path, @"^icon/rune/(\d+)\.png$");
+        if (rune.Success)
+        {
+            if (_data == null) return (null, "image/png"); // données du jeu pas encore chargées : rien en cache
+            if (!_webIcons.TryGetValue(path, out var png))
+                _webIcons[path] = png = RuneBreaking.SmallestRuneId(_data, int.Parse(rune.Groups[1].Value)) is { } id
+                    ? Png(ItemIcons.Get(id), 64) : null;
+            return (png, "image/png");
+        }
         // Carte : tuiles et icônes rendues depuis les fichiers du client installé (rien n'est livré avec l'application)
         if (path.StartsWith("carte/")) return (CarteWebFile(path), "image/png");
         if (Regex.IsMatch(path, @"^fonts/PlusJakartaSans-\w+\.ttf$"))

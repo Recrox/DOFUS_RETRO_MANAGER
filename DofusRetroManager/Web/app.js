@@ -91,6 +91,7 @@ document.addEventListener('click', e => {
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
     case 'trade-del': post({ type: 'trade-del', index: +d.i }); break;
+    case 'trade-sold': post({ type: 'trade-sold', index: +d.i }); break;
     case 'trade-clear': local.confirm = { text: `Effacer ${d.n} ligne(s) de Mes échanges ?`, msg: { type: 'trade-clear', list: d.list.split(',').map(Number) } }; schedule(); break;
     case 'trade-kind': local.tf.k = d.k; schedule(); break;
     case 'book-close': local.book = null; schedule(); break;

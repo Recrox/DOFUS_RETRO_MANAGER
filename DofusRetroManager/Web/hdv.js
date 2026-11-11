@@ -62,7 +62,7 @@ function tradesView() {
           <td><span class="item-cell">${itemImg(e.t.id, 'sm')}<span class="ellipsis" title="${esc(e.t.n)}">${esc(e.t.n)}</span></span>${e.t.s === 'Marchand' ? ' <span class="chip" title="Acheté dans la boutique d\'un marchand">🏪</span>' : ''}</td>
           <td class="num">×${e.t.q}</td><td class="num">${fmt(e.t.p / e.t.q)}</td><td class="num strong ${e.cls}">${e.sign < 0 ? '−' : e.sign > 0 ? '+' : ''}${fmt(e.t.p)}</td>
           <td class="muted ellipsis" title="${esc(e.t.c)}">${esc(e.t.c.replace(/^\w+-/, ''))}</td>
-          <td><button class="small ghost" title="Oublier cette ligne (rapprochement erroné)" data-act="trade-del" data-i="${e.t.i}">✕</button></td></tr>`).join('')}
+          <td style="white-space:nowrap">${e.kind === 'Mise en vente' && e.t.st === 'En vente' ? `<button class="small ghost" title="Marquer comme vendue (vente faite hors ligne, pas vue par l'application)" data-act="trade-sold" data-i="${e.t.i}">✓</button>` : ''}<button class="small ghost" title="Oublier cette ligne (rapprochement erroné)" data-act="trade-del" data-i="${e.t.i}">✕</button></td></tr>`).join('')}
       </tbody></table>${shown.length === 0 ? '<div class="empty">Aucun échange sur la période. Achetez ou mettez en vente à l\'HDV, application lancée.</div>' : ''}</div>
       <aside class="detail glass"><div class="togs">${kinds.map(([v, l]) => `<button class="pill ${f.k === v ? 'on' : ''}" data-act="trade-kind" data-k="${v}">${l}</button>`).join('')}</div>
         <h3>Objets les plus échangés</h3>
