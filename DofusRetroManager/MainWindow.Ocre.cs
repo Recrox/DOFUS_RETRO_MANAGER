@@ -204,9 +204,8 @@ public partial class MainWindow
             .Where(p => p.Length > 0).ToList();
         OcreDetailSub.Text = row.Done ? "Étape déjà validée (étape atteinte choisie plus haut)."
             : missing.Count == 0 ? $"Toutes les âmes sont dans vos pierres ({souls.Count}/{souls.Count})."
-            : $"Il manque {string.Join(", ", parts)} : "
-              + string.Join(", ", missing.Select(s => $"{s.Name} ({s.PriceText})"))
-              + $"\nTotal : {Kamas(missing.Sum(s => s.Price ?? 0))}"
+            // Les âmes elles-mêmes sont affichées en illustrations par la page (OcreSouls) : ici le décompte et le total
+            : $"Il manque {string.Join(", ", parts)} · total {Kamas(missing.Sum(s => s.Price ?? 0))}"
               + (missing.Count(s => s.Price == null) is > 0 and var u ? $" (+ {u} sans prix relevé)" : "");
         OcreSouls.ItemsSource = souls.OrderBy(s => s.Owned).ThenBy(s => s.Kind).ThenBy(s => s.Name).ToList();
     }

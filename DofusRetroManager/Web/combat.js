@@ -100,26 +100,32 @@ function combatSettings() {
     </div>`;
 }
 
-// Détail d'une session de l'historique (clic sur sa ligne) : fenêtre par-dessus la page, par personnage et par objet
-function sessionDetail() {
-  if (!local.sessDetail || TABS[S.MainTabs?.i ?? 0]?.key !== 'combat' || !T('HuntSessionDetailTitle')) return '';
-  const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1], kills = rows('HuntSessionMobs');
+// Chiffres clés d'une session (ligne de l'historique) en tuiles : détail d'une session et carte Rentabilité
+function sessKpis(row, full = true) {
+  if (!row) return '';
   const kpi = (v, l, tip, cls = '') => `<div class="sess-kpi ${cls}" data-tip="${esc(tip)}"><b>${v}</b><span>${l}</span></div>`;
-  const kpis = row ? `<div class="sess-kpis">
+  return `<div class="sess-kpis">
       ${kpi(esc(row.Duration), 'Durée', 'Durée hors pauses')}
       ${kpi(fmt(row.Fights), 'Combats', 'Un combat fait par plusieurs de vos personnages compte une fois · ' + row.Characters + ' personnage(s)')}
-      ${row.Kills != null ? kpi(fmt(row.Kills), 'Mobs', 'Monstres tués') : ''}
+      ${full && row.Kills != null ? kpi(fmt(row.Kills), 'Mobs', 'Monstres tués') : ''}
       ${kpi(fmt(row.Xp), 'XP', 'XP / h : ' + fmt(row.XpPerHour))}
-      ${kpi(kamas(row.Kamas), 'Kamas', 'Kamas ramassés')}
-      ${kpi(kamas(row.Drops), 'Drops', 'Drops au prix HDV actuel')}
-      ${kpi(kamas(row.Total), 'Total', 'Kamas + drops', 'acc')}
-      ${kpi(kamas(row.PerHour), '/ heure', 'Total par heure', 'acc')}</div>` : '';
-  return `<div class="modal-back" data-act="sess-close"><div class="modal glass wide" data-act="none">
-      <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><span class="sub">${esc(T('HuntSessionDetailTitle'))}</span>
-        <button class="small ghost right" data-act="sess-close">✕</button></div>
-      <div class="modal-body session-detail">
-        ${kpis}
-        <p class="section-title">Par personnage</p>
+      ${full ? kpi(kamas(row.Kamas), 'Kamas', 'Kamas ramassés') + kpi(kamas(row.Drops), 'Drops', 'Drops au prix HDV actuel') : ''}
+      ${kpi(kamas(row.Total), 'Total', 'Kamas ' + fmt(row.Kamas) + ' + drops ' + fmt(row.Drops), 'acc')}
+      ${kpi(kamas(row.PerHour), '/ heure', 'Total par heure', 'acc')}</div>`;
+}
+
+// Objets obtenus : icône et quantité ; nom, valeur et qui l'a obtenu au survol
+const dropChips = list => `<span class="drop-chips">${(list || []).map(d => `<span class="drop-chip" data-tip="${esc(d.Name + ' ×' + d.Quantity
+  + (d.Total != null ? ' · ' + fmt(d.Total) + ' k' : '') + (d.Who ? '\n' + d.Who : ''))}">${itemImg(d.ItemId, 'sm')}<i>${fmt(d.Quantity)}</i></span>`).join('')}</span>`;
+
+// Détail d'une session (clic sur sa ligne) : fenêtre par-dessus la page. Résumé (personnages, monstres, objets) ou
+// liste de tous ses combats avec leurs monstres et leurs drops
+function sessionDetail() {
+  if (!local.sessDetail || TABS[S.MainTabs?.i ?? 0]?.key !== 'combat' || !T('HuntSessionDetailTitle')) return '';
+  const row = rows('HuntSessionGrid')[S.HuntSessionGrid?.sel ?? -1], kills = rows('HuntSessionMobs'), fights = rows('HuntSessionFights');
+  const view = local.sessView || 'sum';
+  const tab = (k, icon, label) => `<button class="small ${view === k ? 'primary' : ''}" data-act="sess-view" data-v="${k}">${icon}${label}</button>`;
+  const summary = `<p class="section-title">Par personnage</p>
         ${table('HuntSessionChars', [
           { h: '', f: r => r.Gfx ? `<img class="ico" src="icon/head/${r.Gfx}.png" alt="">` : '' },
           { h: 'Personnage', k: 'Name', f: r => `<span class="strong">${esc(r.Name)}</span>` },
@@ -143,14 +149,27 @@ function sessionDetail() {
           { h: 'Prix u.', k: 'Unit', num: true, f: r => kamas(r.Unit) },
           { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${kamas(r.Total)}</span>` },
         ], { select: false, empty: 'Aucun objet obtenu.' })}
-        <div class="muted small">Drops au prix HDV actuel (sinon prix marchand) · qui a obtenu chaque objet : au survol de son nom.</div>
-      </div></div></div>`;
+        <div class="muted small">Drops au prix HDV actuel (sinon prix marchand) · qui a obtenu chaque objet : au survol.</div>`;
+  const list = `<div class="sess-fights">${table('HuntSessionFights', [
+          { h: 'Fin', k: 'TimeSort', f: r => `<span data-tip="${esc('Durée ' + r.Duration)}">${esc(r.Time)}</span>` },
+          { h: '👥', k: 'Count', num: true, f: r => `<span data-tip="${esc(r.Characters)}">${r.Count}</span>` },
+          { h: 'Monstres', f: r => mobs(r.Mobs) },
+          { h: 'XP', k: 'Xp', num: true, f: r => fmt(r.Xp) },
+          { h: 'Gain', k: 'Total', num: true, f: r => `<span class="acc strong" data-tip="${esc('Kamas ' + fmt(r.Kamas) + ' · drops ' + fmt(r.DropValue))}">${kamas(r.Total)}</span>` },
+          { h: 'Drops', f: r => dropChips(r.Drops) },
+        ], { select: false, empty: 'Combats de cette session plus gardés (seuls les 3 000 derniers le sont).' })}</div>
+        <div class="muted small">Vos personnages du même combat réunis (👥 : leurs noms au survol) · objets : nom, valeur et qui l'a obtenu au survol.</div>`;
+  return `<div class="modal-back" data-act="sess-close"><div class="modal glass wide" data-act="none">
+      <div class="row"><h2>${row?.Current ? 'Session en cours' : 'Session'}</h2><span class="sub">${esc(T('HuntSessionDetailTitle'))}</span>
+        <span class="right filters">${tab('sum', ico('all'), 'Résumé')}${tab('fights', ico('history'), `Combats (${fights.length})`)}</span>
+        <button class="small ghost" data-act="sess-close">✕</button></div>
+      <div class="modal-body session-detail">${sessKpis(row)}${view === 'fights' ? list : summary}</div></div></div>`;
 }
 
-// Rentabilité : session en cours (et projection), ou historique de toutes les sessions
+// Rentabilité : session en cours (tuiles de tous vos personnages, projection), ou historique de toutes les sessions
 function sessionCard() {
   const hist = local.open.sessHist;
-  const n = rows('HuntSessionGrid').filter(r => !r.Current).length;
+  const all = rows('HuntSessionGrid'), n = all.filter(r => !r.Current).length, ci = all.findIndex(r => r.Current), cur = all[ci];
   const tabsHtml = `<div class="seg"><button class="pill ${hist ? '' : 'on'}" data-act="${hist ? 'open' : ''}" data-key="sessHist">Session</button>
     <button class="pill ${hist ? 'on' : ''}" data-act="${hist ? '' : 'open'}" data-key="sessHist">Historique (${n})</button></div>`;
   if (hist) return panel('session', 'Rentabilité', `<div class="session-hist">${table('HuntSessionGrid', [
@@ -160,15 +179,22 @@ function sessionCard() {
       { h: 'Mobs', k: 'Kills', num: true, f: r => r.Kills == null ? '—' : fmt(r.Kills) },
       { h: 'XP', k: 'Xp', num: true, f: r => fmt(r.Xp) },
       // Kamas + drops : le détail au survol (tableau étroit)
-      { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong" data-tip="${esc('Kamas : ' + fmt(r.Kamas) + ' · Drops : ' + fmt(r.Drops))}">${fmt(r.Total)}</span>` },
-      { h: '/ h', k: 'PerHour', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${fmt(r.PerHour)}</span>` },
+      { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong" data-tip="${esc('Kamas : ' + fmt(r.Kamas) + ' · Drops : ' + fmt(r.Drops))}">${kamas(r.Total)}</span>` },
+      { h: '/ h', k: 'PerHour', num: true, f: r => `<span data-tip="${esc('XP / h : ' + fmt(r.XpPerHour))}">${kamas(r.PerHour)}</span>` },
       { h: '', f: r => r.Current ? '' : `<a class="item-link muted" ${attrs({ act: 'row', grid: 'HuntSessionGrid', i: r._i, handler: 'HuntSessionForget_Click' })} title="Oublier cette session">✕</a>` },
     ], { empty: 'Aucune session : chaque fin de combat s\'ajoute à la session en cours.' })}</div>
-    <div class="muted small">Tous les personnages · drops au prix HDV actuel · clic sur une session : son détail · ≈ : reconstituée (pauses inconnues).</div>`, tabsHtml, 'glass card session');
-  return panel('session', 'Rentabilité', `<div class="lines">${esc(T('HuntSession'))}</div>
-    ${rows('HuntProjection').length ? `<table class="proj"><thead><tr><th>Sur</th><th class="num">XP</th><th class="num">Kamas</th><th class="num">Drops (HDV)</th><th class="num">Total</th></tr></thead><tbody>
-      ${rows('HuntProjection').map(p => `<tr><td class="strong">${esc(p.Span)}</td><td class="num">${fmt(p.Xp)}</td><td class="num">${kamas(p.Kamas)}</td><td class="num">${kamas(p.Drops)}</td><td class="num acc strong">${kamas(p.Total)}</td></tr>`).join('')}</tbody></table>` : ''}
-    <div class="muted small" style="margin-top:6px">${esc(T('HuntLearned'))}</div>`, tabsHtml, 'glass card session');
+    <div class="muted small">Tous les personnages · drops au prix HDV actuel · clic sur une session : son détail (combats, drops) · ≈ : reconstituée.</div>`, tabsHtml, 'glass card session');
+  // Projection : une carte par durée, le total en grand, l'XP dessous ; kamas et drops au survol
+  const proj = rows('HuntProjection');
+  const projHtml = proj.length ? `<div class="sess-proj">${proj.map(p => `<div class="proj-card" data-tip="${esc(`XP ${fmt(p.Xp)} · kamas ${fmt(p.Kamas)} · drops ${fmt(p.Drops)}`)}">
+      <span>${esc(p.Span)}</span><b class="acc">${kamas(p.Total)}</b><small class="muted">${fmt(p.Xp)} XP</small></div>`).join('')}</div>` : '';
+  const me = T('HuntSession');
+  return panel('session', 'Rentabilité', cur ? `${sessKpis(cur, false)}
+      <div class="sess-me"><span class="lbl" data-tip="${esc(me)}">Projection · personnage affiché</span>
+        <button class="small" ${attrs({ act: 'select', grid: 'HuntSessionGrid', i: ci })} title="Détail de la session en cours : personnages, monstres, objets et tous les combats">${ico('history')}Détail</button></div>
+      ${projHtml}
+      <div class="muted small ellipsis" data-tip="${esc(T('HuntLearned'))}">${esc(T('HuntLearned'))}</div>`
+    : `<div class="empty small">Aucun combat sur cette session.</div><div class="muted small">${esc(T('HuntLearned'))}</div>`, tabsHtml, 'glass card session');
 }
 
 // Panneaux de l'onglet : réduits (▾ / ▸ : titre seul) ou agrandis (⤢ : seuls à l'écran, 🗗 pour revenir). L'état est

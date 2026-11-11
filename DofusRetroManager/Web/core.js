@@ -34,7 +34,7 @@ const TABS = [
     'FarmItem', 'FarmSuggest', 'FarmTarget', 'FarmStatus', 'FarmState',
     'HuntAlertsToggle', 'HuntAlertMonster', 'HuntAlertSuggest', 'HuntAlertCount', 'HuntAlertMin', 'HuntAlertMax', 'HuntAlertStatus', 'HuntAlertList',
     'ChronoTime', 'ChronoStart', 'ChronoReset', 'ChronoFights', 'ChronoGains', 'ChronoRate', 'ChronoGrid', 'AreneChallenges',
-    'AreneOtherChallenges', 'AreneGroup', 'AreneGroupEdit', 'AreneGroupName', 'AreneGroupStatus', 'AreneGroupMembers', 'HuntSessionGrid', 'HuntSessionDetailTitle', 'HuntSessionChars', 'HuntSessionDrops', 'HuntSessionMobs'] },
+    'AreneOtherChallenges', 'AreneGroup', 'AreneGroupEdit', 'AreneGroupName', 'AreneGroupStatus', 'AreneGroupMembers', 'HuntSessionGrid', 'HuntSessionDetailTitle', 'HuntSessionChars', 'HuntSessionDrops', 'HuntSessionMobs', 'HuntSessionFights'] },
   { key: 'windows', label: 'Switcheur', watch: ['OrganizerEnabled', 'HotkeyDebounce', 'OrganizerClickSwitch', 'OrganizerClickKey', 'OrganizerClickLeft', 'OrganizerClickRight', 'OrganizerFixBounce', 'NotifyAutoSwitchTurn', 'OrganizerSplitMode', 'OrganizerMaximize', 'OrganizerLockOrder', 'HotkeyNext', 'HotkeyPrevious', 'HotkeyMain', 'HotkeySadida', 'SadidaReturn', 'HotkeyStatus', 'NotifyFight', 'NotifyTurn',
     'NotifyExchange', 'NotifyParty', 'NotifyToast', 'NotifyFlash', 'NotifySound', 'NotifyAutoSwitch', 'OrganizerCount', 'OrganizerGrid', 'OverlayEnabled', 'OverlayEconome', 'OverlayGroups', 'OverlayHarvest',
     'OverlayRotation', 'OverlayFmHistory', 'OverlayFmChances', 'OverlayOpacity', 'OverlayOpacityText', 'OverlayMove', 'OrganizerSaveOrder', 'OrganizerResetOrder',
@@ -124,7 +124,7 @@ const posLink = (text, go, cls = '') => !text ? '' : go
 // survol), le dernier mis en avant. Les prix aberrants (plus de 3 fois le prix courant) ne tassent pas l'échelle : ils
 // restent en haut, marqués ▲.
 const fmtShort = n => n >= 1e6 ? (n / 1e6).toFixed(n < 1e7 ? 1 : 0).replace('.', ',').replace(',0', '') + ' M'
-  : n >= 1e4 ? Math.round(n / 1e3) + ' k' : fmt(n);
+  : n >= 1e4 ? Math.round(n / 1e3) + 'k' : fmt(n);
 // name : contrôle du graphique (HdvChart…) : bouton ⤢ pour l'agrandir dans une fenêtre ; big : graphique agrandi
 function chart(points, name = '', big = false) {
   if (!points?.length) return '<div class="empty">Aucun relevé pour l\'instant.</div>';
@@ -170,7 +170,8 @@ function chart(points, name = '', big = false) {
     <span title="Prix médian des relevés">Méd. <b>${fmtShort(med)}</b></span>
     <span title="Dernier relevé : ${dh(last[0])}">Dernier <b>${fmtShort(last[1])}</b></span>
     <span class="muted" title="Nombre de relevés">${sorted.length} rel.</span>${name && !big ? `<button class="pbtn" data-act="chart-zoom" data-name="${name}" data-tip="Agrandir le graphique">⤢</button>` : ''}</div>`;
-  return `${sum}<svg class="chart${big ? ' big' : ''}" viewBox="0 0 ${W} ${H}">
+  // Clic sur le graphique : agrandi dans une fenêtre (comme le bouton ⤢)
+  return `${sum}<svg class="chart${big ? ' big' : ''}${name && !big ? ` zoomable" data-act="chart-zoom" data-name="${name}` : ''}" viewBox="0 0 ${W} ${H}">
     <defs><linearGradient id="chartGrad" x1="0" x2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
     <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b5cf6" stop-opacity=".3"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs>
     ${grid}${area}${best.length > 1 ? `<polyline class="line" points="${line}"/>` : ''}
@@ -298,3 +299,19 @@ const views = {
 const seenCol = { h: 'Relevé', k: 'SeenAt', f: r => `<span class="muted">${esc(r.Seen)}</span>` };
 const detailHead = (icon, title, sub) => `<div class="head">${icon}<div><h2>${esc(T(title))}</h2></div></div>
   ${T(sub) ? `<div class="sub">${esc(T(sub))}</div>` : ''}`;
+
+// Montants en kamas écrits en texte (« 1 234 k », « 1 234 kamas », venus de l'application) : remplacés à l'affichage par
+// le nombre et le symbole des kamas. Seul le texte affiché change : ni les balises et leurs attributs (infobulles), ni
+// les graphiques (svg), ni les listes déroulantes. Les abréviations « 12k » / « 1,2 M » (milliers, millions) ne sont pas touchées.
+const KAMAS_TEXT = /(?<![\d,.\w])(\d{1,3}(?:[   .]\d{3})+|\d+)[   ](?:k|kamas)(?![\wÀ-ſ])/g;
+function kamasIcons(html) {
+  let skip = 0;
+  return html.split(/(<[^>]*>)/).map(part => {
+    if (part[0] === '<') {
+      if (/^<(svg|select|textarea)\b/i.test(part)) skip++;
+      else if (/^<\/(svg|select|textarea)>/i.test(part)) skip = Math.max(0, skip - 1);
+      return part;
+    }
+    return skip || !part ? part : part.replace(KAMAS_TEXT, (_, n) => `<span class="kamas">${n.replace(/[  ]/g, ' ')}${KAMA}</span>`);
+  }).join('');
+}

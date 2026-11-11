@@ -199,6 +199,7 @@ public partial class MainWindow
     internal readonly WebList HuntSessionChars = new();
     internal readonly WebList HuntSessionDrops = new();
     internal readonly WebList HuntSessionMobs = new();
+    internal readonly WebList HuntSessionFights = new();
     internal readonly WebText HuntLearned = new() { ForegroundKey = "TextMuted" };
     internal readonly WebButton HuntClearArchis = new() { Content = "Vider" };
     internal readonly WebList HuntArchiGrid = new();

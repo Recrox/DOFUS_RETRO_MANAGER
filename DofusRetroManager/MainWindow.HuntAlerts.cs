@@ -20,6 +20,14 @@ public sealed record SessionCharRow(string Name, int Gfx, int Fights, long Xp, l
     public int? Kills { get; init; }
 }
 
+/// <summary>Combat d'une session (détail, onglet « Combats ») : vos personnages du même combat réunis, monstres et objets obtenus.</summary>
+public sealed record SessionFightRow(string Time, DateTime TimeSort, string Duration, string Characters, int Count, long Xp, long Kamas, double DropValue)
+{
+    public double Total => Kamas + DropValue;
+    public IReadOnlyList<MonsterChip> Mobs { get; init; } = [];
+    public IReadOnlyList<HuntDropRow> Drops { get; init; } = [];
+}
+
 /// <summary>Alerte monstre affichée dans l'onglet Combat.</summary>
 public sealed record HuntAlertRow(MonsterAlert Alert, string Text)
 {

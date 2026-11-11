@@ -68,7 +68,7 @@ function fmChances() {
 
 // Kamas courts : 950, 12,3 k, 1,25 M
 const fmKamas = n => n >= 1e6 ? (Math.round(n / 1e4) / 100).toLocaleString('fr-FR') + ' M'
-  : n >= 1e4 ? (Math.round(n / 100) / 10).toLocaleString('fr-FR') + ' k' : fmt(n);
+  : n >= 1e4 ? (Math.round(n / 100) / 10).toLocaleString('fr-FR') + 'k' : fmt(n);
 const fmCostTip = r => `Coût des runes passées : ${fmt(r.Cost)} kamas (prix HDV au passage, sinon prix actuel)`
   + (r.Unpriced ? `\n${r.Unpriced} rune(s) sans prix connu : consultez-les à l'HDV` : '');
 const fmCost = r => `<span class="fm-cost" data-tip="${esc(fmCostTip(r))}">${r.Cost || !r.Unpriced ? fmKamas(r.Cost) : '?'}${r.Unpriced ? '<sup>+?</sup>' : ''}</span>`;

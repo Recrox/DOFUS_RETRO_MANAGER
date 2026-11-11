@@ -2,6 +2,15 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.86.0 — 12 novembre 2026
+
+- **Ocre** : le détail d'une étape montre les âmes en illustrations de monstres (manquantes avec leur prix, puis possédées) au lieu d'une longue liste de noms ; clic sur un monstre : sa pierre dans l'onglet PDA.
+- **Kamas** : le symbole des kamas du jeu s'affiche partout où un montant en kamas est écrit (Banque, Recettes, HDV, TTG, PDA, Ocre, Brisage, Combat…).
+- **Graphiques** : un clic sur un graphique de prix l'ouvre en grand.
+- **Combat** : la zone Rentabilité est plus claire : chiffres clés de la session en tuiles, projection en cartes (30 min, 1 h, 2 h) et bouton « Détail ».
+- **Combat** : le détail d'une session a un onglet « Combats » : tous les combats de la session avec leurs monstres, leur gain et leurs drops en icônes.
+- **Interface** : Correction : les boutons actifs des barres de réglages (ex. Mes échanges ouvert) sont de nouveau colorés.
+
 ## 1.85.0 — 11 novembre 2026
 
 - **Banque** : les objets sont triés par défaut par valeur HDV, du plus cher au moins cher.

@@ -20,11 +20,21 @@ Object.assign(views, {
           { h: 'État', k: 'State', f: r => `<span class="${r.Validable ? 'ok strong' : r.Done ? 'muted' : ''}">${esc(r.State)}</span>` },
         ], { empty: T('OcreSummary') || 'Aucune étape.' })}
         <aside class="detail glass">${sel ? `<h2 class="acc">${esc(T('OcreDetailTitle'))}</h2>
-          <div class="muted" style="white-space:pre-line">${esc(T('OcreDetailSub'))}</div>
-          <div class="lines">${rows('OcreSouls').map(s => `<div class="card ocre-soul" data-act="item-pda" data-id="${s.MonsterId}" title="Voir sa pierre dans l'onglet PDA" style="display:flex;gap:8px;align-items:center;padding:6px 8px;margin-top:6px;cursor:pointer">
-            ${itemImg(s.StoneTemplate, 'sm')}<div style="flex:1;min-width:0"><b class="${s.Owned ? 'ok' : ''}">${esc(s.Name)}</b>
-            <div class="muted small">${esc(s.Kind)} · niv. ${esc(s.Level)}${s.Where ? ' · ' + esc(s.Where) : ''}</div></div>
-            <span class="acc strong">${esc(s.PriceText)}</span></div>`).join('')}</div>` : '<div class="empty">Sélectionnez une étape.</div>'}</aside>
+          <div class="muted">${esc(T('OcreDetailSub'))}</div>
+          ${ocreSouls(rows('OcreSouls'))}` : '<div class="empty">Sélectionnez une étape.</div>'}</aside>
       </div>`;
   },
 });
+
+// Âmes de l'étape en illustrations (manquantes d'abord) : prix sous chaque monstre manquant, ✓ sur les possédées ;
+// nom, catégorie, niveau et pierre au survol ; clic : sa pierre dans l'onglet PDA
+function ocreSouls(list) {
+  if (!list.length) return '';
+  const missing = list.filter(s => !s.Owned), owned = list.filter(s => s.Owned);
+  const tile = s => `<div class="ocre-mob ${s.Owned ? 'owned' : ''} ${s.Price == null && !s.Owned ? 'unpriced' : ''}" data-act="item-pda" data-id="${s.MonsterId}"
+      data-tip="${esc(`${s.Name} · ${s.Kind} · niv. ${s.Level}\n${s.Owned ? 'Possédée' + (s.Where ? ' : ' + s.Where : '') : s.PriceText}\nClic : sa pierre dans l'onglet PDA`)}">
+      <img src="icon/monster/${s.MonsterId}.png" alt="" loading="lazy">${s.Owned ? '<i class="ok">✓</i>' : ''}
+      <span class="nm">${esc(s.Name)}</span><b>${s.Owned ? '' : s.Price != null ? kamas(s.Price) : '?'}</b></div>`;
+  const block = (title, l) => l.length ? `<p class="section-title">${title} · ${l.length}</p><div class="ocre-mobs">${l.map(tile).join('')}</div>` : '';
+  return block('Manquantes', missing) + block('Possédées', owned);
+}

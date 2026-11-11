@@ -247,7 +247,7 @@ input[type="search"]:not([placeholder=""]) { padding-left: 30px;
   background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Ccircle cx='6' cy='6' r='4.5' fill='none' stroke='%239aa0b4' stroke-width='1.6'/%3E%3Cpath d='M9.5 9.5L13 13' stroke='%239aa0b4' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center; }
 .filters button.small { display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-h); padding: 0 12px; background: var(--glass-strong); }
 .filters button.small:not(.primary):hover { background: color-mix(in srgb, var(--accent-solid) 14%, var(--glass-strong)); }
-.filters button.small.primary { box-shadow: var(--accent-glow), inset 0 -2px 0 rgba(0, 0, 0, .18); }
+.filters button.small.primary { background: var(--accent); color: #fff; border-color: transparent; box-shadow: var(--accent-glow), inset 0 -2px 0 rgba(0, 0, 0, .18); }
 .filters .chip { height: var(--ctl-h); padding: 0 12px; }
 /* Case à cocher d'une barre : pastille cliquable entière, colorée quand elle est cochée */
 .filters label.check { height: var(--ctl-h); padding: 0 11px 0 8px; gap: 7px; border-radius: var(--radius-sm); font-size: 12.5px;
@@ -263,3 +263,16 @@ button.small:has(.btn-ico), .pill:has(.btn-ico) { display: inline-flex; align-it
 .seg.modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-sm); background: var(--glass-strong); border: 1px solid var(--line-strong); }
 .filters .seg.modes button.small { height: calc(var(--ctl-h) - 6px); border-color: transparent; background: transparent; }
 .filters .seg.modes button.small.primary { background: var(--accent); color: #fff; }
+/* Graphique cliquable : agrandi au clic */
+svg.chart.zoomable { cursor: zoom-in; }
+/* Onglet Ocre : âmes de l'étape en illustrations */
+.ocre-mobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+.ocre-mob { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 10px;
+  background: var(--hover); border: 1px solid transparent; cursor: pointer; min-width: 0; transition: border-color .15s; }
+.ocre-mob:hover { border-color: var(--accent-solid); }
+.ocre-mob > img { width: 48px; height: 48px; object-fit: contain; }
+.ocre-mob .nm { max-width: 100%; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+.ocre-mob b { font-size: 12px; color: var(--accent-solid); white-space: nowrap; }
+.ocre-mob.unpriced b { color: var(--muted); }
+.ocre-mob.owned { opacity: .55; }
+.ocre-mob > i { position: absolute; top: 4px; right: 6px; font-style: normal; font-weight: 800; }
