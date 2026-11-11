@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         InitPda(_data);
         InitHunt(_data);
         InitHarvest(_data);
+        try { System.IO.File.Delete(System.IO.Path.Combine(GameData.AppDir, "pnj.json")); } catch { } // PNJ de la 1.82, retirés
         InitFarm();
         InitMiniMap();
         InitOcre(_data);

@@ -96,9 +96,9 @@ public partial class MainWindow
         {
             jobs,
             maps = _carteResourceMaps,
-            hints = _carteResourceHints.Where(h => h.Map.SuperArea is 0 or 3).Select(h => new
+            hints = _carteResourceHints.Where(h => CarteArea(h.Map) is 0 or 3 or UndergroundArea).Select(h => new
             {
-                n = h.Name, k = h.Category, i = $"icon/item/{h.Gfx}.png", x = h.Map.X, y = h.Map.Y, sa = h.Map.SuperArea, l = h.Map.Label,
+                n = h.Name, k = h.Category, i = $"icon/item/{h.Gfx}.png", x = h.Map.X, y = h.Map.Y, sa = CarteArea(h.Map), l = h.Map.Label,
             }),
         });
     }

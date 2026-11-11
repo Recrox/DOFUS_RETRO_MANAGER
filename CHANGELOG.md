@@ -2,6 +2,11 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.83.0 — 11 novembre 2026
+
+- **Carte** : nouvelle vue « Souterrains » : égouts de Bonta et de Brâkmar et autres souterrains, en plan (une case par map), avec leurs ressources et la position de vos personnages.
+- **Carte** : le filtre « PNJ » est retiré.
+
 ## 1.82.0 — 11 novembre 2026
 
 - **FM** : Correction : le coût des runes passées s'affiche dès le lancement de l'application (il restait « ? » jusqu'au relevé d'un prix).

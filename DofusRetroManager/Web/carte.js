@@ -17,7 +17,8 @@ Object.assign(views, {
       : carte.search ? "Aucun point d'intérêt ne correspond à la recherche." : 'Cochez une catégorie pour afficher ses points.';
     return `<div class="filters">
         <select data-carte="sa"><option value="0" ${carte.sa === 0 ? 'selected' : ''}>Continent amaknien</option>
-          <option value="3" ${carte.sa === 3 ? 'selected' : ''}>Incarnam</option></select>
+          <option value="3" ${carte.sa === 3 ? 'selected' : ''}>Incarnam</option>
+          <option value="100" ${carte.sa === 100 ? 'selected' : ''} title="Égouts de Bonta et de Brâkmar, souterrains : une case par map">Souterrains</option></select>
         ${D.cats.map(c => `<button class="pill carte-cat ${carte.shown.has(c.k) ? 'on' : ''}" data-act="carte-cat" data-k="${c.k}">
           ${c.i ? `<img src="${c.i}" alt="">` : ''}${esc(c.n)}</button>`).join('')}
         <label class="check"><input type="checkbox" data-carte="grid" ${carte.grid ? 'checked' : ''}>Grille</label>
@@ -76,7 +77,17 @@ function carteBuild(D) {
   const tiles = D.tiles[carte.sa] || [];
   const el = document.createElement('div');
   el.className = 'carte-view';
-  if (!tiles.length) {
+  const plan = D.plan?.[carte.sa] || [];
+  if (!tiles.length && plan.length) {
+    // Souterrains : pas d'image dans le client, une case par map (plan)
+    const xs = plan.map(p => p[0]), ys = plan.map(p => p[1]);
+    const b = carte.bounds = { x: (Math.min(...xs) - 1) * CW, y: (Math.min(...ys) - 1) * CH, w: (Math.max(...xs) + 2) * CW, h: (Math.max(...ys) + 2) * CH };
+    b.w -= b.x; b.h -= b.y;
+    el.innerHTML = `<div class="carte-world carte-plan">
+        ${plan.map(([x, y]) => `<div class="carte-plan-cell" style="left:${x * CW}px;top:${y * CH}px"></div>`).join('')}
+        <div class="carte-cell hover"></div><div class="carte-cell sel"></div>
+      </div><div class="carte-markers"></div><div class="carte-hover">Survolez la carte pour voir les coordonnées.</div>`;
+  } else if (!tiles.length) {
     el.innerHTML = `<div class="empty">Carte introuvable : elle est lue dans les fichiers de Dofus Retro, qui doit être installé sur ce PC.</div>`;
   } else {
     const xs = tiles.map(t => t[0]), ys = tiles.map(t => t[1]);

@@ -13,6 +13,8 @@
   background-size: 40px 23px; }
 .carte-cell { position: absolute; display: none; width: 40px; height: 23px; border: 1.5px solid var(--accent-solid); box-sizing: border-box; pointer-events: none; }
 .carte-cell.hover { background: rgba(255, 255, 255, .16); }
+/* Souterrains : une case par map (pas d'image dans le client) */
+.carte-plan-cell { position: absolute; width: 40px; height: 23px; box-sizing: border-box; background: #5b4a36; border: 1px solid #2e241a; pointer-events: none; }
 .carte-markers { position: absolute; inset: 0; pointer-events: none; }
 .carte-marker { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; }
 .carte-marker img { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .5)); }

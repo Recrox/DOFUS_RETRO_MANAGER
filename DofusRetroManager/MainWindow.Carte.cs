@@ -28,6 +28,17 @@ public partial class MainWindow
     const int DungeonCategory = 6;
 
     readonly HashSet<int> _carteShown = [ZaapFilter, DungeonCategory];
+
+    /// <summary>
+    /// Vue « Souterrains » de la carte : égouts de Bonta et de Brâkmar, souterrains (d'Astrub, d'Amakna, des Wabbits…).
+    /// Leurs maps ont les coordonnées de la surface au-dessus : on les sépare du continent et on les dessine en plan.
+    /// </summary>
+    const int UndergroundArea = 100;
+    static readonly System.Text.RegularExpressions.Regex UndergroundName =
+        new(@"[ÉéEe]gout|ous[- ]?terrain", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Vue de la carte d'une map : sa super-zone, ou la vue Souterrains.</summary>
+    static int CarteArea(MapInfo m) => m.SuperArea == 0 && UndergroundName.IsMatch(m.SubArea) ? UndergroundArea : m.SuperArea;
     static int CarteFilterOf(MapHint h) => h.Name == "Zaap" ? ZaapFilter : h.Category;
 
     /// <summary>Icône d'une maison, dessinée par l'application (le jeu n'en a pas dans les icônes de la carte).</summary>
@@ -53,11 +64,11 @@ public partial class MainWindow
     void ShowCarteCellInfo(int superArea, int x, int y)
     {
         if (_data == null) return;
-        var maps = _data.Maps.Values.Where(m => m.SuperArea == superArea && m.X == x && m.Y == y).ToList();
+        var maps = _data.Maps.Values.Where(m => CarteArea(m) == superArea && m.X == x && m.Y == y).ToList();
         var zone = maps.GroupBy(m => m.SubArea).MaxBy(g => g.Count())?.First();
         CarteCellTitle.Text = $"[{x},{y}]" + (zone != null ? " " + zone.Area + (zone.SubArea.Length > 0 && zone.SubArea != zone.Area ? $" ({zone.SubArea})" : "") : "");
         CarteCellTitle.ToolTip = zone == null ? null : zone.Area + (zone.SubArea.Length > 0 && zone.SubArea != zone.Area ? $" ({zone.SubArea})" : "");
-        var here = _data.Hints.Where(h => h.Map.SuperArea == superArea && h.Map.X == x && h.Map.Y == y).ToList();
+        var here = _data.Hints.Where(h => CarteArea(h.Map) == superArea && h.Map.X == x && h.Map.Y == y).ToList();
         var houses = here.Count(h => h.Category == GameData.HouseCategory);
         var names = here.Where(h => h.Category != GameData.HouseCategory).Select(h => h.Name).Distinct().ToList();
         if (houses > 0) names.Add(houses == 1 ? "1 maison" : $"{houses} maisons");
@@ -76,8 +87,8 @@ public partial class MainWindow
 
     /// <summary>Case d'une map reçue du jeu, si la carte peut l'afficher (continent ou Incarnam).</summary>
     CarteTarget? CarteTargetOf(int? mapId, string label) =>
-        mapId is { } id && _data != null && _data.Maps.TryGetValue(id, out var m) && m.SuperArea is 0 or 3
-            ? new CarteTarget(m.SuperArea, m.X, m.Y, label) : null;
+        mapId is { } id && _data != null && _data.Maps.TryGetValue(id, out var m) && CarteArea(m) is 0 or 3 or UndergroundArea
+            ? new CarteTarget(CarteArea(m), m.X, m.Y, label) : null;
 
     CarteTarget? CarteTargetOf(string mapId, string label) => CarteTargetOf(int.TryParse(mapId, out var id) ? id : null, label);
 
@@ -121,8 +132,8 @@ public partial class MainWindow
     {
         if (_carteWebJson != null || _data == null) return _carteWebJson ?? "null";
         if (!_carteTiles.ContainsKey(0) || !_carteTiles.ContainsKey(3)) { PreloadCarte(); return "null"; }
-        int[] areas = [0, 3];
-        var cells = areas.ToDictionary(sa => sa.ToString(), sa => _data.Maps.Values.Where(m => m.SuperArea == sa)
+        int[] areas = [0, 3, UndergroundArea];
+        var cells = areas.ToDictionary(sa => sa.ToString(), sa => _data.Maps.Values.Where(m => CarteArea(m) == sa)
             .GroupBy(m => $"{m.X},{m.Y}")
             .ToDictionary(g => g.Key, g =>
             {
@@ -134,14 +145,16 @@ public partial class MainWindow
             .Select(c => new { k = c.Key, n = c.Value, i = Icon(_data.Hints.FirstOrDefault(h => CarteFilterOf(h) == c.Key)) }));
         _carteWebJson = System.Text.Json.JsonSerializer.Serialize(new
         {
-            tiles = areas.ToDictionary(sa => sa.ToString(), sa => CarteTiles(sa)
+            tiles = areas.Where(sa => sa != UndergroundArea).ToDictionary(sa => sa.ToString(), sa => CarteTiles(sa)
                 .Select(t => new[] { (int)(t.Bounds.X / t.Bounds.Width), (int)(t.Bounds.Y / t.Bounds.Height) })),
             cats,
             shown = _carteShown,
-            hints = _data.Hints.Where(h => areas.Contains(h.Map.SuperArea)).Select(h => new
+            hints = _data.Hints.Where(h => areas.Contains(CarteArea(h.Map))).Select(h => new
             {
-                n = h.Name, k = CarteFilterOf(h), i = Icon(h), x = h.Map.X, y = h.Map.Y, sa = h.Map.SuperArea, l = h.Map.Label,
+                n = h.Name, k = CarteFilterOf(h), i = Icon(h), x = h.Map.X, y = h.Map.Y, sa = CarteArea(h.Map), l = h.Map.Label,
             }),
+            // Souterrains : pas d'image d'ensemble dans le client, une case par map (plan)
+            plan = new Dictionary<string, IEnumerable<int[]>> { [UndergroundArea.ToString()] = _data.Maps.Values.Where(m => CarteArea(m) == UndergroundArea).Select(m => (m.X, m.Y)).Distinct().Select(p => new[] { p.X, p.Y }) },
             cells,
         });
         return _carteWebJson;
@@ -158,7 +171,7 @@ public partial class MainWindow
             .Select(c => (c, ok: int.TryParse(c.MapId, out var id) && _data.Maps.ContainsKey(id), id))
             .Where(x => x.ok)
             .Select(x => (x.c, m: _data.Maps[x.id]))
-            .Select(x => new { n = x.c.Label, sa = x.m.SuperArea, x = x.m.X, y = x.m.Y, l = x.m.Label, me = x.c == shown }));
+            .Select(x => new { n = x.c.Label, sa = CarteArea(x.m), x = x.m.X, y = x.m.Y, l = x.m.Label, me = x.c == shown }));
     }
 
     /// <summary>Fichiers de la carte : carte/tile/{super-zone}/{x}_{y}.png, carte/hint/{gfx}.png, carte/house.png.</summary>
