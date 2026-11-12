@@ -4,17 +4,16 @@ namespace DofusRetroManager.Data;
 public sealed record RuneYield(int ItemId, string Name, double Quantity);
 
 /// <summary>
-/// Estimation des runes obtenues en brisant un objet. Aucune formule officielle n'existe pour Retro : on applique
-/// la formule communautaire, pour chaque caractéristique positive :
-///   poids de runes = jet × poids par point × niveau de l'objet × coefficient / 10 000
-/// puis ce poids est réparti en runes, de la plus grosse (Ra) à la plus petite (rune simple, quantité décimale).
-/// Le poids d'une rune est sa valeur × poids par point, arrondi à l'entier supérieur (Ra Vi : 30 × 0,25 → 8).
+/// Estimation des runes obtenues en brisant un objet. Aucune formule officielle : on applique celle du projet Cyberia
+/// (github.com/Lounek09/Cyberia, RuneCalculator ; d'après le sujet JOL « Les taux de brisage »), pour chaque
+/// caractéristique positive :
+///   part extractible = min(2/3, 1,5 × niveau² / poids^1,25 + (jet − 1) / poids × max(0, 2/3 − …))
+///   points extraits = jet × part × multiplicateur (aléatoire, 90 % à 110 %)
+/// puis répartis en lots Ra (4 simples + 2 Pa + 1 Ra), Pa (2 simples + 1 Pa), et runes simples.
+/// Points apportés par chaque rune : ceux du fichier « itemstats » du jeu (Rune Vi 3, Pa Vi 10, Ra Vi 30…).
 /// </summary>
 public static class RuneBreaking
 {
-    /// <summary>Coefficient de brisage, en % : la Coiffe du Kitsou (niveau 61, 150 de vitalité) donne 1 Ra Vi.</summary>
-    const double Coefficient = 36;
-
     sealed record Line(double PointWeight, (string Rune, int Value)[] Runes);
 
     /// <summary>Caractéristique (voir ItemStats) -> poids par point et runes, de la plus petite à la plus grosse.</summary>
@@ -82,25 +81,58 @@ public static class RuneBreaking
     public static int? SmallestRuneId(GameData data, int characteristic) =>
         Table.TryGetValue(characteristic, out var line) ? RuneId(data, line.Runes[0].Rune) : null;
 
-    /// <summary>Runes estimées pour un objet de ce niveau et ces caractéristiques (les malus ne donnent rien).</summary>
+    /// <summary>Part extractible d'une caractéristique, en % (au plus 2/3) : formule de Cyberia.</summary>
+    static double ExtractablePercent(double pointWeight, int level, int value)
+    {
+        const double max = 200.0 / 3;
+        double c = 1.5 * level * (double)level / Math.Pow(pointWeight, 1.25);
+        return Math.Min(max, c + (value - 1) / pointWeight * Math.Max(0, max - c));
+    }
+
+    /// <summary>
+    /// Runes d'une caractéristique pour un multiplicateur donné : (simples, Pa, Ra). Chaque Ra vient avec 4 simples et
+    /// 2 Pa (seuil 4 × simple + 2 × Pa + Ra points), chaque Pa avec 2 simples (seuil 2 × simple + Pa) ; le reste donne
+    /// des runes simples, la partie décimale étant la chance d'en avoir une de plus.
+    /// </summary>
+    static (double Ba, double Pa, double Ra) Bundle(Line line, int level, int value, double multiplier)
+    {
+        var r = line.Runes;
+        double amount = value * ExtractablePercent(line.PointWeight, level, value) * multiplier / 100;
+        double ba = 0, pa = 0, ra = 0;
+        if (r.Length >= 3)
+        {
+            int t = 4 * r[0].Value + 2 * r[1].Value + r[2].Value;
+            if (amount > t) { int n = (int)Math.Floor(amount / t); ba += 4 * n; pa += 2 * n; ra += n; amount -= t * n; }
+        }
+        if (r.Length >= 2)
+        {
+            int t = 2 * r[0].Value + r[1].Value;
+            if (amount > t) { int n = (int)Math.Floor(amount / t); ba += 2 * n; pa += n; amount -= t * n; }
+        }
+        return (ba + amount / r[0].Value, pa, ra);
+    }
+
+    /// <summary>
+    /// Runes estimées pour un objet de ce niveau et ces caractéristiques (les malus ne donnent rien) : moyenne sur le
+    /// multiplicateur aléatoire du jeu (90 % à 110 %), d'où des quantités décimales (ex. 0,4 Ra = 40 % de chances).
+    /// </summary>
     public static List<RuneYield> Estimate(GameData data, int level, IReadOnlyDictionary<int, int> stats)
     {
+        const int steps = 20;
         var result = new List<RuneYield>();
         foreach (var (characteristic, value) in stats.OrderBy(kv => ItemStats.Order(kv.Key)))
         {
             if (value <= 0 || !Table.TryGetValue(characteristic, out var line)) continue;
-            double weight = value * line.PointWeight * level * Coefficient / 10_000;
-
-            // De la plus grosse rune à la plus petite ; le reste va en runes simples (quantité décimale)
-            for (int i = line.Runes.Length - 1; i >= 0 && weight > 0; i--)
+            double ba = 0, pa = 0, ra = 0;
+            for (int i = 0; i < steps; i++)
             {
-                var (rune, runeValue) = line.Runes[i];
-                double runeWeight = Math.Ceiling(runeValue * line.PointWeight);
-                double qty = i == 0 ? weight / runeWeight : Math.Floor(weight / runeWeight);
-                if (qty <= 0) continue;
-                weight -= qty * runeWeight;
-                result.Add(new RuneYield(RuneIds(data).GetValueOrDefault(rune), rune, Math.Round(qty, 2)));
+                var b = Bundle(line, level, value, 0.9 + 0.2 * (i + 0.5) / steps);
+                ba += b.Ba / steps; pa += b.Pa / steps; ra += b.Ra / steps;
             }
+            // De la plus grosse rune à la plus petite
+            foreach (var (qty, i) in new[] { (ra, 2), (pa, 1), (ba, 0) })
+                if (i < line.Runes.Length && qty >= 0.005)
+                    result.Add(new RuneYield(RuneIds(data).GetValueOrDefault(line.Runes[i].Rune), line.Runes[i].Rune, Math.Round(qty, 2)));
         }
         return result;
     }

@@ -2,6 +2,11 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.88.0 — 12 novembre 2026
+
+- **Brisage** : correction : nouveau calcul des runes (formule de la communauté Retro, issue de la rétro-ingénierie) ; les runes Pa et Ra apparaissent enfin avec les runes simples, en quantités moyennes, et la valeur des runes est bien plus juste.
+- **Brisage** : les caractéristiques de l'objet choisi s'affichent en liste, comme en Forgemagie (icône, valeur, maximum du jeu pour un objet possédé).
+
 ## 1.87.0 — 12 novembre 2026
 
 - **Combat** : plusieurs objectifs de farm en même temps, un par objet, chacun avec son décompte et sa croix pour l'arrêter ; ajout avec Entrée ou ＋, le formulaire reste ouvert pour enchaîner ; la superposition montre le premier objectif pas encore atteint.

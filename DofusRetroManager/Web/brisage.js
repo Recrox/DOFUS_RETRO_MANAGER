@@ -28,6 +28,7 @@ Object.assign(views, {
           { h: 'Gain %', k: 'GainPercent', num: true, f: r => r.GainPercent == null ? '—' : `<span title="Gain rapporté au prix de référence (${r.Reference == null ? '—' : fmt(r.Reference) + ' k'})" class="strong ${r.GainSign < 0 ? 'bad' : 'ok'}">${pct(r.GainPercent)}</span>` },
         ], { empty: T('BrisageEmpty') || 'Aucun objet ne correspond à ces critères.' })}
         <aside class="detail glass">${sel ? `${detailHead(itemImg(sel.ItemId, 'lg'), 'BrisageDetailTitle', 'BrisageDetailSub')}
+          <div class="fm-effects">${(sel.Chips || []).map(c => `<div class="fx ${c.Neg ? 'neg' : ''}" title="${esc(c.Tip)}"><span>${esc(c.Text)}${c.Max ? ` <span class="fm-max">/${c.Max}</span>` : ''}</span>${fxImg(c.Char)}</div>`).join('')}</div>
           ${btn('BrisageGoRecipe', 'Voir la recette', 'small')}
           <div class="filters"><span class="lbl">Quantité à briser</span>${input('BrisageBreakCount', '', '80px')}${btn('BrisageBreakMax', 'Max', 'small')}</div>
           ${T('BrisageDetailTotal') ? `<div class="card strong lines" style="color:${S.BrisageDetailTotal?.c || 'inherit'}">${esc(T('BrisageDetailTotal'))}</div>` : ''}
@@ -35,7 +36,7 @@ Object.assign(views, {
           ${rows('BrisageRunes').map(r => `<div class="ing rune">${itemImg(r.ItemId)}<div><div class="name">${esc(r.Quantity)} × ${esc(r.Name)}</div>
             <div class="price">${r.UnitPrice == null ? 'pas de prix HDV' : fmt(r.UnitPrice) + ' k / u'}</div></div><span class="ratio acc">${r.Total == null ? '—' : kamas(r.Total)}</span></div>`).join('')
             || '<div class="muted">Aucune rune.</div>'}
-          <div class="muted" style="font-size:11.5px">Estimation : aucune formule officielle pour Retro (Coiffe du Kitsou, niveau 61, 150 Vi ≈ 1 Ra Vi).</div>`
+          <div class="muted" style="font-size:11.5px" title="Formule du projet Cyberia (rétro-ingénierie, d'après le sujet JOL « Les taux de brisage ») : part extractible selon le niveau et le poids de la caractéristique, multiplicateur aléatoire de 90 à 110 % (quantités moyennes), lots Ra = 4 simples + 2 Pa + 1 Ra, lots Pa = 2 simples + 1 Pa. Pas de formule officielle.">Estimation moyenne (formule Cyberia) ⓘ</div>`
           : '<div class="empty">Sélectionnez un objet.</div>'}</aside>
       </div>`;
   },

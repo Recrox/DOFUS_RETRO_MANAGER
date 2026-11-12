@@ -24,7 +24,13 @@ public sealed record BrisageRow(int ItemId, string Name, int Level, string Type,
 /// Caractéristique d'un objet, en compact : icône de la rune (sinon l'abréviation), valeur (« 400 », « 351–400 »,
 /// « -20 »), texte complet au survol. On : caractéristique filtrée ; Neg : malus.
 /// </summary>
-public sealed record StatChip(int? Rune, string Short, string Value, string Tip, bool On, bool Neg);
+public sealed record StatChip(int? Rune, string Short, string Value, string Tip, bool On, bool Neg)
+{
+    /// <summary>Caractéristique (icône d'effet du détail, comme en FM), libellé complet et maximum du jeu (objet possédé).</summary>
+    public int Char { get; init; }
+    public string Text { get; init; } = "";
+    public int Max { get; init; }
+}
 
 /// <summary>Rune du détail : quantité estimée, prix unitaire HDV et total.</summary>
 public sealed record RuneRow(int ItemId, string Name, string Quantity, double? UnitPrice, double? Total);
@@ -82,7 +88,8 @@ public partial class MainWindow
                 value = kv.Value.ToString("+0;-0");
                 tip = $"{name} : jusqu'à {kv.Value:+0;-0}\nLe jeu ne donne que le maximum ; le minimum s'apprend en consultant cet objet à l'HDV";
             }
-            return new StatChip(StatRune(kv.Key), StatShort.GetValueOrDefault(kv.Key, name), value, tip, active.Contains(kv.Key), kv.Value < 0);
+            return new StatChip(StatRune(kv.Key), StatShort.GetValueOrDefault(kv.Key, name), value, tip, active.Contains(kv.Key), kv.Value < 0)
+                { Char = kv.Key, Text = $"{value} {name}", Max = real && max > 0 ? max : 0 };
         }).ToList();
 
     /// <summary>Offres consultées à l'HDV : leurs caractéristiques réelles nourrissent les jets observés.</summary>
@@ -207,7 +214,7 @@ public partial class MainWindow
         int n = int.TryParse(BrisageBreakCount.Text, out var c) && c > 0 ? Math.Min(c, 100_000) : 1;
         BrisageDetailTitle.Text = row.Name;
         BrisageGoRecipe.Visibility = _rows.Any(r => r.Recipe.ResultId == row.ItemId) ? Visibility.Visible : Visibility.Collapsed;
-        BrisageDetailSub.Text = $"Niveau {row.Level} · {row.Type}" + (row.Owned > 0 ? $" · {row.Owned} possédé(s)" : "") + $"\n{row.Stats}";
+        BrisageDetailSub.Text = $"Niveau {row.Level} · {row.Type}" + (row.Owned > 0 ? $" · {row.Owned} possédé(s)" : "");
         BrisageRunes.ItemsSource = row.Runes.Select(r =>
         {
             var unit = UnitPrice(r.ItemId);
