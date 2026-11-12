@@ -2,6 +2,12 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.92.0 — 12 novembre 2026
+
+- **Paramètres** : nouveau bouton ⚙ en haut à droite : style et thème (retirés de l'en-tête), taille de la page, menu par familles ou tous les onglets sur une ligne comme avant, et choix des onglets affichés.
+- **Métier** : ce que devient l'objet fabriqué se choisit : coût brut, revente HDV, brisage (runes au jet moyen) ou le plus rentable des deux ; chaque recette montre son prix de revente 🏷 et sa valeur au brisage 🔨 (clic : l'objet dans le Brisage).
+- **Métier** : gain en vert (+) et coût en rouge (−), au lieu d'un coût négatif ; chaque palier rappelle le nombre de cases minimum qui rapporte de l'XP.
+
 ## 1.91.0 — 12 novembre 2026
 
 - **Recherche** : bouton 🔍 en haut ou Ctrl+K : un objet, et tout ce qu'on en sait d'un coup (prix HDV ou marchand pour les cartes, quantité possédée et chez qui, coût de la recette, valeur des runes, monstres qui le font tomber), avec des liens vers l'HDV, la recette et le Brisage.

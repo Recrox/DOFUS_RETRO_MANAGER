@@ -37,7 +37,8 @@ public partial class MainWindow
     internal readonly WebCombo MetierJob = new();
     internal readonly WebTextBox MetierFrom = new() { Text = "1", ToolTip = "Niveau actuel du métier" };
     internal readonly WebTextBox MetierTo = new() { Text = "100", ToolTip = "Niveau visé" };
-    internal readonly WebToggle MetierResell = new() { Content = "Revente déduite", ToolTip = "Coût net : prix HDV de l'objet fabriqué déduit (vous revendez ce que vous fabriquez)" };
+    /// <summary>Ce que devient l'objet fabriqué : rien (coût brut), revendu à l'HDV, brisé (runes), ou le meilleur des deux.</summary>
+    internal readonly WebCombo MetierValue = new();
     internal readonly WebCombo ModeFilter = new();
     internal readonly WebPanel SellMinPanel = new() { Visibility = Visibility.Collapsed };
     internal readonly WebTextBox SellMin = new() { Text = "10000" };

@@ -50,7 +50,7 @@ function render() {
   const scroll = [...document.querySelectorAll('.table-wrap, .detail, .modal-body')].map(e => e.scrollTop);
 
   const html = kamasIcons(header() + banner() + tabs(active)
-    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail() + chartZoom() + searchBox());
+    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail() + chartZoom() + searchBox() + settingsBox());
   const app = document.getElementById('app');
   if (local.noMorph) app.innerHTML = html; else morphHtml(app, html);
 
@@ -91,6 +91,11 @@ document.addEventListener('click', e => {
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
     case 'search-open': openSearch(); break;
+    // Paramètres (⚙) : préférences de la page
+    case 'settings-open': local.settings = true; schedule(); break;
+    case 'settings-close': local.settings = false; schedule(); break;
+    case 'pref-zoom': PREFS.zoom = +d.v; savePrefs(); schedule(); break;
+    case 'pref-menu': PREFS.menu = d.v; savePrefs(); schedule(); break;
     case 'hdv-break': local.sort.HdvGrid = local.sort.HdvGrid?.k === 'BreakGain' ? null : { k: 'BreakGain', dir: -1 }; schedule(); break;
     case 'search-close': local.search = null; schedule(); break;
     // Lien d'un résultat de recherche : la fenêtre se ferme, l'onglet de l'objet s'ouvre
@@ -208,6 +213,7 @@ function openSearch() {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); return; }
   if (e.key === 'Escape' && local.search) { local.search = null; schedule(); return; }
+  if (e.key === 'Escape' && local.settings) { local.settings = false; schedule(); return; }
   if (e.key === 'Escape' && local.confirm) { local.confirm = null; schedule(); return; }
   if (e.key === 'Escape' && local.changelog) { local.changelog = false; schedule(); return; }
   if (e.key === 'Escape' && local.book) { local.book = null; schedule(); return; }
@@ -262,6 +268,13 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  // Paramètres : onglet affiché ou masqué dans le menu (au moins un reste affiché)
+  if (el.dataset?.prefTab) {
+    const k = el.dataset.prefTab;
+    PREFS.hidden = el.checked ? PREFS.hidden.filter(x => x !== k) : [...new Set([...PREFS.hidden, k])];
+    if (PREFS.hidden.length >= TABS.length) PREFS.hidden = PREFS.hidden.filter(x => x !== k);
+    savePrefs(); schedule(); return;
+  }
   if (el.dataset?.tf) { local.tf[el.dataset.tf] = el.dataset.tf === 'd' ? +el.value : el.value; schedule(); return; }
   if (el.dataset?.carte === 'sa') { carte.sa = +el.value; carte.sel = null; schedule(); return; }
   if (el.dataset?.carte === 'job') { carte.job = el.value; schedule(); return; }

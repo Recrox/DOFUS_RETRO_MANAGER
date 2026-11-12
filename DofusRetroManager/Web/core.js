@@ -46,7 +46,7 @@ const TABS = [
   { key: 'journal', label: 'Journal', watch: ['LogBox', 'LogPacketsBox'] },
   // Ajoutés après coup : leur place dans le menu est donnée par GROUPS, pas par cet ordre (index de MainTabs)
   { key: 'patrimoine', label: 'Patrimoine', watch: ['_patrimoine'] },
-  { key: 'metier', label: 'Métier', watch: ['MetierJob', 'MetierFrom', 'MetierTo', 'MetierResell', '_metier'] },
+  { key: 'metier', label: 'Métier', watch: ['MetierJob', 'MetierFrom', 'MetierTo', 'MetierValue', '_metier'] },
   { key: 'elevage', label: 'Élevage', watch: ['_elevage'] },
 ];
 // Contrôles suivis : l'en-tête et l'onglet affiché seulement (et le livre TTG quand il est ouvert) ; l'application ne
@@ -203,14 +203,11 @@ function header() {
         <b>${esc(T('CaptureStatus'))}</b><span>·</span><span class="bank">${esc(T('BankStatus'))}</span></div>
     </div>
     <div class="actions">
-      <div class="theme-picker" title="Style">${['Classique', 'Moderne'].map(s =>
-        `<button class="${(S._style || 'Moderne') === s ? 'on' : ''}" data-act="style" data-v="${s}">${s}</button>`).join('')}</div>
-      <div class="theme-picker" title="Thème">${[['Jour', '☀ Jour'], ['Crepuscule', '◐ Crépuscule'], ['Nuit', '☾ Nuit']].map(([t, l]) =>
-        `<button class="${(S._theme || 'Crepuscule') === t ? 'on' : ''}" data-act="theme" data-v="${t}">${l}</button>`).join('')}</div>
       ${btn('AdminButton', 'Relancer en administrateur')}
       ${btn('CaptureButton', 'Démarrer la capture', 'primary')}
       <button data-act="search-open" title="Rechercher un objet partout : prix, possédé, recette, runes, drops (Ctrl+K)">🔍</button>
       <button data-act="changelog" title="Les changements de chaque version">Nouveautés</button>
+      <button data-act="settings-open" title="Paramètres : style, thème, taille du texte, menu et onglets affichés">⚙</button>
     </div>
   </header>`;
 }
@@ -240,6 +237,41 @@ function confirmBox() {
       <div class="row"><span class="right"></span><button data-act="confirm-close">Annuler</button>
         <button class="primary" data-act="confirm-ok">Confirmer</button></div>
     </div></div>`;
+}
+
+// Préférences de la page (bouton ⚙) : menu par familles ou à plat, onglets masqués, taille du texte. Gardées dans le
+// navigateur de l'application (localStorage) ; le style et le thème, eux, sont retenus par l'application (settings.json).
+const PREFS = (() => {
+  let p = {};
+  try { p = JSON.parse(localStorage.getItem('prefs') || '{}') || {}; } catch { }
+  return { menu: p.menu === 'flat' ? 'flat' : 'groups', hidden: Array.isArray(p.hidden) ? p.hidden : [], zoom: [90, 100, 110, 125].includes(p.zoom) ? p.zoom : 100 };
+})();
+function savePrefs() {
+  try { localStorage.setItem('prefs', JSON.stringify(PREFS)); } catch { }
+  document.documentElement.style.zoom = PREFS.zoom / 100;
+}
+document.documentElement.style.zoom = PREFS.zoom / 100;
+const tabShown = k => !PREFS.hidden.includes(k);
+
+function settingsBox() {
+  if (!local.settings) return '';
+  const pill = (act, v, on, label, tip = '') => `<button class="pill ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" ${tip ? `title="${esc(tip)}"` : ''}>${label}</button>`;
+  const row = (label, html) => `<div class="set-row"><span class="lbl">${label}</span><span class="togs">${html}</span></div>`;
+  return `<div class="modal-back" data-act="settings-close"><div class="modal glass settings" data-act="none">
+      <div class="row"><h2>Paramètres</h2><button class="small ghost right" data-act="settings-close">✕</button></div>
+      <div class="modal-body">
+        <h3>Apparence</h3>
+        ${row('Style', ['Classique', 'Moderne'].map(s => pill('style', s, (S._style || 'Moderne') === s, s)).join(''))}
+        ${row('Thème', [['Jour', '☀ Jour'], ['Crepuscule', '◐ Crépuscule'], ['Nuit', '☾ Nuit']].map(([t, l]) => pill('theme', t, (S._theme || 'Crepuscule') === t, l)).join(''))}
+        ${row('Taille', [90, 100, 110, 125].map(z => pill('pref-zoom', z, PREFS.zoom === z, z + ' %', 'Taille du texte et de la page')).join(''))}
+        <h3>Menu</h3>
+        ${row('Affichage', pill('pref-menu', 'groups', PREFS.menu === 'groups', 'Par familles', 'Onglets regroupés : Inventaire, Artisanat, Commerce, Aventure, Outils')
+          + pill('pref-menu', 'flat', PREFS.menu === 'flat', 'Tous les onglets', 'Tous les onglets affichés sur une ligne, comme avant'))}
+        <h3>Onglets affichés</h3>
+        <div class="set-tabs">${GROUPS.map(g => `<div><div class="lbl">${esc(g.label)}</div>${g.tabs.map(k => `<label class="check" title="${esc(TAB_TIPS[k] || '')}">
+          <input type="checkbox" data-pref-tab="${k}" ${tabShown(k) ? 'checked' : ''}>${tabIcon(k)}${esc(TABS[tabIndex(k)]?.label || k)}</label>`).join('')}</div>`).join('')}</div>
+        <div class="muted small">Un onglet masqué s'ouvre encore par les liens des autres onglets et de la recherche (🔍).</div>
+      </div></div></div>`;
 }
 
 // Recherche globale (Ctrl+K ou 🔍) : fenêtre par-dessus la page ; résultats calculés par l'application (« _search »)
@@ -341,12 +373,16 @@ function tabs(active) {
   try { localStorage.setItem('tabGroup.' + curGroup.key, cur); } catch { }
   const tab = k => `<button class="tab ${k === cur ? 'on' : ''}" data-act="tab" data-i="${tabIndex(k)}"
     title="${esc(TAB_TIPS[k] || '')}">${tabIcon(k)}${esc(TABS[tabIndex(k)]?.label || k)}</button>`;
-  return `<nav class="tabs glass">${GROUPS.map(g => g === curGroup
+  // Onglets masqués (⚙) : retirés du menu, sauf celui affiché (ouvert par un lien)
+  const visible = GROUPS.map(g => ({ ...g, tabs: g.tabs.filter(k => tabShown(k) || k === cur) })).filter(g => g.tabs.length);
+  if (PREFS.menu === 'flat') return `<nav class="tabs glass">${visible.flatMap(g => g.tabs).map(tab).join('')}</nav>`;
+  const lastOf = g => { const k = groupLast(g); return g.tabs.includes(k) ? k : g.tabs[0]; };
+  return `<nav class="tabs glass">${visible.map(g => g.key === curGroup.key
     ? `<span class="tab-group on"><span class="tab-group-name">${esc(g.label)}</span>${g.tabs.map(tab).join('')}</span>`
-    : `<button class="tab tab-group-btn" data-act="tab" data-i="${tabIndex(groupLast(g))}"
-        title="${esc(g.label + ' : ' + g.tabs.map(k => TABS[tabIndex(k)]?.label).join(', '))}">${tabIcon(groupLast(g))}${esc(g.label)}</button>`).join('')}</nav>`;
+    : g.tabs.length === 1 ? tab(g.tabs[0])
+    : `<button class="tab tab-group-btn" data-act="tab" data-i="${tabIndex(lastOf(g))}"
+        title="${esc(g.label + ' : ' + g.tabs.map(k => TABS[tabIndex(k)]?.label).join(', '))}">${tabIcon(lastOf(g))}${esc(g.label)}</button>`).join('')}</nav>`;
 }
-
 // Rendu de chaque onglet : ajouté par son fichier (banque.js, combat.js…), chargé après celui-ci
 const views = {
   journal() {

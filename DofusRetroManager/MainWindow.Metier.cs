@@ -37,6 +37,8 @@ public partial class MainWindow
         var jobs = data.Recipes.SelectMany(r => r.Jobs).Distinct().Where(j => j.Length > 1 && j != "Sans métier" && !j.Contains("Forgemage", StringComparison.OrdinalIgnoreCase)).Order().ToList();
         foreach (var j in jobs) MetierJob.Items.Add(j);
         MetierJob.SelectedIndex = jobs.Count > 0 ? 0 : -1;
+        foreach (var v in new[] { "Coût brut", "Revente HDV", "Brisage", "Revente ou brisage" }) MetierValue.Items.Add(v);
+        MetierValue.SelectedIndex = 3;
     }
 
     string MetierJson()
@@ -44,16 +46,26 @@ public partial class MainWindow
         if (_data == null || MetierJob.SelectedItem is not string job) return "null";
         int from = Math.Clamp(int.TryParse(MetierFrom.Text, out var f) ? f : 1, 1, 99);
         int to = Math.Clamp(int.TryParse(MetierTo.Text, out var t) ? t : 100, from + 1, 100);
-        bool resell = MetierResell.IsChecked == true;
-        var craftable = (_rows ?? []).ToLookup(r => r.Recipe.ResultId);
+        int mode = MetierValue.SelectedIndex; // 0 coût brut, 1 revente HDV, 2 brisage, 3 le meilleur des deux
+        var craftable = _rows.ToLookup(r => r.Recipe.ResultId);
 
-        // Recettes du métier et leur coût par fabrication (null : un ingrédient sans prix ni recette)
+        // Recettes du métier et leur coût par fabrication (null : un ingrédient sans prix ni recette), moins ce que
+        // rapporte l'objet fabriqué : revendu à l'HDV (prix ×1), ou brisé (runes au jet moyen)
         var recipes = _data.Recipes.Where(r => r.Jobs.Contains(job)).Select(r =>
         {
             var cost = RecipeCost(r);
+            var item = _data.GetItem(r.ResultId);
             var sell = UnitPrice(r.ResultId);
-            return (Recipe: r, Cases: r.Ingredients.Count, Cost: cost, Net: cost is { } c ? c - (resell ? sell ?? 0 : 0) : (double?)null,
-                Sell: sell, Craftable: craftable[r.ResultId].FirstOrDefault()?.Craftable ?? 0);
+            var runes = item.MaxStats.Count > 0 ? BreakValue(item) : null;
+            double back = mode switch
+            {
+                1 => sell ?? 0,
+                2 => runes ?? 0,
+                3 => Math.Max(sell ?? 0, runes ?? 0),
+                _ => 0,
+            };
+            return (Recipe: r, Cases: r.Ingredients.Count, Cost: cost, Net: cost is { } c ? c - back : (double?)null,
+                Sell: sell, Runes: runes, Craftable: craftable[r.ResultId].FirstOrDefault()?.Craftable ?? 0);
         }).ToList();
 
         // Paliers : le nombre de cases change aux niveaux 10, 20, 40, 60, 80
@@ -69,7 +81,7 @@ public partial class MainWindow
             var options = recipes.Where(r => CraftXpAt(r.Cases, a) > 0)
                 .Select(r => new
                 {
-                    r.Recipe.ResultId, r.Cases, Xp = CraftXpAt(r.Cases, a), r.Cost, r.Net, r.Sell, r.Craftable,
+                    r.Recipe.ResultId, r.Cases, Xp = CraftXpAt(r.Cases, a), r.Cost, r.Net, r.Sell, r.Runes, r.Craftable,
                     PerXp = r.Net / CraftXpAt(r.Cases, a),
                     Crafts = (long)Math.Ceiling(xp / (double)CraftXpAt(r.Cases, a)),
                 })
@@ -81,12 +93,12 @@ public partial class MainWindow
                 a, b, slots = JobSlots(a), xp,
                 opts = options.Take(6).Select(o => new
                 {
-                    id = o.ResultId, n = _data.GetItem(o.ResultId).Name, c = o.Cases, x = o.Xp, cost = o.Cost, net = o.Net, sell = o.Sell,
+                    id = o.ResultId, n = _data.GetItem(o.ResultId).Name, c = o.Cases, x = o.Xp, cost = o.Cost, net = o.Net, sell = o.Sell, runes = o.Runes,
                     per = o.PerXp, k = o.Crafts, total = o.Net * o.Crafts, own = o.Craftable,
                 }),
                 unpriced = options.Count(o => o.PerXp == null),
             });
         }
-        return JsonSerializer.Serialize(new { job, from, to, xp = JobXp[to - 1] - JobXp[from - 1], totalCost, totalCrafts, incomplete, resell, steps });
+        return JsonSerializer.Serialize(new { job, from, to, xp = JobXp[to - 1] - JobXp[from - 1], totalCost, totalCrafts, incomplete, mode, steps });
     }
 }

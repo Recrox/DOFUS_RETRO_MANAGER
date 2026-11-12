@@ -93,6 +93,15 @@ label.check input:checked::after { content: "✓"; color: #fff; font-size: 12px;
 .tab:hover .tab-ico { opacity: 1; transform: scale(1.1); }
 .tab.on .tab-ico { opacity: 1; }
 .tab.on { background: var(--accent); color: #fff; box-shadow: var(--accent-glow); }
+/* Paramètres (⚙) */
+.settings { width: min(640px, 94vw); max-height: 86vh; display: flex; flex-direction: column; gap: 6px; }
+.settings h3 { margin: 10px 0 4px; }
+.set-row { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+.set-row > .lbl { min-width: 70px; }
+.set-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 6px; }
+.set-tabs .check { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+.set-tabs .tab-ico { width: 16px; height: 16px; }
+
 /* Recherche globale (Ctrl+K) */
 .gsearch { width: min(720px, 94vw); max-height: 84vh; display: flex; flex-direction: column; gap: 8px; }
 .gs-input { flex: 1; font-size: 15px; padding: 8px 12px; }
