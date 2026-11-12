@@ -11,7 +11,7 @@ function chronoBlock() {
       <span class="time acc" title="Chronomètre : compte les fins de combat des personnages choisis (un combat à plusieurs compte une fois)">⏱ ${esc(T('ChronoTime'))}</span>
       ${btn('ChronoStart', '▶ Démarrer', 'small primary')}${btn('ChronoReset', 'Remettre à zéro', 'small')}
       <span title="Personnages comptés (groupes : ⚙ Réglages)">${select('AreneGroup')}</span>
-      <div class="chrono-stats" title="Gains : kamas + drops au prix HDV (sinon prix marchand)">
+      <div class="chrono-stats" title="Gains : kamas + drops au prix HDV (sinon prix marchand ; pierre d'âme pleine : prix PDA du monstre le plus cher du combat)">
         <b class="ellipsis" title="${esc(T('ChronoFights'))}">${esc(T('ChronoFights'))}</b><b class="acc ellipsis" title="${esc(T('ChronoGains'))}">${esc(T('ChronoGains'))}</b>
         <span class="muted ellipsis" title="${esc(T('ChronoRate'))}">${esc(T('ChronoRate'))}</span></div>
       <div class="chrono-chal">${challenges.map(c => `<span class="chall ${state(c)}" data-tip="${esc(c.Name + ' · ' + c.Status + ' · ' + c.Character + (c.Rule ? ' — ' + c.Rule : '') + (c.Announced ? ' (annoncé par le jeu)' : ''))}">
@@ -42,25 +42,33 @@ function groupMembers() {
   return block('Dans le groupe', all.filter(m => m.on)) + block('Autres personnages', all.filter(m => !m.on));
 }
 
-// Objectif de farm : décompte (icône, total / voulu, barre ; derniers combats au survol), ou formulaire (🎯)
+// Objectifs de farm : liste (en cours, sans JSON valide → [])
+function farmGoals() {
+  try { const g = T('FarmState') ? JSON.parse(T('FarmState')) : []; return Array.isArray(g) ? g : [g]; } catch { return []; }
+}
+
+// Objectifs de farm : une pastille par objet (icône, total / voulu, barre ; derniers combats au survol), puis le formulaire d'ajout (🎯)
 function farmBlock() {
-  let g = null;
-  try { g = T('FarmState') ? JSON.parse(T('FarmState')) : null; } catch { }
+  const goals = farmGoals();
   const form = () => {
-    const item = input('FarmItem', 'Objet (ex. Pierre de diamant)', '200px').replace('<input ', '<input list="farm-items" autocomplete="off" ');
-    return `<div class="filters farm-form">${item}<datalist id="farm-items">${T('FarmSuggest').split('|').filter(Boolean).map(n => `<option value="${esc(n)}">`).join('')}</datalist>
-      <span class="lbl">×</span>${input('FarmTarget', '', '56px')}
-      <button class="small primary" data-act="click" data-name="FarmStart" title="Compter cet objet à chaque fin de combat de vos personnages ; bulle et son quand la quantité est atteinte">Lancer</button>
-      ${T('FarmStatus') ? `<span class="muted small">${esc(T('FarmStatus'))}</span>` : ''}</div>`;
+    const item = input('FarmItem', 'Objet (ex. Pierre de diamant)', '200px').replace('<input ', '<input list="farm-items" autocomplete="off" data-enter="FarmStart" ');
+    return `<span class="farm-form">${item}<datalist id="farm-items">${T('FarmSuggest').split('|').filter(Boolean).map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+      <span class="lbl">×</span>${input('FarmTarget', '', '56px').replace('<input ', '<input data-enter="FarmStart" ')}
+      <button class="small primary" data-act="click" data-name="FarmStart" title="Ajouter cet objectif (ou Entrée) : compté à chaque fin de combat de vos personnages ; bulle et son quand la quantité est atteinte. Même objet : l'objectif est remplacé">＋</button>
+      ${T('FarmStatus') ? `<span class="muted small">${esc(T('FarmStatus'))}</span>` : ''}</span>`;
   };
-  if (!g) return local.open.farm ? form() : '';
-  const tip = `${g.n} · ${g.f} combat(s)` + (g.s.length ? '\n' + g.s.map(s => `Combat ${s.n} : +${s.g} → ${s.t}/${g.t}`).join('\n') : '');
-  const last = g.s[0];
-  return `<div class="farm-goal ${g.c >= g.t ? 'done' : ''}" data-tip="${esc(tip)}">${itemImg(g.id, 'sm')}
+  const chip = g => {
+    const tip = `${g.n} · ${g.f} combat(s)` + (g.s.length ? '\n' + g.s.map(s => `Combat ${s.n} : +${s.g} → ${s.t}/${g.t}`).join('\n') : '');
+    const last = g.s[0];
+    return `<div class="farm-goal ${g.c >= g.t ? 'done' : ''}" data-tip="${esc(tip)}">${itemImg(g.id, 'sm')}
       <b>${fmt(g.c)}</b><span class="muted">/ ${fmt(g.t)}</span>
       <span class="farm-bar"><i style="width:${Math.min(100, g.c / Math.max(1, g.t) * 100)}%"></i></span>
       ${last ? `<span class="muted small">C${last.n} +${last.g}</span>` : ''}
-      <a class="item-link muted" data-act="click" data-name="FarmReset" title="Arrêter l'objectif">✕</a></div>`;
+      <a class="item-link muted" data-act="farm-del" data-i="${g.id}" title="Arrêter cet objectif">✕</a></div>`;
+  };
+  if (!goals.length && !local.open.farm) return '';
+  return `<div class="filters farm-row">${goals.map(chip).join('')}${local.open.farm ? form() : ''}
+    ${goals.length > 1 ? `<a class="item-link muted small" data-act="click" data-name="FarmReset" title="Arrêter tous les objectifs">Tout arrêter</a>` : ''}</div>`;
 }
 
 // Réglages de l'onglet, regroupés dans un panneau repliable (⚙) : alertes archi-monstres, alertes monstres, groupes
@@ -149,7 +157,7 @@ function sessionDetail() {
           { h: 'Prix u.', k: 'Unit', num: true, f: r => kamas(r.Unit) },
           { h: 'Total', k: 'Total', num: true, f: r => `<span class="acc strong">${kamas(r.Total)}</span>` },
         ], { select: false, empty: 'Aucun objet obtenu.' })}
-        <div class="muted small">Drops au prix HDV actuel (sinon prix marchand) · qui a obtenu chaque objet : au survol.</div>`;
+        <div class="muted small">Drops au prix HDV actuel (sinon marchand ; pierre d'âme : PDA) · qui a obtenu chaque objet : au survol.</div>`;
   const list = `<div class="sess-fights">${table('HuntSessionFights', [
           { h: 'Fin', k: 'TimeSort', f: r => `<span data-tip="${esc('Durée ' + r.Duration)}">${esc(r.Time)}</span>` },
           { h: '👥', k: 'Count', num: true, f: r => `<span data-tip="${esc(r.Characters)}">${r.Count}</span>` },
@@ -355,14 +363,14 @@ Object.assign(views, {
           ${ist(saImg, 'HuntWisdom', 'Sagesse')}${ist(ppImg, 'HuntProspection', 'Prospection')}${ist(`<span class="grp">${ppImg}<img src="icon/stat/Group.png" alt=""></span>`, 'HuntGroupProspection', 'Prospection du groupe', 'acc')}
         </div>
         <div class="combat-actions">
-          ${T('FarmState') ? farmBlock() : `<button class="small ibtn ${local.open.farm ? 'primary' : ''}" data-act="open" data-key="farm" data-tip="Objectif de farm : un objet et une quantité, comptés à chaque fin de combat">🎯</button>`}
+          <button class="small ibtn ${local.open.farm ? 'primary' : ''}" data-act="open" data-key="farm" data-tip="Objectifs de farm : ajouter des objets et leur quantité, comptés à chaque fin de combat">🎯${farmGoals().length ? `<sup>${farmGoals().length}</sup>` : ''}</button>
           <span class="lbl">Session</span>
           ${ibtn('HuntNewSession', '↺', 'Nouvelle session : la session en cours passe dans l\'historique')}
           ${ibtn('HuntPauseSession', esc(pause.split(' ')[0]), pause.slice(pause.indexOf(' ') + 1) + ' : le temps ne compte plus dans la rentabilité, un combat la relance')}
           <button class="small ${settings ? 'primary' : ''}" data-act="open" data-key="combatSettings" data-tip="Alertes archi-monstres, alertes monstres, groupes du chronomètre">⚙ Réglages <span class="flags">${flags}</span></button>
         </div>
       </div>
-      ${!T('FarmState') && local.open.farm ? farmBlock() : ''}
+      ${farmBlock()}
       ${settings ? combatSettings() : ''}
       ${T('HuntStatus') ? `<div class="alert">${esc(T('HuntStatus'))}</div>` : ''}
       ${T('HuntAlertBanner') ? `<div class="notice">${esc(T('HuntAlertBanner'))}</div>` : ''}

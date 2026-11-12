@@ -14,7 +14,7 @@ public partial class MainWindow
     void ShowSessionHistory()
     {
         if (_hunt == null) return;
-        double Drops(SessionTotals t) => t.Drops.Sum(d => d.Value * (UnitPrice(d.Key) ?? 0));
+        double Drops(SessionTotals t) => TotalsDropsValue(t);
         var current = _hunt.CurrentSession();
         var list = _hunt.Sessions.Select(s => (s, now: false)).ToList();
         if (current != null) list.Add((current, true));
@@ -70,7 +70,7 @@ public partial class MainWindow
         }
         ShowSessionFights(s);
         double hours = Math.Max(s.Seconds, 60) / 3600;
-        double Drops(SessionTotals t) => t.Drops.Sum(d => d.Value * (UnitPrice(d.Key) ?? 0));
+        double Drops(SessionTotals t) => TotalsDropsValue(t);
         SetRows(HuntSessionChars, s.Characters.Select(c =>
         {
             double drops = Drops(c.Value), total = c.Value.Kamas + drops;
@@ -80,7 +80,7 @@ public partial class MainWindow
         // Monstres tués : illustration et nombre, du plus tué au moins tué (un combat de plusieurs personnages compte une fois)
         SetRows(HuntSessionMobs, s.Total.Monsters.Select(m => new MonsterChip(m.Key, _data.GetMonster(m.Key).Name, 0, m.Value))
             .OrderByDescending(m => m.Count).ThenBy(m => m.Name).ToList());
-        SetRows(HuntSessionDrops, s.Total.Drops.Select(d => new HuntDropRow(d.Key, _data.GetItem(d.Key).Name, d.Value, DropPrice(d.Key))
+        SetRows(HuntSessionDrops, s.Total.Drops.Select(d => new HuntDropRow(d.Key, _data.GetItem(d.Key).Name, d.Value, TotalsDropPrice(s.Total, d.Key))
             {
                 Who = string.Join(", ", s.Characters.Where(c => c.Value.Drops.ContainsKey(d.Key)).OrderByDescending(c => c.Value.Drops[d.Key])
                     .Select(c => $"{c.Key} ×{c.Value.Drops[d.Key]}")),
@@ -104,7 +104,7 @@ public partial class MainWindow
         {
             var f = g[0];
             var drops = g.SelectMany(x => x.Drops).GroupBy(d => d.ItemId)
-                .Select(x => new HuntDropRow(x.Key, _data!.GetItem(x.Key).Name, x.Sum(d => d.Quantity), DropPrice(x.Key))
+                .Select(x => new HuntDropRow(x.Key, _data!.GetItem(x.Key).Name, x.Sum(d => d.Quantity), FightDropPrice(f, x.Key))
                 {
                     Who = string.Join(", ", g.Where(c => c.Drops.Any(d => d.ItemId == x.Key))
                         .Select(c => $"{c.Character} ×{c.Drops.Where(d => d.ItemId == x.Key).Sum(d => d.Quantity)}")),

@@ -193,7 +193,9 @@ main:has(.combat-split) { overflow-y: auto; }
 .farm-bar { width: 70px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .farm-bar i { display: block; height: 100%; background: var(--accent); }
 .farm-goal.done .farm-bar i { background: var(--ok); }
-.farm-form { margin: 4px 0; }
+.farm-row { margin: 4px 0; flex-wrap: wrap; gap: 6px; }
+.farm-form { display: inline-flex; align-items: center; gap: 6px; }
+.ibtn sup { font-size: 9px; margin-left: 1px; }
 /* Rentabilité (session en cours) : tuiles plus serrées, projection en cartes */
 .session .sess-kpis { grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); margin-bottom: 8px; }
 .session .sess-kpi { padding: 6px 4px; }

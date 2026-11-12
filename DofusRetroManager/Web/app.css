@@ -270,7 +270,7 @@ svg.chart.zoomable { cursor: zoom-in; }
 .ocre-mob { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 10px;
   background: var(--hover); border: 1px solid transparent; cursor: pointer; min-width: 0; transition: border-color .15s; }
 .ocre-mob:hover { border-color: var(--accent-solid); }
-.ocre-mob > img { width: 48px; height: 48px; object-fit: contain; }
+.ocre-mob > img { width: 100%; max-width: 76px; height: 72px; object-fit: contain; }
 .ocre-mob .nm { max-width: 100%; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
 .ocre-mob b { font-size: 12px; color: var(--accent-solid); white-space: nowrap; }
 .ocre-mob.unpriced b { color: var(--muted); }

@@ -16,7 +16,7 @@ public partial class MainWindow
     {
         FarmItem.TextChanged += (_, _) => SuggestFarmItems();
         FarmStart.Click += FarmStart_Click;
-        FarmReset.Click += (_, _) => { if (_hunt != null) _hunt.Farm = null; FarmStatus.Text = ""; RefreshFarm(); };
+        FarmReset.Click += (_, _) => { _hunt?.RemoveFarm(0); FarmStatus.Text = ""; RefreshFarm(); };
         _hunt!.Changed += RefreshFarm;
         _hunt.FarmReached += OnFarmReached;
         RefreshFarm();
@@ -43,7 +43,7 @@ public partial class MainWindow
             return;
         }
         int target = int.TryParse(FarmTarget.Text, out var t) && t > 0 ? t : 50;
-        _hunt.Farm = new FarmGoal { ItemId = found[0].Id, Target = target };
+        _hunt.AddFarm(new FarmGoal { ItemId = found[0].Id, Target = target });
         FarmItem.Text = "";
         FarmStatus.Text = "";
     }
@@ -59,20 +59,24 @@ public partial class MainWindow
 
     void RefreshFarm()
     {
-        var goal = _hunt?.Farm;
-        FarmState.Text = goal == null || _data == null ? "" : JsonSerializer.Serialize(new
+        var goals = _hunt?.Farms ?? [];
+        FarmState.Text = goals.Count == 0 || _data == null ? "" : JsonSerializer.Serialize(goals.Select(goal => new
         {
             id = goal.ItemId, n = _data.GetItem(goal.ItemId).Name, c = goal.Count, t = goal.Target, f = goal.Fights,
             s = goal.Steps.TakeLast(8).Reverse().Select(s => new { n = s.Number, g = s.Got, t = s.Total }),
-        });
+        }));
         UpdateOverlay();
     }
 
-    /// <summary>Décompte pour la superposition : titre, remplissage (0 à 1) et derniers combats (le plus récent en haut).</summary>
+    /// <summary>Objectif montré par la superposition : le premier pas encore atteint (sinon le dernier).</summary>
+    FarmGoal? OverlayFarm() => _hunt?.Farms is { Count: > 0 } l ? l.FirstOrDefault(g => g.Count < g.Target) ?? l[^1] : null;
+
+    /// <summary>Décompte pour la superposition : titre (« +n » : autres objectifs), remplissage (0 à 1) et derniers combats.</summary>
     (string Title, double Fill, List<string> Steps) FarmOverlay()
     {
-        if (_hunt?.Farm is not { } g || _data == null) return ("", 0, []);
-        return ($"{g.Count} / {g.Target}", Math.Min(1, g.Count / (double)Math.Max(1, g.Target)),
+        if (OverlayFarm() is not { } g || _data == null) return ("", 0, []);
+        int others = _hunt!.Farms.Count - 1;
+        return ($"{g.Count} / {g.Target}" + (others > 0 ? $"  (+{others})" : ""), Math.Min(1, g.Count / (double)Math.Max(1, g.Target)),
             g.Steps.TakeLast(3).Reverse().Select(s => $"Combat {s.Number} · +{s.Got} → {s.Total}").ToList());
     }
 }

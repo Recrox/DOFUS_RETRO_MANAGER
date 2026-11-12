@@ -175,8 +175,11 @@ sealed class HuntData
     public Dictionary<string, KnownCharacter> Known { get; set; } = new();
     /// <summary>Historique des sessions terminées (résumés, sans limite : les combats eux-mêmes sont limités à MaxFights).</summary>
     public List<SessionSummary> Sessions { get; set; } = new();
-    /// <summary>Objectif de farm de l'onglet Combat (null : aucun).</summary>
-    public FarmGoal? Farm { get; set; }
+    /// <summary>Objectifs de farm de l'onglet Combat (un par objet).</summary>
+    public List<FarmGoal> Farms { get; set; } = new();
+    /// <summary>Ancien objectif unique (fichiers d'avant les objectifs multiples) : repris dans Farms, jamais écrit.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public FarmGoal? Farm { get => null; set { if (value != null && Farms.All(f => f.ItemId != value.ItemId)) Farms.Add(value); } }
 }
 
 /// <summary>
@@ -210,6 +213,8 @@ public sealed class SessionTotals
     public long Kamas { get; set; }
     /// <summary>Objets obtenus : valorisés au prix HDV du moment de l'affichage, comme la session en cours.</summary>
     public Dictionary<int, int> Drops { get; set; } = new();
+    /// <summary>Pierres d'âme pleines (« modèle:monstres du combat » -> nombre), valorisées au prix PDA du monstre le plus cher.</summary>
+    public Dictionary<string, int> Souls { get; set; } = new();
     /// <summary>Monstres tués (modèle -> nombre). Total de la session : un combat fait par plusieurs de vos personnages ne compte qu'une fois.</summary>
     public Dictionary<int, int> Monsters { get; set; } = new();
 }

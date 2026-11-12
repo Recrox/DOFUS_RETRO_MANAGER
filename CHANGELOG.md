@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.87.0 — 12 novembre 2026
+
+- **Combat** : plusieurs objectifs de farm en même temps, un par objet, chacun avec son décompte et sa croix pour l'arrêter ; ajout avec Entrée ou ＋, le formulaire reste ouvert pour enchaîner ; la superposition montre le premier objectif pas encore atteint.
+- **Combat** : les pierres d'âme pleines obtenues ont maintenant un prix, celui de la pierre (onglet PDA) du monstre le plus cher du combat ; elles comptent dans les gains des sessions.
+- **Combat** : correction : les cartes au prix marchand comptent maintenant dans les totaux des personnages, de la session et par heure, pas seulement dans la liste des objets.
+- **Ocre** : les illustrations des monstres sont plus grandes et plus nettes dans le détail d'une étape.
+
 ## 1.86.0 — 12 novembre 2026
 
 - **Ocre** : le détail d'une étape montre les âmes en illustrations de monstres (manquantes avec leur prix, puis possédées) au lieu d'une longue liste de noms ; clic sur un monstre : sa pierre dans l'onglet PDA.

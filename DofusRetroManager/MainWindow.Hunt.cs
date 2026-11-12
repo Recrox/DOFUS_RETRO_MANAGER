@@ -293,6 +293,43 @@ public partial class MainWindow
         return m?.Recent(TtgDays).Select(s => (double?)s.Price).Min() ?? m?.Last?.Price;
     }
 
+    /// <summary>
+    /// Pierre d'âme pleine (clé « modèle:monstres », HuntTracker.SoulKey) : elle contient le groupe du combat, et vaut le
+    /// prix PDA (catégorie de la pierre) du monstre le plus cher ; null si aucun n'a de prix relevé.
+    /// </summary>
+    double? SoulPrice(string key)
+    {
+        if (_pda == null) return null;
+        var parts = key.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var tpl)) return null;
+        var category = _pda.Category(tpl);
+        return parts[1].Split(',').Select(m => int.TryParse(m, out var id)
+                ? _pda.Prices.GetValueOrDefault(Hdv.PdaTracker.Key(id, category))?.Price : null)
+            .Max() is { } p ? p : null;
+    }
+
+    /// <summary>Prix d'un drop d'un combat : pierre d'âme pleine d'après ses monstres, sinon DropPrice.</summary>
+    double? FightDropPrice(FightRecord f, int itemId) =>
+        _hunt?.SoulKey(itemId, f) is { } key ? SoulPrice(key) : DropPrice(itemId);
+
+    /// <summary>Valeur des drops d'un combat (objets sans prix : 0).</summary>
+    double FightDropsValue(FightRecord f) => f.Drops.Sum(d => d.Quantity * (FightDropPrice(f, d.ItemId) ?? 0));
+
+    /// <summary>
+    /// Prix unitaire d'un objet sur des totaux de session : pierres d'âme pleines au prix moyen de leurs combats (null si
+    /// aucune n'a de prix), sinon DropPrice (HDV, sinon prix marchand des cartes).
+    /// </summary>
+    double? TotalsDropPrice(SessionTotals t, int itemId)
+    {
+        var souls = t.Souls.Where(s => s.Key.StartsWith(itemId + ":")).ToList();
+        if (souls.Count == 0) return DropPrice(itemId);
+        var priced = souls.Select(s => (s.Value, Price: SoulPrice(s.Key))).Where(s => s.Price != null).ToList();
+        return priced.Count == 0 ? null : priced.Sum(s => s.Value * s.Price!.Value) / Math.Max(1, t.Drops.GetValueOrDefault(itemId));
+    }
+
+    /// <summary>Valeur des drops de totaux de session (objets sans prix : 0).</summary>
+    double TotalsDropsValue(SessionTotals t) => t.Drops.Sum(d => d.Value * (TotalsDropPrice(t, d.Key) ?? 0));
+
     string DropLabel(GroupDrop d) =>
         $"{_data!.GetItem(d.ItemId).Name} {Percent(d.Chance)}" + (d.Count > 1 ? $" ×{d.Count}" : "");
 
@@ -394,7 +431,7 @@ public partial class MainWindow
         }).ToList());
 
         // Combats et rentabilité de la session
-        double Value(FightRecord f) => f.Drops.Sum(d => d.Quantity * (UnitPrice(d.ItemId) ?? 0));
+        double Value(FightRecord f) => FightDropsValue(f);
         // Session du personnage affiché ; en multi-compte, le total de tous les personnages est rappelé
         var allSession = _hunt.Fights.Where(f => f.Time >= _hunt.SessionStart).ToList();
         var session = allSession.Where(f => f.Character == (me?.Name ?? "")).ToList();
@@ -429,10 +466,10 @@ public partial class MainWindow
         var minutes = Math.Max(1, _hunt.SessionDuration.TotalMinutes);
         HuntPauseSession.Content = _hunt.SessionPaused ? "▶ Reprendre" : "⏸ Pause";
         double xpTotal = session.Sum(f => f.Xp), kamasTotal = session.Sum(f => f.Kamas), dropsTotal = session.Sum(Value);
-        int unpriced = session.SelectMany(f => f.Drops).Select(d => d.ItemId).Distinct().Count(id => UnitPrice(id) == null);
+        int unpriced = session.SelectMany(f => f.Drops.Where(d => FightDropPrice(f, d.ItemId) == null).Select(d => d.ItemId)).Distinct().Count();
         HuntSession.Text = (_hunt.SessionPaused ? "⏸ En pause · " : "") + $"Session depuis {_hunt.SessionStart:HH:mm} ({minutes:0} min) · {session.Count} combat(s) · "
             + $"{xpTotal:N0} XP · {kamasTotal:N0} kamas · drops {Kamas(dropsTotal)}"
-            + (unpriced > 0 ? $" ({unpriced} objet(s) sans prix HDV, comptés 0)" : "")
+            + (unpriced > 0 ? $" ({unpriced} objet(s) sans prix, comptés 0)" : "")
             + (allSession.Select(f => f.Character).Distinct().Count() > 1
                 ? $"\nTous les personnages : {HuntTracker.CountFights(allSession)} combat(s) · {allSession.Sum(f => f.Kamas):N0} kamas · drops {Kamas(allSession.Sum(Value))}"
                 : "");

@@ -121,6 +121,10 @@ public partial class MainWindow
                     if (el is WebPanel panel && panel.Children.OfType<ToggleButton>().ElementAtOrDefault(index) is { } toggle)
                         toggle.IsChecked = toggle.IsChecked != true;
                     break;
+                case "farm-del":
+                    // Objectif de farm arrêté (index : identifiant de l'objet, 0 : tous)
+                    _hunt?.RemoveFarm(index);
+                    break;
                 case "trade-del":
                     // « Mes échanges » : ligne oubliée (rapprochement erroné)
                     ForgetTrade(index);

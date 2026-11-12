@@ -90,6 +90,7 @@ document.addEventListener('click', e => {
     case 'changelog-close': local.changelog = false; schedule(); break;
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
+    case 'farm-del': post({ type: 'farm-del', index: +d.i }); break;
     case 'trade-del': post({ type: 'trade-del', index: +d.i }); break;
     case 'trade-sold': post({ type: 'trade-sold', index: +d.i }); break;
     case 'trade-clear': local.confirm = { text: `Effacer ${d.n} ligne(s) de Mes échanges ?`, msg: { type: 'trade-clear', list: d.list.split(',').map(Number) } }; schedule(); break;
@@ -196,6 +197,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && local.confirm) { local.confirm = null; schedule(); return; }
   if (e.key === 'Escape' && local.changelog) { local.changelog = false; schedule(); return; }
   if (e.key === 'Escape' && local.book) { local.book = null; schedule(); return; }
+  // Entrée dans un champ data-enter : valeur envoyée tout de suite, puis clic sur le bouton nommé
+  const enter = e.target.dataset?.enter;
+  if (enter && e.key === 'Enter') {
+    const set = e.target.dataset.set;
+    if (set) { clearTimeout(timers[set]); post({ type: 'set', name: set, value: e.target.value }); }
+    post({ type: 'click', name: enter }); e.preventDefault(); return;
+  }
   const name = e.target.dataset?.hotkey;
   if (!name) return;
   e.preventDefault();

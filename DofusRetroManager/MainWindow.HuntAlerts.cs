@@ -73,8 +73,14 @@ public partial class MainWindow
         var chosen = _huntSessionFights.FirstOrDefault(g => g[0].Time == _huntSelectedFight);
         var fight = chosen?[0];
         var fights = chosen ?? _huntSessionFights.SelectMany(g => g).ToList();
-        var rows = fights.SelectMany(f => f.Drops).GroupBy(d => d.ItemId)
-            .Select(g => new HuntDropRow(g.Key, _data.GetItem(g.Key).Name, g.Sum(d => d.Quantity), DropPrice(g.Key)))
+        // Prix unitaire : celui du combat (pierres d'âme pleines : d'après ses monstres), moyen sur plusieurs combats
+        var rows = fights.SelectMany(f => f.Drops.Select(d => (d.ItemId, d.Quantity, Price: FightDropPrice(f, d.ItemId)))).GroupBy(d => d.ItemId)
+            .Select(g =>
+            {
+                int qty = g.Sum(d => d.Quantity);
+                double? price = g.Any(d => d.Price != null) ? g.Sum(d => d.Quantity * (d.Price ?? 0)) / Math.Max(1, qty) : null;
+                return new HuntDropRow(g.Key, _data.GetItem(g.Key).Name, qty, price);
+            })
             .OrderByDescending(r => r.Total ?? -1).ThenBy(r => r.Name).ToList();
         SetRows(HuntDropGrid, rows);
         var who = HuntFightsGroup.IsChecked == true ? " (groupe)" : "";

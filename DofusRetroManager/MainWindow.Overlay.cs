@@ -198,6 +198,6 @@ public partial class MainWindow
             _organizer.OverlayHarvest && me != null && _harvest?.MapOf(me.Stream) != null,
             fmTitle, fmHistory, fmChances, fmActive && _organizer.OverlayFmHistory && fmHistory.Count > 0,
             fmActive && _organizer.OverlayFmChances && fmChances.Count > 0, fmActive ? FmReliquat.Text : "",
-            farm.Title, farm.Fill, farm.Steps, _hunt?.Farm is { } goal ? Data.ItemIcons.Get(goal.ItemId) : null));
+            farm.Title, farm.Fill, farm.Steps, OverlayFarm() is { } goal ? Data.ItemIcons.Get(goal.ItemId) : null));
     }
 }

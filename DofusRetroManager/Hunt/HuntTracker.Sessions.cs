@@ -60,7 +60,7 @@ public sealed partial class HuntTracker
         }
     }
 
-    static SessionSummary Summarize(List<FightRecord> fights, DateTime start, DateTime end, double seconds, bool rebuilt)
+    SessionSummary Summarize(List<FightRecord> fights, DateTime start, DateTime end, double seconds, bool rebuilt)
     {
         var s = new SessionSummary { Start = start, End = end, Seconds = Math.Max(0, seconds), Rebuilt = rebuilt };
         var counted = new List<FightRecord>();
@@ -80,11 +80,16 @@ public sealed partial class HuntTracker
         }
         return s;
 
-        static void AddGains(SessionTotals t, FightRecord f)
+        void AddGains(SessionTotals t, FightRecord f)
         {
             t.Xp += f.Xp;
             t.Kamas += f.Kamas;
-            foreach (var d in f.Drops) t.Drops[d.ItemId] = t.Drops.GetValueOrDefault(d.ItemId) + d.Quantity;
+            foreach (var d in f.Drops)
+            {
+                t.Drops[d.ItemId] = t.Drops.GetValueOrDefault(d.ItemId) + d.Quantity;
+                // Pierre d'âme pleine : gardée avec les monstres du combat, pour son prix (PDA du plus cher)
+                if (SoulKey(d.ItemId, f) is { } key) t.Souls[key] = t.Souls.GetValueOrDefault(key) + d.Quantity;
+            }
         }
 
         static void AddMonsters(SessionTotals t, FightRecord f)
@@ -92,6 +97,11 @@ public sealed partial class HuntTracker
             foreach (var m in f.Monsters) t.Monsters[m.Id] = t.Monsters.GetValueOrDefault(m.Id) + 1;
         }
     }
+
+    /// <summary>Pierre d'âme pleine d'un combat : « modèle:monstre,monstre… » (null si l'objet n'en est pas une ou sans monstres).</summary>
+    public string? SoulKey(int itemId, FightRecord f) =>
+        f.Monsters.Count == 0 || !Hdv.PdaTracker.StoneTypes.Contains(_data.GetItem(itemId).TypeId) ? null
+            : $"{itemId}:{string.Join(",", f.Monsters.Select(m => m.Id).Distinct().Order())}";
 
     /// <summary>Nombre de combats distincts : un combat fait par plusieurs de vos personnages ne compte qu'une fois.</summary>
     public static int CountFights(IEnumerable<FightRecord> fights)
@@ -127,6 +137,16 @@ public sealed partial class HuntTracker
             s.Total.Monsters = again.Total.Monsters;
             foreach (var (name, c) in s.Characters)
                 if (again.Characters.TryGetValue(name, out var a)) c.Monsters = a.Monsters;
+        }
+        // Sessions d'avant le prix des pierres d'âme pleines : leurs monstres repris des combats encore gardés
+        foreach (var s in _store.Sessions.Where(s => s.Total.Souls.Count == 0 && s.Total.Drops.Keys.Any(id => Hdv.PdaTracker.StoneTypes.Contains(_data.GetItem(id).TypeId))))
+        {
+            var fights = _store.Fights.Where(f => f.Time >= s.Start && f.Time <= s.End).ToList();
+            if (fights.Count != s.Characters.Values.Sum(c => c.Fights)) continue;
+            var again = Summarize(fights, s.Start, s.End, s.Seconds, s.Rebuilt);
+            s.Total.Souls = again.Total.Souls;
+            foreach (var (name, c) in s.Characters)
+                if (again.Characters.TryGetValue(name, out var a)) c.Souls = a.Souls;
         }
     }
 }

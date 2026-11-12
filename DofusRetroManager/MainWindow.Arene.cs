@@ -119,7 +119,7 @@ public partial class MainWindow
             if (fights.FindLast(g => IsSameFight(g[0], f)) is { } same) same.Add(f);
             else fights.Add([f]);
 
-        double DropValue(FightRecord f) => f.Drops.Sum(d => d.Quantity * (DropPrice(d.ItemId) ?? 0));
+        double DropValue(FightRecord f) => FightDropsValue(f);
         var rows = fights.Select(g => new ArenaFightRow(g[0].Time.ToString("HH:mm:ss"), g[0].Time,
             string.Join(", ", g.Select(f => f.Character).Distinct()),
             string.Join(", ", g[0].Monsters.GroupBy(m => m.Id).Select(x => (x.Count() > 1 ? $"{x.Count()}× " : "") + _data.GetMonster(x.Key).Name)),

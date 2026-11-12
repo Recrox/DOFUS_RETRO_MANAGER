@@ -89,9 +89,10 @@ public partial class MainWindow
                     "item" => ItemIcons.Get(id),
                     "head" => CharacterIcons.Get(id), // tête du personnage : classe × 10 + sexe
                     "chall" => ChallengeIcons.Get(id), // challenge : son icône (champ g du fichier de langue)
-                    "monster" => MonsterIcons.Get(id), // monstre : son illustration (champ g du fichier de langue)
+                    // monstre : son illustration (champ g du fichier de langue), marges transparentes rognées, en plus grand
+                    "monster" => Trim(MonsterIcons.Get(id)),
                     _ => SpellIcons.Get(id, _data?.SpellLooks.GetValueOrDefault(id)),
-                }, 64);
+                }, icon.Groups[1].Value == "monster" ? 128 : 64);
             }
             return (png, "image/png");
         }
@@ -194,6 +195,31 @@ public partial class MainWindow
     }
 
     /// <summary>Icône vectorielle du jeu rendue en PNG carré (proportions gardées, centrée).</summary>
+    /// <summary>Image sans ses marges transparentes (illustrations de monstres : le dessin occupe toute la vignette).</summary>
+    static ImageSource? Trim(ImageSource? img)
+    {
+        if (img == null || img.Width <= 0 || img.Height <= 0) return img;
+        int w = (int)Math.Ceiling(img.Width), h = (int)Math.Ceiling(img.Height);
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen()) dc.DrawImage(img, new Rect(0, 0, img.Width, img.Height));
+        var bitmap = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        var px = new byte[w * h * 4];
+        bitmap.CopyPixels(px, w * 4, 0);
+        int x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (px[(y * w + x) * 4 + 3] > 8)
+                {
+                    if (x < x0) x0 = x; if (x > x1) x1 = x;
+                    if (y < y0) y0 = y; if (y > y1) y1 = y;
+                }
+        if (x1 < 0) return img;
+        var cropped = new CroppedBitmap(bitmap, new Int32Rect(x0, y0, x1 - x0 + 1, y1 - y0 + 1));
+        cropped.Freeze();
+        return cropped;
+    }
+
     static byte[]? Png(ImageSource? img, int size)
     {
         if (img == null || img.Width <= 0 || img.Height <= 0) return null;

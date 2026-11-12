@@ -86,11 +86,22 @@ public sealed partial class HuntTracker
 
     public void SaveAlerts() => Save();
 
-    /// <summary>Objectif de farm (onglet Combat) ; null : aucun.</summary>
-    public FarmGoal? Farm
+    /// <summary>Objectifs de farm (onglet Combat), dans l'ordre d'ajout.</summary>
+    public IReadOnlyList<FarmGoal> Farms => _store.Farms;
+
+    /// <summary>Ajoute un objectif (remplace celui du même objet).</summary>
+    public void AddFarm(FarmGoal goal)
     {
-        get => _store.Farm;
-        set { _store.Farm = value; Save(); Changed?.Invoke(); }
+        _store.Farms.RemoveAll(f => f.ItemId == goal.ItemId);
+        _store.Farms.Add(goal);
+        Save(); Changed?.Invoke();
+    }
+
+    /// <summary>Arrête l'objectif de cet objet (tous si itemId est 0).</summary>
+    public void RemoveFarm(int itemId)
+    {
+        if (_store.Farms.RemoveAll(f => itemId == 0 || f.ItemId == itemId) == 0) return;
+        Save(); Changed?.Invoke();
     }
 
     /// <summary>Objectif de farm atteint à la fin d'un combat de ce personnage.</summary>
