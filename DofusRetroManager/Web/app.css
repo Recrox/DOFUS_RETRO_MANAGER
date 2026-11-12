@@ -93,6 +93,24 @@ label.check input:checked::after { content: "✓"; color: #fff; font-size: 12px;
 .tab:hover .tab-ico { opacity: 1; transform: scale(1.1); }
 .tab.on .tab-ico { opacity: 1; }
 .tab.on { background: var(--accent); color: #fff; box-shadow: var(--accent-glow); }
+/* Recherche globale (Ctrl+K) */
+.gsearch { width: min(720px, 94vw); max-height: 84vh; display: flex; flex-direction: column; gap: 8px; }
+.gs-input { flex: 1; font-size: 15px; padding: 8px 12px; }
+.gs-list { overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.gs-item { padding: 8px 10px; border-radius: var(--radius-md); background: var(--hover); border: 1px solid var(--line); }
+.gs-head { display: flex; align-items: center; gap: 8px; }
+.gs-acts { display: flex; gap: 4px; }
+.gs-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; margin-top: 4px; }
+.gs-line { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.gs-line .lbl { min-width: 54px; }
+
+/* HDV : objet rentable à briser */
+.break-chip { margin-left: 4px; padding: 0 6px; border-radius: 99px; font-size: 11px; font-weight: 700; color: var(--ok); background: var(--hover); cursor: pointer; white-space: nowrap; }
+
+/* Qualité d'un jet (Banque) */
+.jet-q { font-weight: 700; white-space: nowrap; }
+.jet-q.over { color: var(--accent-solid); }
+
 /* Menu par familles : la famille active encadre ses onglets, les autres sont un seul bouton */
 .tab-group { display: flex; align-items: center; gap: 3px; padding: 2px 3px 2px 10px; border-radius: var(--radius-md); background: var(--hover); flex: none; }
 .tab-group-name { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-solid); margin-right: 4px; }

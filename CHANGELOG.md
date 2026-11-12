@@ -2,6 +2,15 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.91.0 — 12 novembre 2026
+
+- **Recherche** : bouton 🔍 en haut ou Ctrl+K : un objet, et tout ce qu'on en sait d'un coup (prix HDV ou marchand pour les cartes, quantité possédée et chez qui, coût de la recette, valeur des runes, monstres qui le font tomber), avec des liens vers l'HDV, la recette et le Brisage.
+- **Brisage** : choix du jet utilisé pour estimer les runes d'un objet à fabriquer (minimum, moyen par défaut, maximum), d'après la fourchette officielle du jeu.
+- **HDV** : pastille 🔨 et gain sur les objets dont les runes valent plus que leur prix ×1, et bouton « à briser » pour les mettre en haut ; clic sur la pastille : l'objet dans le Brisage.
+- **HDV** : type et niveau sous le nom de l'objet, et relevé abrégé (texte complet au survol) : le tableau tient dans la fenêtre.
+- **Banque** : colonne « Jet » : qualité du meilleur exemplaire (0 % tout au minimum, 100 % tout au maximum, ✦ au-delà : forgemagé), chaque exemplaire au survol.
+- **Patrimoine** : correction : la banque d'un compte, ouverte par plusieurs de ses personnages, n'est plus comptée plusieurs fois.
+
 ## 1.90.0 — 12 novembre 2026
 
 - **Menu** : les onglets sont regroupés en familles (Inventaire, Artisanat, Commerce, Aventure, Outils) ; la famille ouverte montre ses onglets, les autres rouvrent leur dernier onglet consulté.

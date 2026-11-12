@@ -79,6 +79,8 @@ Object.assign(views, {
     const sel = rows('HdvGrid')[S.HdvGrid?.sel ?? -1];
     return `<div class="filters">${input('HdvSearch', 'Rechercher un objet…', '260px')}${select('HdvTypeFilter')}
         ${check('HdvShowAll', 'Tous les objets du jeu')}<span class="chip">${esc(T('HdvCount'))}</span>
+        ${(() => { const n = rows('HdvGrid').filter(r => r.BreakGain > 0).length, on = local.sort.HdvGrid?.k === 'BreakGain';
+          return n ? `<button class="small ${on ? 'primary' : ''}" data-act="hdv-break" title="Objets dont les runes (jet moyen, prix HDV) valent plus que leur prix ×1 : les plus rentables à briser en haut">🔨 ${n} à briser</button>` : ''; })()}
         <button class="small ${local.trades ? 'primary' : ''}" data-act="trades" title="Achats et ventes de vos personnages (HDV et marchands)">${ico('trades')}Mes échanges</button>
         <span class="right"></span><span title="Partager vos relevés de prix avec votre groupe">${btn('ShareToggle', 'Partage entre amis', 'small')}</span>
         <span title="Récupère tout de suite les derniers prix du groupe">${btn('ShareSync', 'Synchroniser', 'small')}</span></div>
@@ -91,15 +93,17 @@ Object.assign(views, {
       ${local.trades ? tradesView() : `<div class="split">
         ${table('HdvGrid', [
           { h: '', f: r => itemImg(r.ItemId) },
-          { h: 'Objet', k: 'Name', f: r => `<span class="strong">${esc(r.Name)}</span>` },
-          { h: 'Niv.', k: 'Level', num: true },
-          { h: 'Type', k: 'Type' },
+          // Brisage : pastille 🔨 et le gain quand les runes (jet moyen) valent plus que le prix ×1
+          { h: 'Objet', k: 'Name', f: r => `<span class="strong hdv-name ellipsis" title="${esc(r.Name)}">${esc(r.Name)}</span>${r.BreakGain > 0
+            ? ` <a class="break-chip" data-act="item-brisage" data-id="${r.ItemId}" data-tip="${esc(`Rentable à briser : runes ≈ ${fmt(r.Break)} k au jet moyen, pour ${fmt(r.Lot1)} k à l'achat (×1)\nClic : voir dans le Brisage`)}">🔨 +${fmtShort(r.BreakGain)}</a>` : ''}
+            <div class="muted small hdv-name ellipsis">${esc(r.Type)} · niv. ${r.Level}</div>` },
           { h: '×1', k: 'Lot1', num: true, f: r => fmt(r.Lot1) },
           { h: '×10', k: 'Lot10', num: true, f: r => fmt(r.Lot10) },
           { h: '×100', k: 'Lot100', num: true, f: r => fmt(r.Lot100) },
           { h: 'Unité', k: 'Unit', num: true, f: r => `<span class="acc strong">${fmt(r.Unit)}</span>` },
           { h: 'Moyen', k: 'Average', num: true, f: r => fmt(r.Average) },
-          { h: 'Relevé', k: 'SeenAt', f: r => `<span class="muted">${esc(r.Seen)}</span>` },
+          // Relevé abrégé (« 1 h 👥 ») : texte complet au survol, pour que le tableau tienne dans son cadre
+          { h: 'Relevé', k: 'SeenAt', f: r => `<span class="muted nowrap" title="${esc(r.Seen)}">${esc(r.Seen.replace(/^il y a /, '').replace(' · groupe', ' 👥'))}</span>` },
         ], { empty: 'Aucun prix relevé : consultez des objets dans un hôtel de vente en jeu.' })}
         <aside class="detail glass">${sel ? `
           <div class="head">${itemImg(sel.ItemId, 'lg')}<div><h2>${esc(T('HdvDetailTitle'))}</h2></div></div>

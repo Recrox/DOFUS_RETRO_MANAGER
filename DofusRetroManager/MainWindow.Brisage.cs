@@ -115,6 +115,54 @@ public partial class MainWindow
         return mins.TryGetValue(characteristic, out var v) ? v : null;
     }
 
+    /// <summary>
+    /// Caractéristiques d'un modèle d'objet au jet choisi (BrisageRoll : 0 minimum, 1 moyen, 2 maximum) : fourchette
+    /// officielle (« itemstats »), sinon le plus bas vu ; sans minimum connu, le maximum.
+    /// </summary>
+    IReadOnlyDictionary<int, int> RollStats(ItemInfo item, int? roll = null)
+    {
+        int mode = roll ?? BrisageRoll.SelectedIndex;
+        if (mode == 2) return item.MaxStats;
+        return item.MaxStats.ToDictionary(kv => kv.Key, kv =>
+        {
+            if (kv.Value <= 0) return kv.Value;
+            int min = OfficialMin(item.Id, kv.Key) ?? _rolls.Of(item.Id, kv.Key)?.Min ?? kv.Value;
+            min = Math.Clamp(min, 1, kv.Value);
+            return mode == 0 ? min : (int)Math.Round((min + kv.Value) / 2.0, MidpointRounding.AwayFromZero);
+        });
+    }
+
+    /// <summary>
+    /// Qualité du jet d'un exemplaire (0 à 1) : pour chaque caractéristique à fourchette (minimum officiel &lt; maximum),
+    /// (valeur − min) / (max − min), moyenne des caractéristiques ; au-delà du maximum (forgemagie) : plus de 1.
+    /// Null si l'objet n'a pas de caractéristique à fourchette ou pas d'effets.
+    /// </summary>
+    double? RollQuality(ItemInfo item, string effects)
+    {
+        if (_fm == null || effects.Length == 0 || item.MaxStats.Count == 0) return null;
+        var stats = ItemStats.FromParsed(_fm.ParseStats(effects));
+        var parts = item.MaxStats.Where(kv => kv.Value > 0)
+            .Select(kv => (Max: kv.Value, Min: OfficialMin(item.Id, kv.Key) ?? _rolls.Of(item.Id, kv.Key)?.Min, Value: stats.GetValueOrDefault(kv.Key)))
+            .Where(x => x.Min is { } m && m < x.Max)
+            .Select(x => (x.Value - x.Min!.Value) / (double)(x.Max - x.Min.Value))
+            .ToList();
+        return parts.Count > 0 ? Math.Max(0, parts.Average()) : null;
+    }
+
+    /// <summary>Objets qui ne se brisent pas (familiers, montiliers, Dofus) : pas de valeur de runes.</summary>
+    static bool Breakable(ItemInfo item) =>
+        !item.TypeName.Contains("Familier", StringComparison.OrdinalIgnoreCase)
+        && !item.TypeName.Contains("Montilier", StringComparison.OrdinalIgnoreCase)
+        && !item.TypeName.Equals("Dofus", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Valeur des runes d'un modèle d'objet au jet moyen (runes au prix HDV, sans prix : 0) ; null si aucune rune n'a de prix.</summary>
+    double? BreakValue(ItemInfo item)
+    {
+        if (_data == null || item.MaxStats.Count == 0 || !Breakable(item)) return null;
+        var priced = RuneBreaking.Estimate(_data, item.Level, RollStats(item, 1)).Where(r => UnitPrice(r.ItemId) != null).ToList();
+        return priced.Count > 0 ? priced.Sum(r => r.Quantity * UnitPrice(r.ItemId)!.Value) : null;
+    }
+
     /// <summary>Offres consultées à l'HDV : leurs caractéristiques réelles nourrissent les jets observés.</summary>
     void ObserveHdvRolls(string body)
     {
@@ -328,7 +376,8 @@ public partial class MainWindow
                 double? craftCost = CraftCost(x.Item.Id), hdvPrice = UnitPrice(x.Item.Id);
 
                 // Runes estimées et leur valeur à l'HDV (runes sans prix comptées 0)
-                var runes = RuneBreaking.Estimate(_data, x.Item.Level, x.Stats);
+                // Modèle d'objet : runes sur le jet choisi (minimum, moyen ou maximum de la fourchette officielle)
+                var runes = RuneBreaking.Estimate(_data, x.Item.Level, mine ? x.Stats : RollStats(x.Item));
                 var priced = runes.Where(r => UnitPrice(r.ItemId) != null).ToList();
                 double? value = priced.Count > 0 ? priced.Sum(r => r.Quantity * UnitPrice(r.ItemId)!.Value) : null;
                 // À comparer : son prix de vente pour un objet possédé, son coût de fabrication sinon

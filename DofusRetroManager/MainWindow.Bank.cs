@@ -18,6 +18,9 @@ public sealed record BankRow(int ItemId, string Name, int Quantity, int Level, s
     public double? UnitPrice { get; init; }
     /// <summary>Prix moyen affiché par l'HDV.</summary>
     public long? AveragePrice { get; init; }
+    /// <summary>Qualité du meilleur jet parmi les exemplaires (0 à 1, au-delà : forgemagé), et chaque exemplaire au survol.</summary>
+    public double? Quality { get; init; }
+    public string QualityTip { get; init; } = "";
 }
 
 public partial class MainWindow
@@ -53,11 +56,16 @@ public partial class MainWindow
                 var it = _data.GetItem(g.Key);
                 int qty = g.Sum(i => i.Quantity);
                 var unit = UnitPrice(g.Key);
+                // Qualité du jet de chaque exemplaire (fourchettes officielles), la meilleure affichée
+                var quality = g.Select(i => RollQuality(it, i.Effects)).OfType<double>().OrderByDescending(q => q).ToList();
                 return new BankRow(g.Key, it.Name, qty, it.Level, it.TypeName, _usage.GetValueOrDefault(g.Key))
                 {
                     Value = unit is { } u ? (long)Math.Round(u * qty) : null,
                     UnitPrice = unit,
                     AveragePrice = _hdv?.Prices.GetValueOrDefault(g.Key)?.Average,
+                    Quality = quality.Count > 0 ? quality[0] : null,
+                    QualityTip = quality.Count == 0 ? "" : "Qualité du jet (0 % : tout au minimum, 100 % : tout au maximum)\n"
+                        + string.Join(" · ", quality.Take(20).Select(q => $"{q * 100:0} %")) + (quality.Count > 20 ? " …" : ""),
                 };
             })
             .ToList();

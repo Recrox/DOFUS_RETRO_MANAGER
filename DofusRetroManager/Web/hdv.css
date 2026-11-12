@@ -19,3 +19,7 @@
 .trades .top-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .trades .top-item .name { font-weight: 700; display: block; }
 .trades .top-item .price { font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+
+/* Nom de l'objet (et type · niveau) : coupé, texte complet au survol, pour que le tableau tienne */
+.hdv-name { display: inline-block; max-width: 190px; vertical-align: bottom; }
+div.hdv-name { display: block; }

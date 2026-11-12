@@ -10,7 +10,13 @@ using DofusRetroManager.Net;
 namespace DofusRetroManager;
 
 public sealed record HdvRow(int Index, int ItemId, string Name, int Level, string Type,
-    long? Lot1, long? Lot10, long? Lot100, double? Unit, long? Average, string Seen, DateTime SeenAt);
+    long? Lot1, long? Lot10, long? Lot100, double? Unit, long? Average, string Seen, DateTime SeenAt)
+{
+    /// <summary>Valeur des runes au jet moyen (équipements) : 🔨 quand elle dépasse le prix ×1.</summary>
+    public double? Break { get; init; }
+    /// <summary>Gain du brisage d'un exemplaire acheté au prix ×1 (positif : rentable à briser).</summary>
+    public double? BreakGain => Break - Lot1;
+}
 
 public sealed record HdvHistoryRow(string When, string Lot1, string Lot10, string Lot100);
 
@@ -71,7 +77,8 @@ public partial class MainWindow
             .OrderByDescending(x => x.Price?.SeenAt ?? DateTime.MinValue).ThenBy(x => x.Item.Name)
             .Select((x, i) => new HdvRow(i + 1, x.Item.Id, x.Item.Name, x.Item.Level, x.Item.TypeName,
                 x.Price?.Lot1, x.Price?.Lot10, x.Price?.Lot100, x.Price?.UnitPrice, x.Price?.Average,
-                x.Price is { } p ? Ago(p.SeenAt) + (p.Shared ? " · groupe" : "") : "", x.Price?.SeenAt ?? DateTime.MinValue))
+                x.Price is { } p ? Ago(p.SeenAt) + (p.Shared ? " · groupe" : "") : "", x.Price?.SeenAt ?? DateTime.MinValue)
+                { Break = x.Price?.Lot1 != null ? BreakValue(x.Item) : null })
             .ToList();
 
         SetRows(HdvGrid, rows);

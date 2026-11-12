@@ -32,7 +32,7 @@ Object.assign(views, {
             { h: 'Kamas', k: 'k', num: true, f: r => r.k ? kamas(r.k) : '—' },
             { h: 'Total', k: 't', num: true, f: r => `<span class="acc strong">${kamas(r.t)}</span>` },
           ], { select: false })}
-          <div class="muted small" title="Une banque est partagée par le compte : elle est comptée une fois, sur le premier personnage qui l'a ouverte.">Banque du compte comptée une fois ⓘ</div>
+          <div class="muted small" title="Une banque est partagée par le compte : les banques au même contenu (vues par plusieurs personnages du compte) sont comptées une fois, sur le personnage qui l'a ouverte le plus récemment.">Banque du compte comptée une fois ⓘ</div>
         </div>
         <aside class="detail glass"><h3>Objets les plus précieux</h3>
           ${table('PatrTop', [

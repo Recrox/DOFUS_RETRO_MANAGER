@@ -10,7 +10,9 @@ Object.assign(views, {
       <span class="muted">à</span>
       <input type="text" data-stat="${i}" data-field="max" data-fk="stat-${i}-max" value="${esc(s.max)}" placeholder="max" title="${esc(s.t)} maximum (vide = pas de limite)">` : ''}</span>`).join('');
     const sel = rows('BrisageGrid')[S.BrisageGrid?.sel ?? -1];
-    return `<div class="filters">${input('BrisageSearch', 'Rechercher un objet…', '220px')}${select('BrisageSource')}${select('BrisageTypeFilter')}
+    // Jet des modèles d'objets (runes estimées) : inutile pour vos objets (leurs vraies valeurs)
+    const roll = (S.BrisageSource?.i ?? 0) > 0 ? `<span data-tip="Jet utilisé pour estimer les runes d'un objet à fabriquer : fourchette officielle du jeu">${select('BrisageRoll')}</span>` : '';
+    return `<div class="filters">${input('BrisageSearch', 'Rechercher un objet…', '220px')}${select('BrisageSource')}${roll}${select('BrisageTypeFilter')}
         <span class="lbl">Niveau</span>${input('BrisageLevelMin', '', '60px')}<span class="lbl">à</span>${input('BrisageLevelMax', '', '60px')}
         ${btn('BrisageReset', 'Réinitialiser les stats', 'small')}<span class="chip">${esc(T('BrisageCount'))}</span></div>
       <div class="filters stat-filters">${stats}</div>

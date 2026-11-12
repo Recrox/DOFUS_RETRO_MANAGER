@@ -35,6 +35,13 @@ public partial class MainWindow
         return _patrimoineDays ??= new();
     }
 
+    /// <summary>Même banque (même compte) : au moins 80 % des objets, des deux côtés, avec la même quantité.</summary>
+    static bool SameBank(Dictionary<int, int> a, Dictionary<int, int> b)
+    {
+        int same = a.Count(kv => b.TryGetValue(kv.Key, out var q) && q == kv.Value);
+        return same >= 0.8 * Math.Max(a.Count, b.Count);
+    }
+
     /// <summary>État de l'onglet (envoyé à la page sous « _patrimoine ») ; la valeur du jour est retenue au passage.</summary>
     string PatrimoineJson()
     {
@@ -47,13 +54,26 @@ public partial class MainWindow
         int unpriced = 0;
         long kamas = 0;
         double objects = 0;
-        foreach (var s in _tracker.AllSnapshots().Where(s => s.Character.Length > 0))
+        var snapshots = _tracker.AllSnapshots().Where(s => s.Character.Length > 0).ToList();
+        // Banque du compte : le jeu renumérote ses objets à chaque ouverture, donc deux personnages du même compte ont
+        // des banques aux identifiants différents mais au même contenu. Banques au contenu presque identique (80 % des
+        // objets avec la même quantité) : une seule, la plus récente, est comptée.
+        var counted = new List<Dictionary<int, int>>();
+        var bankOf = new HashSet<Net.Snapshot>();
+        foreach (var s in snapshots.Where(s => s.Bank.Count > 0).OrderByDescending(s => s.BankUpdatedAt))
+        {
+            var content = s.Bank.Values.GroupBy(i => i.TemplateId).ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
+            if (counted.Any(o => SameBank(o, content))) continue;
+            counted.Add(content);
+            bankOf.Add(s);
+        }
+        foreach (var s in snapshots)
         {
             var c = perChar.GetValueOrDefault(s.Character);
-            // Banque du compte : la même (mêmes objets) vue par plusieurs personnages n'est comptée qu'une fois
-            bool newBank = s.Bank.Count > 0 && banks.Add(string.Join(",", s.Bank.Keys.Order()));
-            if (newBank) { c.Kamas += s.BankKamas; kamas += s.BankKamas; }
-            foreach (var (uid, it, inBank) in s.Bank.Select(kv => (kv.Key, kv.Value, true)).Concat(s.Inventory.Select(kv => (kv.Key, kv.Value, false))))
+            bool hasBank = bankOf.Contains(s);
+            if (hasBank) { banks.Add(s.Character); c.Kamas += s.BankKamas; kamas += s.BankKamas; }
+            foreach (var (uid, it, inBank) in (hasBank ? s.Bank.Select(kv => (kv.Key, kv.Value, true)) : [])
+                .Concat(s.Inventory.Select(kv => (kv.Key, kv.Value, false))))
             {
                 if (!seen.Add(uid)) continue;
                 var price = DropPrice(it.TemplateId);

@@ -7,6 +7,23 @@ namespace DofusRetroManager;
 public partial class MainWindow
 {
     /// <summary>Ouvre l'onglet HDV sur l'objet : recherche par son nom, type « Tous », et tous les objets s'il n'a pas de prix.</summary>
+    /// <summary>Ouvre le Brisage sur cet objet (tous les objets du jeu, autres filtres remis à zéro).</summary>
+    void ShowInBrisage(int itemId)
+    {
+        if (_data == null) return;
+        _ready = false; // une seule mise à jour à la fin
+        foreach (var f in _statFilters) f.Box.IsChecked = false;
+        BrisageSource.SelectedIndex = 3;
+        BrisageTypeFilter.SelectedIndex = 0;
+        BrisageLevelMin.Text = "1";
+        BrisageLevelMax.Text = "200";
+        BrisageSearch.Text = _data.GetItem(itemId).Name;
+        _ready = true;
+        ApplyBrisageFilters();
+        MainTabs.SelectedIndex = 2;
+        if ((BrisageGrid.ItemsSource as IEnumerable<BrisageRow>)?.FirstOrDefault(r => r.ItemId == itemId) is { } row) BrisageGrid.SelectedItem = row;
+    }
+
     void ShowInHdv(int itemId)
     {
         if (_data == null || _hdv == null) return;

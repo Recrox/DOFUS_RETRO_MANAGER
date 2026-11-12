@@ -8,14 +8,14 @@ const post = m => window.chrome.webview.postMessage(m);
 
 // Contrôles suivis, par onglet (les autres onglets s'ouvrent dans l'interface classique)
 const COMMON = ['VersionText', 'CaptureDot', 'CaptureStatus', 'BankStatus', 'CaptureButton', 'AdminButton', 'UpdateBanner',
-  'UpdateTitle', 'UpdateText', 'UpdateActionButton', 'UpdateLaterButton', 'UpdateNotesButton', 'MainTabs'];
+  'UpdateTitle', 'UpdateText', 'UpdateActionButton', 'UpdateLaterButton', 'UpdateNotesButton', 'MainTabs', '_search'];
 const TABS = [
   { key: 'bank', label: 'Banque', watch: ['BankOwner', 'BankCharacter', 'BankSearch', 'BankTypeFilter', 'BankCount', 'BankValue', 'BankGrid'] },
   { key: 'recipes', label: 'Recettes', watch: ['RecipeSearch', 'JobFilter', 'ModeFilter', 'SellMinPanel', 'SellMin',
     'LevelMin', 'LevelMax', 'SlotFilters', 'IncludeInventory', 'InventoryHint', 'RecipeCount', 'IngredientChip', 'IngredientChipText',
     'RecipeGrid', 'DetailTitle', 'DetailSub', 'DetailCostPanel', 'DetailCraftCount', 'DetailCraftMax', 'DetailCostTitle', 'DetailCost',
     'DetailCostNote', 'DetailProfit', 'DetailProfitOwned', 'DetailStatsPanel', 'DetailStats', 'DetailIngredients'] },
-  { key: 'brisage', label: 'Brisage', watch: ['BrisageSearch', 'BrisageSource', 'BrisageTypeFilter', 'BrisageLevelMin',
+  { key: 'brisage', label: 'Brisage', watch: ['BrisageSearch', 'BrisageSource', 'BrisageRoll','BrisageTypeFilter', 'BrisageLevelMin',
     'BrisageLevelMax', 'BrisageCount', 'BrisageStats', 'BrisageGrid', 'BrisageGainColumn', 'BrisageEmpty', 'BrisageDetailTitle',
     'BrisageDetailSub', 'BrisageGoRecipe', 'BrisageBreakCount', 'BrisageBreakMax', 'BrisageDetailTotal', 'BrisageRunes'] },
   { key: 'hdv', label: 'HDV', watch: ['HdvSearch', 'HdvTypeFilter', 'HdvShowAll', 'HdvCount', 'HdvGrid', 'HdvEmpty',
@@ -209,6 +209,7 @@ function header() {
         `<button class="${(S._theme || 'Crepuscule') === t ? 'on' : ''}" data-act="theme" data-v="${t}">${l}</button>`).join('')}</div>
       ${btn('AdminButton', 'Relancer en administrateur')}
       ${btn('CaptureButton', 'Démarrer la capture', 'primary')}
+      <button data-act="search-open" title="Rechercher un objet partout : prix, possédé, recette, runes, drops (Ctrl+K)">🔍</button>
       <button data-act="changelog" title="Les changements de chaque version">Nouveautés</button>
     </div>
   </header>`;
@@ -238,6 +239,32 @@ function confirmBox() {
       <h2>Confirmer</h2><p>${esc(local.confirm.text)}</p>
       <div class="row"><span class="right"></span><button data-act="confirm-close">Annuler</button>
         <button class="primary" data-act="confirm-ok">Confirmer</button></div>
+    </div></div>`;
+}
+
+// Recherche globale (Ctrl+K ou 🔍) : fenêtre par-dessus la page ; résultats calculés par l'application (« _search »)
+function searchBox() {
+  if (!local.search) return '';
+  const r = S._search;
+  const line = (lbl, v, tip = '') => v ? `<div class="gs-line" ${tip ? `data-tip="${esc(tip)}"` : ''}><span class="lbl">${lbl}</span>${v}</div>` : '';
+  const item = i => `<div class="gs-item">
+      <div class="gs-head">${itemImg(i.id)}<div><b>${esc(i.n)}</b><div class="muted small">${esc(i.t)} · niv. ${i.l}</div></div>
+        <span class="right gs-acts">
+          ${i.card ? '' : `<button class="small" data-act="gs-go" data-to="item-hdv" data-id="${i.id}" title="Voir à l'HDV">HDV</button>`}
+          ${i.recipe ? `<button class="small" data-act="gs-go" data-to="item-recipe" data-id="${i.id}" title="Voir la recette">Recette</button>` : ''}
+          ${i.runes != null ? `<button class="small" data-act="gs-go" data-to="item-brisage" data-id="${i.id}" title="Voir dans le Brisage">Brisage</button>` : ''}</span></div>
+      <div class="gs-lines">
+        ${i.card ? line('Marchand', i.shop != null ? kamas(i.shop) : '<span class="muted">pas de prix</span>', 'Carte TTG : ne se vend pas à l\'HDV ; meilleur prix relevé chez les marchands (onglet TTG)') : line('HDV', i.unit != null ? `${kamas(i.unit)} <span class="muted small">${esc(i.seen || '')}</span>` : '<span class="muted">pas de prix</span>', i.avg != null ? `Prix moyen : ${fmt(i.avg)} k` : '')}
+        ${line('Possédé', i.own ? `<b>×${fmt(i.own)}</b> <span class="muted small ellipsis">${esc(i.who)}</span>` : '', i.who)}
+        ${line('Recette', i.recipe ? (i.cost != null ? kamas(i.cost) : '<span class="muted">coût inconnu</span>') + (i.craft ? ` <span class="ok small">faisable ×${i.craft}</span>` : '') : '')}
+        ${line('Runes', i.runes != null ? kamas(i.runes) : '', 'Valeur des runes au jet moyen (Brisage)')}
+        ${line('Drop', i.dropCount ? i.drops.map(m => `<span class="chip">${esc(m.n)}</span>`).join('') + (i.dropCount > i.drops.length ? ` <span class="muted small">+${i.dropCount - i.drops.length}</span>` : '') : '')}
+      </div></div>`;
+  return `<div class="modal-back" data-act="search-close"><div class="modal glass gsearch" data-act="none">
+      <div class="row"><input type="search" class="gs-input" data-gsearch="1" data-fk="gsearch" placeholder="Rechercher un objet… (Échap pour fermer)" value="${esc(local.search.q)}" autofocus>
+        <button class="small ghost" data-act="search-close">✕</button></div>
+      <div class="modal-body gs-list">${!r || r.q !== local.search.q.trim() ? (local.search.q.trim().length < 2 ? '<div class="muted">Tapez au moins 2 lettres.</div>' : '<div class="muted">Recherche…</div>')
+        : r.items.length ? r.items.map(item).join('') : '<div class="empty">Aucun objet.</div>'}</div>
     </div></div>`;
 }
 

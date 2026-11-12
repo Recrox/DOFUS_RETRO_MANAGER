@@ -12,6 +12,8 @@ Object.assign(views, {
         { h: 'Quantité', k: 'Quantity', num: true, f: r => `<span class="acc strong">${fmt(r.Quantity)}</span>` },
         { h: 'Niv.', k: 'Level', num: true },
         { h: 'Type', k: 'Type' },
+        // Qualité du meilleur jet (fourchettes officielles) : rouge bas, vert haut, ✦ au-delà du maximum (forgemagé)
+        { h: 'Jet', k: 'Quality', num: true, f: r => r.Quality == null ? '' : `<span class="jet-q ${r.Quality > 1.001 ? 'over' : r.Quality >= .8 ? 'ok' : r.Quality < .4 ? 'bad' : ''}" data-tip="${esc(r.QualityTip)}">${r.Quality > 1.001 ? '✦ ' : ''}${Math.round(r.Quality * 100)} %</span>` },
         { h: 'Utilisé dans', k: 'UsedIn', f: r => r.UsedIn > 0 ? `<button class="small" ${attrs({ act: 'row', grid: 'BankGrid', i: r._i, handler: 'BankRecipes_Click' })}>${r.UsedIn} recette(s) ›</button>` : '' },
         { h: 'Prix /u', k: 'UnitPrice', num: true, f: r => fmt(r.UnitPrice) },
         { h: 'Moyen', k: 'AveragePrice', num: true, f: r => `<span class="muted">${fmt(r.AveragePrice)}</span>` },

@@ -50,7 +50,7 @@ function render() {
   const scroll = [...document.querySelectorAll('.table-wrap, .detail, .modal-body')].map(e => e.scrollTop);
 
   const html = kamasIcons(header() + banner() + tabs(active)
-    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail() + chartZoom());
+    + `<main class="glass">${views[tab.key]()}</main>` + changelog() + confirmBox() + ttgBook() + sessionDetail() + chartZoom() + searchBox());
   const app = document.getElementById('app');
   if (local.noMorph) app.innerHTML = html; else morphHtml(app, html);
 
@@ -90,6 +90,11 @@ document.addEventListener('click', e => {
     case 'changelog-close': local.changelog = false; schedule(); break;
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
+    case 'search-open': openSearch(); break;
+    case 'hdv-break': local.sort.HdvGrid = local.sort.HdvGrid?.k === 'BreakGain' ? null : { k: 'BreakGain', dir: -1 }; schedule(); break;
+    case 'search-close': local.search = null; schedule(); break;
+    // Lien d'un résultat de recherche : la fenêtre se ferme, l'onglet de l'objet s'ouvre
+    case 'gs-go': local.search = null; post({ type: 'show', tab: { 'item-hdv': 'hdv', 'item-recipe': 'recipe', 'item-brisage': 'brisage' }[d.to], id: +d.id }); schedule(); break;
     case 'elev': { const f = local.elev ||= {}; f[d.k] = d.k === 'fec' ? !f.fec : d.v; schedule(); break; }
     case 'farm-del': post({ type: 'farm-del', index: +d.i }); break;
     case 'trade-del': post({ type: 'trade-del', index: +d.i }); break;
@@ -118,6 +123,7 @@ document.addEventListener('click', e => {
     case 'item-hdv': post({ type: 'show', tab: 'hdv', id: +d.id }); break;
     case 'item-recipe': post({ type: 'show', tab: 'recipe', id: +d.id }); break;
     case 'item-pda': post({ type: 'show', tab: 'pda', id: +d.id }); break;
+    case 'item-brisage': post({ type: 'show', tab: 'brisage', id: +d.id }); break;
     case 'goto': case 'goto-me': {
       // Repère à montrer une fois la carte chargée (carteMount) ; vos personnages sont déjà marqués
       const g = d.act === 'goto' ? JSON.parse(d.g) : null;
@@ -194,7 +200,14 @@ document.addEventListener('dragend', () => {
 // Raccourci : la combinaison pressée remplace la valeur (« Ctrl+Alt+Right ») ; Suppr ou Retour arrière l'efface
 const KEYS = { ArrowRight: 'Right', ArrowLeft: 'Left', ArrowUp: 'Up', ArrowDown: 'Down', ' ': 'Space', Escape: 'Escape',
   PageUp: 'PageUp', PageDown: 'Next', Enter: 'Return' };
+function openSearch() {
+  local.search = { q: local.search?.q || '' };
+  schedule();
+  setTimeout(() => document.querySelector('.gs-input')?.focus(), 50);
+}
 document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); return; }
+  if (e.key === 'Escape' && local.search) { local.search = null; schedule(); return; }
   if (e.key === 'Escape' && local.confirm) { local.confirm = null; schedule(); return; }
   if (e.key === 'Escape' && local.changelog) { local.changelog = false; schedule(); return; }
   if (e.key === 'Escape' && local.book) { local.book = null; schedule(); return; }
@@ -223,6 +236,13 @@ document.addEventListener('input', e => {
   const el = e.target;
   // Carte : recherche propre à la page
   if (el.dataset?.carte === 'search') { carte.search = el.value; schedule(); return; }
+  // Recherche globale : envoyée après une courte pause
+  if (el.dataset?.gsearch) {
+    local.search.q = el.value; schedule();
+    clearTimeout(timers.gsearch);
+    timers.gsearch = setTimeout(() => post({ type: 'search', q: el.value }), 200);
+    return;
+  }
   // Seuil du Brisage (minimum ou maximum d'une caractéristique)
   if (el.dataset?.stat != null && el.type !== 'checkbox') {
     const key = 'stat' + el.dataset.stat + el.dataset.field;

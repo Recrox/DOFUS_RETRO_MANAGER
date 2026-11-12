@@ -91,6 +91,7 @@ public partial class MainWindow
                             if (!ShowRecipeOf(shownItem)) AddLog($"{_data?.GetItem(shownItem).Name} : pas de recette.");
                         }
                         else if (shownTab == "pda") ShowInPda(shownItem); // id : le monstre (onglet Ocre)
+                        else if (shownTab == "brisage") ShowInBrisage(shownItem);
                         else ShowInHdv(shownItem);
                     }
                     break;
@@ -120,6 +121,10 @@ public partial class MainWindow
                 case "toggle":
                     if (el is WebPanel panel && panel.Children.OfType<ToggleButton>().ElementAtOrDefault(index) is { } toggle)
                         toggle.IsChecked = toggle.IsChecked != true;
+                    break;
+                case "search":
+                    // Recherche globale (Ctrl+K) : objets correspondants et tout ce qu'on en sait
+                    Search(m.TryGetProperty("q", out var q) ? q.GetString() ?? "" : "");
                     break;
                 case "farm-del":
                     // Objectif de farm arrêté (index : identifiant de l'objet, 0 : tous)

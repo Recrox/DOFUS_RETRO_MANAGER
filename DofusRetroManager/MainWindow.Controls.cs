@@ -66,6 +66,8 @@ public partial class MainWindow
     internal readonly WebList DetailIngredients = new();
     internal readonly WebTextBox BrisageSearch = new();
     internal readonly WebCombo BrisageSource = new();
+    /// <summary>Jet des modèles d'objets pour les runes : minimum, moyen (par défaut) ou maximum.</summary>
+    internal readonly WebCombo BrisageRoll = new();
     internal readonly WebCombo BrisageTypeFilter = new();
     internal readonly WebTextBox BrisageLevelMin = new() { Text = "1" };
     internal readonly WebTextBox BrisageLevelMax = new() { Text = "200" };
@@ -359,6 +361,9 @@ public partial class MainWindow
         BrisageSource.Items.Add(new ComboBoxItem { Content = "Tous les objets du jeu" });
         BrisageSource.SelectedIndex = 0;
         BrisageSource.SelectionChanged += BrisageFilters_Changed;
+        foreach (var r in new[] { "Jet min", "Jet moyen", "Jet max" }) BrisageRoll.Items.Add(new ComboBoxItem { Content = r });
+        BrisageRoll.SelectedIndex = 1;
+        BrisageRoll.SelectionChanged += BrisageFilters_Changed;
         BrisageTypeFilter.SelectionChanged += BrisageFilters_Changed;
         BrisageLevelMin.TextChanged += BrisageFilters_Changed;
         BrisageLevelMax.TextChanged += BrisageFilters_Changed;

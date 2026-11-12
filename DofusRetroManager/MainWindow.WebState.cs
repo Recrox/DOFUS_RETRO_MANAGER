@@ -53,6 +53,7 @@ public partial class MainWindow
                     "_ttgBook" => JsonSerializer.Serialize(BuildTtgBook()),
                     "_trades" => TradesJson(),
                     "_patrimoine" => PatrimoineJson(),
+                    "_search" => _searchJson,
                     "_metier" => MetierJson(),
                     "_elevage" => ElevageJson(),
                     _ => ElementJson(name),
