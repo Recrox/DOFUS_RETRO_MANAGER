@@ -168,9 +168,9 @@ public partial class MainWindow
     /// Un nouveau fichier de Web/ s'ajoute ici.
     /// </summary>
     static readonly string[] WebCssFiles =
-        ["theme", "app", "recettes", "hdv", "combat", "brisage", "ttg", "fm", "switcheur", "carte"];
+        ["theme", "app", "recettes", "hdv", "combat", "brisage", "ttg", "fm", "switcheur", "carte", "patrimoine", "metier", "elevage"];
     static readonly string[] WebJsFiles =
-        ["core", "banque", "recettes", "hdv", "combat", "brisage", "ttg", "pda", "ocre", "fm", "switcheur", "carte", "app"];
+        ["core", "banque", "recettes", "hdv", "combat", "brisage", "ttg", "pda", "ocre", "fm", "switcheur", "carte", "patrimoine", "metier", "elevage", "app"];
     static byte[]? _webCss, _webJs;
 
     static byte[] Bundle(string[] names)

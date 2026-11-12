@@ -52,6 +52,9 @@ public partial class MainWindow
                     "_carteRes" => CarteResourcesJson(),
                     "_ttgBook" => JsonSerializer.Serialize(BuildTtgBook()),
                     "_trades" => TradesJson(),
+                    "_patrimoine" => PatrimoineJson(),
+                    "_metier" => MetierJson(),
+                    "_elevage" => ElevageJson(),
                     _ => ElementJson(name),
                 };
             }

@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.90.0 — 12 novembre 2026
+
+- **Menu** : les onglets sont regroupés en familles (Inventaire, Artisanat, Commerce, Aventure, Outils) ; la famille ouverte montre ses onglets, les autres rouvrent leur dernier onglet consulté.
+- **Patrimoine** : nouvel onglet, la valeur de tous vos biens (objets des banques et inventaires, kamas en banque, offres en vente), par personnage, les objets les plus précieux et l'évolution jour après jour.
+- **Métier** : nouvel onglet pour monter un métier d'un niveau à un autre : pour chaque palier, les recettes les moins chères par XP, le nombre de fabrications et le coût total (revente déduite au choix).
+- **Élevage** : nouvel onglet, vos dragodindes de l'étable, de l'enclos et la monture équipée (couleurs, sexe, niveau, endurance, maturité, amour, énergie, sérénité, fatigue, reproductions, capacités), avec des filtres ; relevées à l'ouverture de l'étable ou de l'enclos en jeu.
+
 ## 1.89.0 — 12 novembre 2026
 
 - **Brisage** : les caractéristiques montrent la fourchette officielle du jet (minimum et maximum lus dans les données du jeu), sans avoir à consulter l'objet à l'HDV.

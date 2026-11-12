@@ -1,0 +1,5 @@
+/* Onglet Patrimoine : totaux en tuiles, courbe et personnages à gauche, objets les plus précieux à droite */
+.patr-kpis { margin-bottom: 8px; }
+.patr-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: auto; }
+.patr-main .card { padding: 8px 10px; }
+.patr-name { display: block; max-width: 120px; }

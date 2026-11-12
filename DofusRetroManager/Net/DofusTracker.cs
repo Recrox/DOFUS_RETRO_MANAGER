@@ -166,5 +166,12 @@ public sealed partial class DofusTracker
         // Classeur TTG : contenu à l'ouverture (« td »), carte ajoutée (« ta »)
         else if (msg.StartsWith("td") && msg.Length > 2 && char.IsAsciiDigit(msg[2])) OnBinder(msg[2..]);
         else if (msg.StartsWith("ta") && int.TryParse(msg.AsSpan(2), out var added)) OnBinderAdd(added);
+        // Élevage : vos dragodindes (étable Ee, enclos Ef, monture équipée Re/Rd). Jamais journalisés.
+        else if (msg.Length >= 3 && (msg.StartsWith("Ee") || msg.StartsWith("Ef") || msg.StartsWith("Re") || msg.StartsWith("Rd"))
+            && (msg[2] is '+' or '-' or '~' || msg.StartsWith("Rd") && char.IsAsciiDigit(msg[2])))
+            MountMessage?.Invoke(Cur.Character, msg);
     }
+
+    /// <summary>Message de dragodinde (Ee+/Ee~/Ee-, Ef+/Ef-, Re+/Re-, Rd…) et le personnage de la fenêtre.</summary>
+    public event Action<string, string>? MountMessage;
 }

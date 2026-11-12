@@ -33,6 +33,11 @@ public partial class MainWindow
     internal readonly WebTab RecipesTab = new() { Header = "Recettes" };
     internal readonly WebTextBox RecipeSearch = new();
     internal readonly WebCombo JobFilter = new();
+    // Onglet Métier (MainWindow.Metier.cs)
+    internal readonly WebCombo MetierJob = new();
+    internal readonly WebTextBox MetierFrom = new() { Text = "1", ToolTip = "Niveau actuel du métier" };
+    internal readonly WebTextBox MetierTo = new() { Text = "100", ToolTip = "Niveau visé" };
+    internal readonly WebToggle MetierResell = new() { Content = "Revente déduite", ToolTip = "Coût net : prix HDV de l'objet fabriqué déduit (vous revendez ce que vous fabriquez)" };
     internal readonly WebCombo ModeFilter = new();
     internal readonly WebPanel SellMinPanel = new() { Visibility = Visibility.Collapsed };
     internal readonly WebTextBox SellMin = new() { Text = "10000" };
@@ -320,6 +325,10 @@ public partial class MainWindow
         MainTabs.Add(new WebTab { Header = "FM" });
         MainTabs.Add(CarteTab);
         MainTabs.Add(new WebTab { Header = "Journal" });
+        // Ajoutés après coup (menu par familles de la page : core.js, GROUPS)
+        MainTabs.Add(new WebTab { Header = "Patrimoine" });
+        MainTabs.Add(new WebTab { Header = "Métier" });
+        MainTabs.Add(new WebTab { Header = "Élevage" });
         MainTabs.SelectedIndex = 0;
         BankCharacter.SelectionChanged += BankFilter_Changed;
         BankSearch.TextChanged += BankFilter_Changed;

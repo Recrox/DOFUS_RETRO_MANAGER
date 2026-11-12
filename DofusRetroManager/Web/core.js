@@ -44,6 +44,10 @@ const TABS = [
   { key: 'carte', label: 'Carte', watch: ['MiniMapEnabled', 'MiniMapMove', 'CarteHarvestTitle', 'CarteHarvest', 'CarteHarvestList', 'CarteCellPanel', 'CarteCellTitle',
     'CarteCellInfo', 'CarteCellHarvest', 'CarteCellList'] },
   { key: 'journal', label: 'Journal', watch: ['LogBox', 'LogPacketsBox'] },
+  // Ajoutés après coup : leur place dans le menu est donnée par GROUPS, pas par cet ordre (index de MainTabs)
+  { key: 'patrimoine', label: 'Patrimoine', watch: ['_patrimoine'] },
+  { key: 'metier', label: 'Métier', watch: ['MetierJob', 'MetierFrom', 'MetierTo', 'MetierResell', '_metier'] },
+  { key: 'elevage', label: 'Élevage', watch: ['_elevage'] },
 ];
 // Contrôles suivis : l'en-tête et l'onglet affiché seulement (et le livre TTG quand il est ouvert) ; l'application ne
 // relit et n'envoie que ceux-là. La liste est renvoyée à chaque changement d'onglet.
@@ -257,6 +261,9 @@ const TAB_ICONS = {
   fm: '<path d="M4 20 15 9"/><path d="M13.5 7.5l3 3"/><path d="M18 3v4M16 5h4"/><path d="M20.5 11.5v3M19 13h3"/><path d="M9.5 3v2.5M8.25 4.25h2.5"/>',
   carte: '<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/>',
   journal: '<rect x="4.5" y="3" width="15" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
+  patrimoine: '<path d="M3 20h18"/><path d="M5 20V10l7-5 7 5v10"/><path d="M9.5 20v-5h5v5"/><circle cx="12" cy="10.5" r="1.5"/>',
+  metier: '<path d="M4 20l8-8"/><path d="M14.5 3.5l6 6-3.5 3.5-6-6z"/><path d="M15 21h6M18 15v6"/>',
+  elevage: '<path d="M5 19c0-4 2-7 6-8l2-5 2 3 3 1-1 3c1 2 1 4 0 6"/><path d="M8 19v-3M15 19v-3"/><circle cx="16" cy="8.5" r=".6"/>',
 };
 const TAB_TIPS = {
   bank: 'Contenu de votre banque et sa valeur estimée', recipes: 'Recettes faisables avec vos ressources, coût et bénéfice',
@@ -264,6 +271,8 @@ const TAB_TIPS = {
   pda: "Pierres d'âme : prix par monstre et vos pierres", ocre: 'Quête du Dofus Ocre : étapes, âmes possédées et à acheter', combat: 'Groupes de la map, drops, XP et rentabilité',
   windows: "Passer d'un personnage à l'autre (multi-compte)", fm: 'Forgemagie : runes passées et reliquat',
   carte: "Carte du monde et points d'intérêt", journal: "Messages de l'application",
+  patrimoine: 'Valeur de tous vos biens : banques, inventaires, kamas, ventes en cours', metier: 'Monter un métier : recettes les moins chères par XP',
+  elevage: 'Vos dragodindes : étable, enclos et monture équipée',
 };
 // Icônes des boutons (même trait que les onglets) : ico('trades') devant le libellé d'un bouton
 const BTN_ICONS = {
@@ -283,9 +292,32 @@ const ico = key => `<svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke=
 const tabIcon = key => `<svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
   stroke-linejoin="round" aria-hidden="true">${TAB_ICONS[key] || ''}</svg>`;
 
+// Menu : onglets regroupés par famille. La famille active montre ses onglets ; une autre famille s'ouvre sur son
+// dernier onglet consulté (gardé dans le navigateur), ses onglets au survol.
+const GROUPS = [
+  { key: 'inv', label: 'Inventaire', icon: 'bank', tabs: ['bank', 'patrimoine'] },
+  { key: 'craft', label: 'Artisanat', icon: 'recipes', tabs: ['recipes', 'metier', 'brisage', 'fm'] },
+  { key: 'trade', label: 'Commerce', icon: 'hdv', tabs: ['hdv', 'ttg', 'pda'] },
+  { key: 'adv', label: 'Aventure', icon: 'combat', tabs: ['combat', 'ocre', 'elevage', 'carte'] },
+  { key: 'tools', label: 'Outils', icon: 'windows', tabs: ['windows', 'journal'] },
+];
+const tabIndex = key => TABS.findIndex(t => t.key === key);
+const groupOf = key => GROUPS.find(g => g.tabs.includes(key)) || GROUPS[0];
+function groupLast(g) {
+  let k = null;
+  try { k = localStorage.getItem('tabGroup.' + g.key); } catch { }
+  return g.tabs.includes(k) ? k : g.tabs[0];
+}
 function tabs(active) {
-  return `<nav class="tabs glass">${TABS.map((t, i) => `<button class="tab ${i === active ? 'on' : ''}" data-act="tab" data-i="${i}"
-    title="${esc(TAB_TIPS[t.key] || '')}">${tabIcon(t.key)}${esc(t.label)}</button>`).join('')}</nav>`;
+  const cur = TABS[active]?.key;
+  const curGroup = groupOf(cur);
+  try { localStorage.setItem('tabGroup.' + curGroup.key, cur); } catch { }
+  const tab = k => `<button class="tab ${k === cur ? 'on' : ''}" data-act="tab" data-i="${tabIndex(k)}"
+    title="${esc(TAB_TIPS[k] || '')}">${tabIcon(k)}${esc(TABS[tabIndex(k)]?.label || k)}</button>`;
+  return `<nav class="tabs glass">${GROUPS.map(g => g === curGroup
+    ? `<span class="tab-group on"><span class="tab-group-name">${esc(g.label)}</span>${g.tabs.map(tab).join('')}</span>`
+    : `<button class="tab tab-group-btn" data-act="tab" data-i="${tabIndex(groupLast(g))}"
+        title="${esc(g.label + ' : ' + g.tabs.map(k => TABS[tabIndex(k)]?.label).join(', '))}">${tabIcon(groupLast(g))}${esc(g.label)}</button>`).join('')}</nav>`;
 }
 
 // Rendu de chaque onglet : ajouté par son fichier (banque.js, combat.js…), chargé après celui-ci

@@ -101,6 +101,8 @@ public partial class MainWindow : Window
         JobFilter.Items.Add(AllJobs);
         foreach (var j in _data.JobNames) JobFilter.Items.Add(j);
         JobFilter.SelectedIndex = 0;
+        InitMetier(_data);
+        InitElevage();
 
         // Un bouton par nombre de cases existant dans le jeu (choix multiple)
         foreach (var n in _data.Recipes.Select(r => r.Ingredients.Count).Distinct().Order())

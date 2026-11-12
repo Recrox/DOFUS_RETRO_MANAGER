@@ -12,9 +12,9 @@ public sealed partial class GameData
 {
     const string DefaultDataUrl = "https://dofusretro.cdn.ankama.com/static-data/612/";
     const string Lang = "fr";
-    static readonly string[] Files = ["items", "crafts", "skills", "jobs", "effects", "monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "itemstats"];
+    static readonly string[] Files = ["items", "crafts", "skills", "jobs", "effects", "monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "itemstats", "rides"];
     /// <summary>Fichiers dont l'absence n'empêche pas de démarrer (ajoutés après coup, peut-être pas encore en cache).</summary>
-    static readonly string[] Optional = ["monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "itemstats"];
+    static readonly string[] Optional = ["monsters", "maps", "spells", "monsterdrops", "hints", "dungeons", "fightChallenge", "houses", "interactiveobjects", "quests", "ttg", "itemstats", "rides"];
     /// <summary>Type d'objet « Objet de Quête » : ne tombe que pendant la quête.</summary>
     const int QuestItemType = 24;
 
@@ -67,6 +67,10 @@ public sealed partial class GameData
     public Dictionary<int, TtgCard> TtgCards { get; } = new();
     /// <summary>Effets de chaque objet (fichier « itemstats ») : "effet#min#max#jet,…" en hexadécimal, fourchettes officielles.</summary>
     public Dictionary<int, string> ItemEffects { get; } = new();
+    /// <summary>Races de dragodindes (fichier « rides ») : nom et trois couleurs (RGB), par modèle.</summary>
+    public Dictionary<int, (string Name, int[] Colors)> Rides { get; } = new();
+    /// <summary>Capacités des dragodindes (fichier « rides », RIA) : nom et description.</summary>
+    public Dictionary<int, (string Name, string Description)> RideCapacities { get; } = new();
     /// <summary>Familles de cartes TTG, par identifiant.</summary>
     public Dictionary<int, TtgFamily> TtgFamilies { get; } = new();
     /// <summary>Noms des challenges de combat (fichier de langue « fightChallenge »), ex. 5 = Économe.</summary>
@@ -344,6 +348,20 @@ public sealed partial class GameData
             && Avm1.Run(await File.ReadAllBytesAsync(istaPath)).GetValueOrDefault("ISTA") is AsObject ista)
             foreach (var (k, v) in ista)
                 if (int.TryParse(k, out var id)) data.ItemEffects[id] = Avm1.ToStr(v);
+
+        // Dragodindes (fichier « rides ») : RI[modèle] = { n: nom, c1..c3: couleurs }, RIA[capacité] = { n, d }
+        if (paths.TryGetValue("rides", out var ridesPath) && Avm1.Run(await File.ReadAllBytesAsync(ridesPath)) is var rides)
+        {
+            if (rides.GetValueOrDefault("RI") is AsObject ri)
+                foreach (var (k, v) in ri)
+                    if (int.TryParse(k, out var id) && v is AsObject o)
+                        data.Rides[id] = (Avm1.ToStr(o.GetValueOrDefault("n")),
+                            [(int)Avm1.ToNum(o.GetValueOrDefault("c1")), (int)Avm1.ToNum(o.GetValueOrDefault("c2")), (int)Avm1.ToNum(o.GetValueOrDefault("c3"))]);
+            if (rides.GetValueOrDefault("RIA") is AsObject ria)
+                foreach (var (k, v) in ria)
+                    if (int.TryParse(k, out var id) && v is AsObject o)
+                        data.RideCapacities[id] = (Avm1.ToStr(o.GetValueOrDefault("n")), Avm1.ToStr(o.GetValueOrDefault("d")).Trim());
+        }
 
         // Classeur TTG : TTG.c[carte] = { o: objet carte (-1 : brillante), e: créature représentée, v: 1 si brillante },
         // TTG.e[créature] = { n: nom, f: famille, a: rareté }, TTG.f[famille] = { n: nom, o: objet (paquet) }

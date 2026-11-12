@@ -90,6 +90,7 @@ document.addEventListener('click', e => {
     case 'changelog-close': local.changelog = false; schedule(); break;
     case 'book': local.book = { fam: null, shiny: false }; schedule(); break;
     case 'trades': local.trades = !local.trades; schedule(); break;
+    case 'elev': { const f = local.elev ||= {}; f[d.k] = d.k === 'fec' ? !f.fec : d.v; schedule(); break; }
     case 'farm-del': post({ type: 'farm-del', index: +d.i }); break;
     case 'trade-del': post({ type: 'trade-del', index: +d.i }); break;
     case 'trade-sold': post({ type: 'trade-sold', index: +d.i }); break;

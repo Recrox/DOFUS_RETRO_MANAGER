@@ -1,0 +1,9 @@
+/* Onglet Métier : un cadre par palier de cases, recettes du moins cher par XP au plus cher */
+.metier-steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; overflow: auto; min-height: 0; }
+.metier-step { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; }
+.metier-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+.metier-opt { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: var(--radius-md); }
+.metier-opt.best { background: var(--hover); outline: 1px solid var(--accent-solid); }
+.metier-name { flex: 1; min-width: 0; }
+.metier-name .item-link { display: block; }
+.metier-opt .num { text-align: right; white-space: nowrap; }
