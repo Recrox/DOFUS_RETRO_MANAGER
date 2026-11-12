@@ -31,7 +31,9 @@ Object.assign(views, {
           <div class="fm-effects">${(sel.Chips || []).map(c => `<div class="fx ${c.Neg ? 'neg' : ''}" title="${esc(c.Tip)}"><span>${esc(c.Text)}${c.Max ? ` <span class="fm-max">/${c.Max}</span>` : ''}</span>${fxImg(c.Char)}</div>`).join('')}</div>
           ${btn('BrisageGoRecipe', 'Voir la recette', 'small')}
           <div class="filters"><span class="lbl">Quantité à briser</span>${input('BrisageBreakCount', '', '80px')}${btn('BrisageBreakMax', 'Max', 'small')}</div>
-          ${T('BrisageDetailTotal') ? `<div class="card strong lines" style="color:${S.BrisageDetailTotal?.c || 'inherit'}">${esc(T('BrisageDetailTotal'))}</div>` : ''}
+          ${T('BrisageDetailTotal') ? `<div class="card strong">${T('BrisageDetailTotal').split('\n').map(l =>
+            // Valeur des runes en vert, coût (fabrication ou prix de l'objet) en rouge, gain selon son signe
+            `<div class="${/^Valeur/.test(l) ? 'ok' : /^(Coût|Prix)/.test(l) ? 'bad' : /^Gain/.test(l) ? (/: -/.test(l) ? 'bad' : 'ok') : ''}">${esc(l)}</div>`).join('')}</div>` : ''}
           <h3>Runes estimées</h3>
           ${rows('BrisageRunes').map(r => `<div class="ing rune">${itemImg(r.ItemId)}<div><div class="name">${esc(r.Quantity)} × ${esc(r.Name)}</div>
             <div class="price">${r.UnitPrice == null ? 'pas de prix HDV' : fmt(r.UnitPrice) + ' k / u'}</div></div><span class="ratio acc">${r.Total == null ? '—' : kamas(r.Total)}</span></div>`).join('')

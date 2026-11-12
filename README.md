@@ -138,7 +138,7 @@ Le panneau de détail d'une recette affiche :
 Cet onglet trouve les objets à briser pour générer des runes. Cliquez sur une ou plusieurs caractéristiques (un bouton par caractéristique, avec l'icône de sa rune et son abréviation : Vi, Sa, Fo…) et indiquez leur seuil dans les champs qui apparaissent (ex. Vi, minimum 104) : seuls les objets dans les bornes restent, les meilleurs en haut. Le tableau affiche les caractéristiques en entier, sur plusieurs lignes si besoin. La recherche peut porter sur :
 
 - vos objets (banque et inventaire), avec leurs caractéristiques **réelles** ;
-- les objets fabricables avec vos ressources, toutes les recettes ou tous les objets du jeu, avec leurs caractéristiques **maximales**. Le fichier de langue ne donne que le maximum : le minimum s'apprend sur les exemplaires réels vus à l'HDV (offres consultées) et dans vos banques (`jets.json`), et la fourchette s'affiche alors (« Vi 351–400 »).
+- les objets fabricables avec vos ressources, toutes les recettes ou tous les objets du jeu, avec la fourchette officielle de leurs caractéristiques (« Vi 351–400 ») : minimum et maximum lus dans le fichier de langue `itemstats` du jeu (téléchargé du CDN d'Ankama avec les autres). Sans ce fichier, le minimum s'apprend sur les exemplaires réels vus à l'HDV (offres consultées) et dans vos banques (`jets.json`).
 
 Les caractéristiques s'affichent en compact : l'icône de la rune, l'abréviation et la valeur ; le nom complet et la fourchette au survol. Les filtres comprennent aussi les % résistance (neutre, terre, feu, eau, air).
 

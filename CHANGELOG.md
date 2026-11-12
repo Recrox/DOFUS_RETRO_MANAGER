@@ -2,6 +2,12 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.89.0 — 12 novembre 2026
+
+- **Brisage** : les caractéristiques montrent la fourchette officielle du jet (minimum et maximum lus dans les données du jeu), sans avoir à consulter l'objet à l'HDV.
+- **Brisage** : les runes estimées sont triées de la plus rentable à la moins rentable.
+- **Brisage** : dans le récapitulatif, la valeur des runes est en vert et le coût de fabrication (ou le prix de l'objet) en rouge.
+
 ## 1.88.0 — 12 novembre 2026
 
 - **Brisage** : correction : nouveau calcul des runes (formule de la communauté Retro, issue de la rétro-ingénierie) ; les runes Pa et Ra apparaissent enfin avec les runes simples, en quantités moyennes, et la valeur des runes est bien plus juste.

@@ -72,16 +72,24 @@ public partial class MainWindow
             var name = ItemStats.Name(kv.Key);
             var roll = _rolls.Of(item.Id, kv.Key);
             int max = item.MaxStats.GetValueOrDefault(kv.Key);
+            // Minimum officiel (fichier « itemstats » du jeu), sinon le plus bas vu (HDV, banques)
+            int? official = OfficialMin(item.Id, kv.Key);
+            int? min = official ?? roll?.Min;
             string value, tip;
             if (real)
             {
                 value = $"{kv.Value:+0;-0}";
-                tip = $"{name} : {kv.Value:+0;-0}" + (max > 0 ? $" (jet de l'objet : {(roll != null && roll.Min < max ? roll.Min + " à " : "jusqu'à ")}{max})" : "");
+                tip = $"{name} : {kv.Value:+0;-0}" + (max > 0 ? $" (jet de l'objet : {(min is { } m0 && m0 < max ? m0 + " à " : "jusqu'à ")}{max})" : "");
             }
-            else if (roll != null && roll.Min < kv.Value)
+            else if (min is { } m && m > 0 && m < kv.Value)
             {
-                value = $"{roll.Min}–{kv.Value}";
-                tip = $"{name} : {roll.Min} à {kv.Value}\nMaximum : fichier du jeu ; minimum : le plus bas vu sur {roll.Seen} exemplaire(s) (HDV, banques)";
+                value = $"{m}–{kv.Value}";
+                tip = $"{name} : {m} à {kv.Value}\n" + (official != null ? "Fourchette du fichier du jeu" : $"Maximum : fichier du jeu ; minimum : le plus bas vu sur {roll!.Seen} exemplaire(s) (HDV, banques)");
+            }
+            else if (official != null)
+            {
+                value = kv.Value.ToString("+0;-0");
+                tip = $"{name} : {kv.Value:+0;-0} (valeur fixe)";
             }
             else
             {
@@ -89,8 +97,23 @@ public partial class MainWindow
                 tip = $"{name} : jusqu'à {kv.Value:+0;-0}\nLe jeu ne donne que le maximum ; le minimum s'apprend en consultant cet objet à l'HDV";
             }
             return new StatChip(StatRune(kv.Key), StatShort.GetValueOrDefault(kv.Key, name), value, tip, active.Contains(kv.Key), kv.Value < 0)
-                { Char = kv.Key, Text = $"{value} {name}", Max = real && max > 0 ? max : 0 };
+                {
+                    Char = kv.Key, Max = real && max > 0 ? max : 0,
+                    // Détail : fourchette du jet ; minimum jamais vu (offres de l'objet pas encore consultées à l'HDV) : « ? »
+                    Text = $"{(!real && min == null && kv.Value > 0 ? $"?–{kv.Value}" : value)} {name}",
+                };
         }).ToList();
+
+    /// <summary>Minimum officiel par objet et caractéristique (fichier « itemstats » : 2e champ de chaque effet).</summary>
+    readonly Dictionary<int, Dictionary<int, int>> _officialMin = new();
+
+    int? OfficialMin(int item, int characteristic)
+    {
+        if (_data == null || _fm == null || !_data.ItemEffects.TryGetValue(item, out var effects)) return null;
+        if (!_officialMin.TryGetValue(item, out var mins))
+            _officialMin[item] = mins = ItemStats.FromParsed(_fm.ParseStats(effects));
+        return mins.TryGetValue(characteristic, out var v) ? v : null;
+    }
 
     /// <summary>Offres consultées à l'HDV : leurs caractéristiques réelles nourrissent les jets observés.</summary>
     void ObserveHdvRolls(string body)
@@ -219,7 +242,7 @@ public partial class MainWindow
         {
             var unit = UnitPrice(r.ItemId);
             return new RuneRow(r.ItemId, r.Name, RuneQuantity(Math.Round(r.Quantity * n, 2)), unit, unit * r.Quantity * n);
-        }).ToList();
+        }).OrderByDescending(r => r.Total ?? -1).ToList(); // la plus rentable en haut, sans prix en bas
 
         int unpriced = row.Runes.Count(r => UnitPrice(r.ItemId) == null);
         double? gain = row.Gain * n;
