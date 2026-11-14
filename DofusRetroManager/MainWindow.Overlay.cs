@@ -60,7 +60,7 @@ public partial class MainWindow
         if (_organizerLoading) return;
         _organizer.OverlayOpacity = OverlayOpacity.Value / 100;
         _organizer.Save();
-        if (_overlay != null) _overlay.Opacity = _organizer.OverlayOpacity;
+        if (_overlay != null) { _overlay.Opacity = _organizer.OverlayOpacity; _overlay.Gear.SetOpacity(_organizer.OverlayOpacity); }
     }
 
     /// <summary>Déplacer : la superposition s'affiche et se fait glisser ; Verrouiller : sa position est retenue.</summary>
@@ -84,6 +84,10 @@ public partial class MainWindow
         if (_overlay != null) return _overlay;
         var area = SystemParameters.WorkArea;
         _overlay = new OverlayWindow { Opacity = _organizer.OverlayOpacity };
+        // Molette ⚙ : mêmes réglages que l'onglet Switcheur
+        _overlay.Gear.SetOpacity(_organizer.OverlayOpacity);
+        _overlay.Gear.LockToggled += () => OverlayMove_Click(this, new RoutedEventArgs());
+        _overlay.Gear.OpacityChanged += v => OverlayOpacity.Value = v * 100;
         // Clic sur un personnage de l'ordre de jeu : sa fenêtre passe au premier plan (à la demande du joueur, règle 3)
         _overlay.TurnClicked += handle =>
         {

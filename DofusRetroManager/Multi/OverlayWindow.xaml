@@ -91,7 +91,7 @@
                     <TextBlock Text="{Binding Stats}" Foreground="{DynamicResource TextMuted}" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </DockPanel>
-            <TextBlock x:Name="MoveHint" Text="Mode déplacement : faites glisser, puis cliquez « Verrouiller » dans l'onglet Switcheur."
+            <TextBlock x:Name="MoveHint" Text="Mode déplacement : faites glisser, puis ⚙ › « Verrouiller »."
                        TextWrapping="Wrap" Foreground="{DynamicResource Warning}" FontWeight="SemiBold" Margin="0,6,0,0" Visibility="Collapsed"/>
 
             <!-- Économe -->

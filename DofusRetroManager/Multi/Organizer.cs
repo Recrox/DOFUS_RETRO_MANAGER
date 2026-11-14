@@ -40,8 +40,10 @@ public sealed class OrganizerSettings
     public bool SadidaReturn { get; set; } = true;
     /// <summary>Touche + clic dans le jeu : au relâchement du clic, la fenêtre suivante de l'ordre de jeu passe au premier plan.</summary>
     public bool ClickSwitch { get; set; }
-    /// <summary>Touche à garder enfoncée pendant le clic : Ctrl, Alt ou Maj.</summary>
+    /// <summary>Touche à garder enfoncée pendant le clic gauche : Ctrl, Alt ou Maj.</summary>
     public string ClickSwitchKey { get; set; } = "Alt";
+    /// <summary>Touche du clic droit ; null : la même que le clic gauche (réglages d'avant).</summary>
+    public string? ClickSwitchKeyRight { get; set; }
     /// <summary>Boutons qui déclenchent le clic + touche : gauche, droit, ou les deux.</summary>
     public bool ClickSwitchLeft { get; set; } = true;
     public bool ClickSwitchRight { get; set; }
@@ -77,6 +79,10 @@ public sealed class OrganizerSettings
     public bool MiniMapEnabled { get; set; }
     public double? MiniMapLeft { get; set; }
     public double? MiniMapTop { get; set; }
+    /// <summary>Personnage suivi par la mini-carte ; vide : celui de la fenêtre au premier plan.</summary>
+    public string MiniMapCharacter { get; set; } = "";
+    /// <summary>Opacité de la mini-carte (molette ⚙) ; null : celle de la superposition.</summary>
+    public double? MiniMapOpacity { get; set; }
     public List<int> MiniMapResources { get; set; } = new();
 
     static string Path => System.IO.Path.Combine(GameData.AppDir, "organizer.json");

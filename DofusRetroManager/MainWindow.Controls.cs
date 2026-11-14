@@ -193,6 +193,7 @@ public partial class MainWindow
     // Mini-carte de récolte en superposition (MainWindow.MiniMap.cs)
     internal readonly WebToggle MiniMapEnabled = new() { ToolTip = "Mini-carte posée sur le jeu : votre map au centre, les ressources choisies autour", Content = "Mini-carte en jeu" };
     internal readonly WebButton MiniMapMove = new() { Content = "Déplacer" };
+    internal readonly WebCombo MiniMapCharacter = new() { ToolTip = "Personnage suivi : celui de la fenêtre au premier plan (Auto), ou toujours le même" };
     internal readonly WebButton EconomeReset = new() { ToolTip = "Efface les sorts lancés (sinon fait automatiquement à l'entrée en combat)", Content = "Remettre à zéro" };
     internal readonly WebText EconomeStatus = new();
     internal readonly WebList EconomeSpells = new();
@@ -225,7 +226,8 @@ public partial class MainWindow
     internal readonly WebToggle SadidaReturn = new() { ToolTip = "Après le tour du Sadida (passé par vous), la fenêtre affichée avant le raccourci revient au premier plan", Content = "Retour après le tour" };
     internal readonly WebTextBox HotkeyDebounce = new() { ToolTip = "Délai minimal entre deux raccourcis, en millisecondes (160 par défaut) : un double appui involontaire ne saute pas un personnage" };
     internal readonly WebToggle OrganizerClickSwitch = new() { ToolTip = "Cliquez dans le jeu en gardant cette touche enfoncée : votre clic arrive au jeu, puis la fenêtre suivante (ordre de jeu) s'affiche. Rien n'est cliqué à votre place.", Content = "Clic +" };
-    internal readonly WebCombo OrganizerClickKey = new() { ToolTip = "Touche à garder enfoncée pendant le clic" };
+    internal readonly WebCombo OrganizerClickKey = new() { ToolTip = "Touche à garder enfoncée pendant le clic gauche" };
+    internal readonly WebCombo OrganizerClickKeyRight = new() { ToolTip = "Touche à garder enfoncée pendant le clic droit" };
     internal readonly WebToggle OrganizerClickLeft = new() { ToolTip = "Clic gauche + touche", Content = "Gauche" };
     internal readonly WebToggle OrganizerClickRight = new() { ToolTip = "Clic droit + touche", Content = "Droit" };
     internal readonly WebToggle OrganizerFixBounce = new() { ToolTip = "Si Windows rend aussitôt la main à la fenêtre quittée, la fenêtre demandée est réaffichée. Rien n'est cliqué ni tapé à votre place.", Content = "Anti-rebond fenêtre" };
@@ -459,6 +461,7 @@ public partial class MainWindow
         OrganizerClickSwitch.Checked += OrganizerOption_Changed;
         OrganizerClickSwitch.Unchecked += OrganizerOption_Changed;
         OrganizerClickKey.SelectionChanged += OrganizerClickKey_Changed;
+        OrganizerClickKeyRight.SelectionChanged += OrganizerClickKey_Changed;
         OrganizerClickLeft.Checked += OrganizerOption_Changed;
         OrganizerClickLeft.Unchecked += OrganizerOption_Changed;
         OrganizerClickRight.Checked += OrganizerOption_Changed;

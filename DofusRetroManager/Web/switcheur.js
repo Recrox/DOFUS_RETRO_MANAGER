@@ -21,9 +21,9 @@ Object.assign(views, {
           ${hotkey('HotkeyNext', '→', 'Suivant')}${hotkey('HotkeyPrevious', '←', 'Précédent')}${hotkey('HotkeyMain', '★', 'Principal')}
           <div class="org-key sadida" title="Mode Sadida : affiche le Sadida en arbre (Puissance Sylvestre) dont c'est le tour, celui qui a le moins de temps restant. Passez son tour vous-même : la fenêtre d'avant revient. Sans Sadida en arbre à son tour, rien ne se passe.">${hotkey('HotkeySadida', '🌳', 'Sadida')}<span title="Retour à la fenêtre d'avant après le tour du Sadida">${pill('SadidaReturn', '↩')}</span></div>
           <label class="org-key"><span class="k-ico">⏱</span><span>Anti-rebond</span><span class="unit">${input('HotkeyDebounce', '', '70px')} ms</span></label>
-          <div class="org-key click" title="Cliquez dans le jeu en gardant cette touche enfoncée : votre clic arrive au jeu, puis la fenêtre suivante (ordre de jeu) s'affiche. Rien n'est cliqué à votre place.">
+          <div class="org-key click" title="Cliquez dans le jeu en gardant la touche choisie enfoncée (une par bouton) : votre clic arrive au jeu, puis la fenêtre suivante (ordre de jeu) s'affiche. Rien n'est cliqué à votre place.">
             <span class="k-ico">🖱</span><label class="check"><input type="checkbox" data-set="OrganizerClickSwitch" ${on('OrganizerClickSwitch')}>Clic +</label>
-            <span class="unit">${select('OrganizerClickKey')}</span>${pill('OrganizerClickLeft', 'Gauche')}${pill('OrganizerClickRight', 'Droit')}<span class="unit">: suivant</span></div>
+            ${pill('OrganizerClickLeft', 'Gauche')}<span class="unit">${select('OrganizerClickKey')}</span>${pill('OrganizerClickRight', 'Droit')}<span class="unit">${select('OrganizerClickKeyRight')}</span><span class="unit">: suivant</span></div>
           <div title="Si Windows rend aussitôt la main à la fenêtre quittée, la fenêtre demandée est réaffichée. Rien n'est cliqué ni tapé à votre place.">${check('OrganizerFixBounce', 'Anti-rebond fenêtre')}</div>
           ${T('HotkeyStatus') ? `<div class="bad strong small">${esc(T('HotkeyStatus'))}</div>` : ''}
           <small class="muted">Ils marchent aussi en jeu ; ils ne font qu'afficher la fenêtre.</small></section>

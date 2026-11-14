@@ -77,10 +77,19 @@ public partial class OverlayWindow : Window
     const int WS_EX_TRANSPARENT = 0x20, WS_EX_TOOLWINDOW = 0x80, WS_EX_NOACTIVATE = 0x08000000, WS_EX_LAYERED = 0x80000;
 
     bool _locked = true;
+    public readonly OverlayGear Gear = new();
 
     public OverlayWindow()
     {
         InitializeComponent();
+        // Molette ⚙ en haut à droite, son panneau en tête de la carte
+        var stack = (System.Windows.Controls.StackPanel)Card.Child;
+        stack.Children.Insert(0, Gear.Panel);
+        var grid = new System.Windows.Controls.Grid();
+        Card.Child = grid;
+        grid.Children.Add(stack);
+        Gear.Button.Margin = new Thickness(0, -6, -8, 0);
+        grid.Children.Add(Gear.Button);
         SourceInitialized += (_, _) => ApplyStyle();
         MouseLeftButtonDown += (_, e) => { if (!_locked && e.ButtonState == MouseButtonState.Pressed) DragMove(); };
     }
@@ -93,6 +102,7 @@ public partial class OverlayWindow : Window
         {
             _locked = value;
             MoveHint.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            Gear.SetLocked(value);
             Cursor = value ? null : Cursors.SizeAll;
             ApplyStyle();
         }
@@ -133,7 +143,7 @@ public partial class OverlayWindow : Window
             var local = e.PointFromScreen(new Point(p.X, p.Y));
             return local.X >= 0 && local.Y >= 0 && local.X <= e.ActualWidth && local.Y <= e.ActualHeight;
         }
-        if (_locked) over = On(RotationList) || On(FmChancesList);
+        if (_locked) over = On(RotationList) || On(FmChancesList) || Gear.IsOver(new Point(p.X, p.Y));
         if (over == _overRotation) return;
         _overRotation = over;
         ApplyStyle();

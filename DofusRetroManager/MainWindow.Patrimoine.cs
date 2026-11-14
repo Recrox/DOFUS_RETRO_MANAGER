@@ -35,11 +35,15 @@ public partial class MainWindow
         return _patrimoineDays ??= new();
     }
 
-    /// <summary>Même banque (même compte) : au moins 80 % des objets, des deux côtés, avec la même quantité.</summary>
+    /// <summary>
+    /// Même rangement (banque du compte, ou coffre de maison ouvert par deux personnages) : au moins 80 % des sortes
+    /// d'objets en commun, des deux côtés. Quantités ignorées : un dépôt ou un retrait entre les deux ouvertures ne doit
+    /// pas le faire compter deux fois.
+    /// </summary>
     static bool SameBank(Dictionary<int, int> a, Dictionary<int, int> b)
     {
-        int same = a.Count(kv => b.TryGetValue(kv.Key, out var q) && q == kv.Value);
-        return same >= 0.8 * Math.Max(a.Count, b.Count);
+        int common = a.Keys.Count(b.ContainsKey);
+        return common >= 0.8 * Math.Max(a.Count, b.Count);
     }
 
     /// <summary>État de l'onglet (envoyé à la page sous « _patrimoine ») ; la valeur du jour est retenue au passage.</summary>

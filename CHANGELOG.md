@@ -2,6 +2,13 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.94.0 — 14 novembre 2026
+
+- **Carte** : la mini-carte en jeu peut suivre un personnage précis au lieu de la fenêtre au premier plan.
+- **Carte et Combat** : une molette ⚙ sur les mini-fenêtres en jeu permet de les déplacer, de les verrouiller et de régler leur opacité sans revenir dans l’application.
+- **Switcheur** : « Clic + » : une touche au choix pour le clic gauche et une autre pour le clic droit, utilisables ensemble.
+- **Patrimoine** : Correction : un coffre de maison ouvert par deux personnages n’est plus compté deux fois.
+
 ## 1.93.0 — 14 novembre 2026
 
 - **Switcheur** : Correction : la fenêtre du jeu affichée reçoit tout de suite le clavier et la souris, sans devoir cliquer deux fois.

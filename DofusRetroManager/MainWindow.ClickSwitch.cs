@@ -7,8 +7,8 @@ using DofusRetroManager.Multi;
 namespace DofusRetroManager;
 
 /// <summary>
-/// Switcheur, « touche + clic » : quand le joueur clique dans une fenêtre du jeu en gardant une touche enfoncée (Ctrl par
-/// défaut ; bouton gauche, droit ou les deux), la fenêtre suivante de l'ordre de jeu passe au premier plan au relâchement du clic, comme avec le raccourci
+/// Switcheur, « touche + clic » : quand le joueur clique dans une fenêtre du jeu en gardant une touche enfoncée (une touche par bouton :
+/// gauche, droit ou les deux), la fenêtre suivante de l'ordre de jeu passe au premier plan au relâchement du clic, comme avec le raccourci
 /// « Personnage suivant ». Le clic du joueur arrive au jeu normalement : il n'est ni bloqué, ni modifié, ni rejoué.
 /// Pas de hook : l'application relit seulement l'état du bouton de la souris et de la touche (GetAsyncKeyState).
 /// Aucun clic ni aucune touche n'est envoyé au jeu (REGLES.md, règles 2 et 3).
@@ -31,6 +31,8 @@ public partial class MainWindow
         OrganizerFixBounce.IsChecked = _organizer.FixWindowBounce;
         OrganizerClickKey.ItemsSource = ClickSwitchKeys.Select(k => k.Name).ToList();
         OrganizerClickKey.SelectedIndex = Math.Max(0, Array.FindIndex(ClickSwitchKeys, k => k.Name == _organizer.ClickSwitchKey));
+        OrganizerClickKeyRight.ItemsSource = ClickSwitchKeys.Select(k => k.Name).ToList();
+        OrganizerClickKeyRight.SelectedIndex = Math.Max(0, Array.FindIndex(ClickSwitchKeys, k => k.Name == (_organizer.ClickSwitchKeyRight ?? _organizer.ClickSwitchKey)));
         _organizerLoading = false;
         _clickTimer.Tick += (_, _) => PollClick();
         UpdateClickSwitch();
@@ -50,8 +52,9 @@ public partial class MainWindow
 
     void OrganizerClickKey_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (_organizerLoading || OrganizerClickKey.SelectedIndex < 0) return;
+        if (_organizerLoading || OrganizerClickKey.SelectedIndex < 0 || OrganizerClickKeyRight.SelectedIndex < 0) return;
         _organizer.ClickSwitchKey = ClickSwitchKeys[OrganizerClickKey.SelectedIndex].Name;
+        _organizer.ClickSwitchKeyRight = ClickSwitchKeys[OrganizerClickKeyRight.SelectedIndex].Name;
         _organizer.Save();
     }
 
@@ -74,7 +77,9 @@ public partial class MainWindow
         if (down)
         {
             // Clic avec la touche, dans une fenêtre du jeu de la rotation
-            int vk = ClickSwitchKeys.FirstOrDefault(k => k.Name == _organizer.ClickSwitchKey, ClickSwitchKeys[0]).Vk;
+            // Touche propre à chaque bouton (gauche, droit)
+            var key = b == 0 ? _organizer.ClickSwitchKey : _organizer.ClickSwitchKeyRight ?? _organizer.ClickSwitchKey;
+            int vk = ClickSwitchKeys.FirstOrDefault(k => k.Name == key, ClickSwitchKeys[0]).Vk;
             var fg = GameWindows.Foreground;
             _clickArmed[b] = enabled && (GetAsyncKeyState(vk) & 0x8000) != 0 && Rotation().Any(w => w.Handle == fg);
             return;

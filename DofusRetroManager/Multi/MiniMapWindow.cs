@@ -20,8 +20,10 @@ public sealed class MiniMapWindow : Window
     readonly Image _map = new() { Stretch = Stretch.None };
     readonly TextBlock _title = new() { FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis };
     readonly TextBlock _info = new() { FontSize = 10.5, TextTrimming = TextTrimming.CharacterEllipsis };
-    readonly TextBlock _hint = new() { FontSize = 10.5, Text = "Glissez pour placer, puis « Verrouiller »", Visibility = Visibility.Collapsed };
+    readonly TextBlock _hint = new() { FontSize = 10.5, Text = "Glissez, puis ⚙ › « Verrouiller »", Visibility = Visibility.Collapsed };
     bool _locked = true;
+    bool _overGear;
+    public readonly OverlayGear Gear = new();
 
     public MiniMapWindow()
     {
@@ -41,7 +43,12 @@ public sealed class MiniMapWindow : Window
         _hint.SetResourceReference(TextBlock.ForegroundProperty, "AccentSolid");
 
         var panel = new StackPanel();
-        panel.Children.Add(_title);
+        var head = new DockPanel();
+        DockPanel.SetDock(Gear.Button, Dock.Right);
+        head.Children.Add(Gear.Button);
+        head.Children.Add(_title);
+        panel.Children.Add(head);
+        panel.Children.Add(Gear.Panel);
         panel.Children.Add(new Border { Child = _map, Margin = new Thickness(0, 4, 0, 4), CornerRadius = new CornerRadius(4), ClipToBounds = true });
         panel.Children.Add(_info);
         panel.Children.Add(_hint);
@@ -62,6 +69,7 @@ public sealed class MiniMapWindow : Window
         {
             _locked = value;
             _hint.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            Gear.SetLocked(value);
             Cursor = value ? null : Cursors.SizeAll;
             ApplyStyle();
         }
@@ -80,10 +88,22 @@ public sealed class MiniMapWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
         int style = GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED;
-        style = _locked ? style | WS_EX_TRANSPARENT : style & ~WS_EX_TRANSPARENT;
+        style = _locked && !_overGear ? style | WS_EX_TRANSPARENT : style & ~WS_EX_TRANSPARENT;
         SetWindowLong(hwnd, GWL_EXSTYLE, style);
     }
 
+    /// <summary>Appelé régulièrement : verrouillée, seule la molette ⚙ et son panneau reçoivent les clics.</summary>
+    public void UpdateHitTest()
+    {
+        if (!IsVisible || !GetCursorPos(out var p)) return;
+        bool over = _locked && Gear.IsOver(new Point(p.X, p.Y));
+        if (over == _overGear) return;
+        _overGear = over;
+        ApplyStyle();
+    }
+
+    [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr hWnd, int index);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr hWnd, int index, int value);
 }

@@ -28,9 +28,18 @@ public partial class MainWindow
         MiniMapEnabled.Checked += MiniMapEnabled_Changed;
         MiniMapEnabled.Unchecked += MiniMapEnabled_Changed;
         MiniMapMove.Click += MiniMapMove_Click;
+        RefreshMiniMapCharacters();
+        MiniMapCharacter.SelectionChanged += (_, _) =>
+        {
+            if (_miniCharFilling) return;
+            _organizer.MiniMapCharacter = MiniMapCharacter.SelectedIndex > 0 ? MiniMapCharacter.SelectedItem as string ?? "" : "";
+            _organizer.Save();
+            _miniKey = "";
+            UpdateMiniMap();
+        };
         _overlayTimer.Tick += (_, _) =>
         {
-            try { UpdateMiniMap(); }
+            try { RefreshMiniMapCharacters(); UpdateMiniMap(); _miniMap?.UpdateHitTest(); }
             catch (Exception ex) { _miniKey = "?"; AddLog("Mini-carte : " + ex.Message); }
         };
         Closed += (_, _) => _miniMap?.Close();
@@ -72,13 +81,42 @@ public partial class MainWindow
     {
         if (_miniMap != null) return _miniMap;
         var area = SystemParameters.WorkArea;
-        _miniMap = new MiniMapWindow { Opacity = _organizer.OverlayOpacity };
+        double opacity = _organizer.MiniMapOpacity ?? _organizer.OverlayOpacity;
+        _miniMap = new MiniMapWindow { Opacity = opacity };
+        // Molette ⚙ : déplacer / verrouiller, opacité propre à la mini-carte
+        _miniMap.Gear.SetOpacity(opacity);
+        _miniMap.Gear.LockToggled += () => MiniMapMove_Click(this, new RoutedEventArgs());
+        _miniMap.Gear.OpacityChanged += v =>
+        {
+            _miniMap.Opacity = v;
+            _organizer.MiniMapOpacity = v;
+            _organizer.Save();
+        };
         bool onScreen = _organizer.MiniMapLeft is { } l && _organizer.MiniMapTop is { } t
             && l >= SystemParameters.VirtualScreenLeft - 50 && l < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 50
             && t >= SystemParameters.VirtualScreenTop - 20 && t < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 50;
         _miniMap.Left = onScreen ? _organizer.MiniMapLeft!.Value : area.Left + 20;
         _miniMap.Top = onScreen ? _organizer.MiniMapTop!.Value : area.Top + 90;
         return _miniMap;
+    }
+
+    bool _miniCharFilling;
+    string _miniCharList = "";
+
+    /// <summary>Choix du personnage suivi : Auto, les personnages en jeu, et celui retenu même s'il n'est pas connecté.</summary>
+    void RefreshMiniMapCharacters()
+    {
+        var names = (_hunt?.Characters.Select(c => c.Name) ?? []).Where(n => n.Length > 0)
+            .Append(_organizer.MiniMapCharacter).Where(n => n.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Order().ToList();
+        var list = string.Join("|", names);
+        if (list == _miniCharList && MiniMapCharacter.Items.Count > 0) return;
+        _miniCharList = list;
+        _miniCharFilling = true;
+        MiniMapCharacter.ItemsSource = names.Prepend("Auto").ToList();
+        int i = _organizer.MiniMapCharacter.Length > 0 ? names.FindIndex(n => string.Equals(n, _organizer.MiniMapCharacter, StringComparison.OrdinalIgnoreCase)) + 1 : 0;
+        MiniMapCharacter.SelectedIndex = i;
+        _miniCharFilling = false;
     }
 
     /// <summary>Appelé avec la superposition (4 fois par seconde) : visibilité, puis image seulement si la map ou les ressources ont changé.</summary>
@@ -90,10 +128,13 @@ public partial class MainWindow
         if (_data == null || _harvest == null) return;
 
         var fgWindow = _windows.FirstOrDefault(w => w.Handle == GameWindows.Foreground);
-        var me = (fgWindow != null ? CharacterOf(fgWindow) : null) ?? _hunt?.Shown;
+        string pinned = _organizer.MiniMapCharacter;
+        var me = pinned.Length > 0
+            ? _hunt?.Characters.FirstOrDefault(c => string.Equals(c.Name, pinned, StringComparison.OrdinalIgnoreCase))
+            : (fgWindow != null ? CharacterOf(fgWindow) : null) ?? _hunt?.Shown;
         Data.MapInfo? map = me != null && int.TryParse(me.MapId, out var id) ? _data.Maps.GetValueOrDefault(id) : null;
         var wanted = _organizer.MiniMapResources.Select(k => k - ResourceFilterBase).ToHashSet();
-        var key = $"{map?.Id}|{string.Join(",", wanted)}|{_harvest.Maps.Count}|{_carteTiles.Count}";
+        var key = $"{pinned}|{map?.Id}|{string.Join(",", wanted)}|{_harvest.Maps.Count}|{_carteTiles.Count}";
         var w = EnsureMiniMap();
         // Tuiles ou icônes pas encore chargées : nouvel essai toutes les 2 s, 10 fois au plus
         bool retry = _miniRetries is > 0 and <= 10 && DateTime.Now >= _miniRetryAt;
@@ -101,13 +142,13 @@ public partial class MainWindow
         {
             if (key != _miniKey) _miniRetries = 0;
             _miniKey = key;
-            if (map == null) w.Show(null, "Mini-carte", "Changez de map en jeu.");
+            if (map == null) w.Show(null, pinned.Length > 0 ? pinned : "Mini-carte", me == null && pinned.Length > 0 ? "Personnage pas en jeu." : "Changez de map en jeu.");
             else
             {
                 var (image, info, pending) = RenderMiniMap(map, wanted);
                 _miniRetries = pending ? _miniRetries + 1 : 0;
                 _miniRetryAt = DateTime.Now.AddSeconds(2);
-                w.Show(image, $"[{map.X},{map.Y}] {map.Area}", info);
+                w.Show(image, $"{(pinned.Length > 0 ? pinned + " · " : "")}[{map.X},{map.Y}] {map.Area}", info);
             }
         }
         if (!w.IsVisible) w.Show();

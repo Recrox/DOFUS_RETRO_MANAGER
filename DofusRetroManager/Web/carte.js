@@ -35,7 +35,7 @@ Object.assign(views, {
         }).join('')}
         <span class="muted">${R.maps > 0 ? `${R.maps} map(s) lue(s)` : 'aucune map lue pour l’instant'}</span>
         <span class="right" data-tip="Mini-carte posée sur le jeu : votre map au centre (suivie à chaque changement de map), les ressources cochées ici autour">${check('MiniMapEnabled', '🗺 Mini-carte en jeu')}
-          ${btn('MiniMapMove', 'Déplacer', 'small')}</span>
+          ${select('MiniMapCharacter')} ${btn('MiniMapMove', 'Déplacer', 'small')}</span>
       </div>
       <div class="split wide">
         <div id="carte-host" class="carte-host"></div>
