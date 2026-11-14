@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.96.0 — 14 novembre 2026
+
+- **Carte** : dans les égouts, grottes et donjons, la mini-carte en jeu montre les maps souterraines visitées et leurs ressources, au lieu de la surface.
+
 ## 1.95.0 — 14 novembre 2026
 
 - **Carte** : la mini-carte en jeu montre la vraie vue des maps déjà visitées (sol, arbres, maisons), tirée des fichiers du jeu.

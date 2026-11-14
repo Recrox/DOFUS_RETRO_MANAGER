@@ -173,9 +173,17 @@ public partial class MainWindow
 
         // Ressources choisies sur les maps visitées de la même super-zone : (x, y) -> objets et nombre
         var spots = new Dictionary<(int X, int Y), Dictionary<int, int>>();
+        // Niveau du personnage : sous terre (égouts, grottes, donjons : map intérieure) ou dehors
+        var hereMap = _harvest!.Maps.GetValueOrDefault(map.Id);
+        var here = hereMap != null ? Data.MapRenderer.TryGet(map.Id, hereMap.Date, hereMap.Key) : null;
+        bool underground = here is { Outdoor: false };
         foreach (var (mapId, hm) in _harvest!.Maps)
         {
             if (_data!.Maps.GetValueOrDefault(mapId) is not { } m || m.SuperArea != map.SuperArea) continue;
+            // Ressources du même niveau : sous terre, la même sous-zone ; dehors, pas celles des maps intérieures en vue
+            // (vue lue seulement pour les maps visibles : pas de dessin de toute la zone)
+            bool inView = Math.Abs(m.X - map.X) <= MiniRadius && Math.Abs(m.Y - map.Y) <= MiniRadius;
+            if (underground ? m.SubArea != map.SubArea : inView && mapId != map.Id && Data.MapRenderer.TryGet(mapId, hm.Date, hm.Key) is { Outdoor: false }) continue;
             foreach (var c in hm.Cells.Where(c => wanted.Contains(c.Resource)))
             {
                 var at = spots.TryGetValue((m.X, m.Y), out var d) ? d : spots[(m.X, m.Y)] = new();
@@ -196,24 +204,28 @@ public partial class MainWindow
             dc.PushTransform(new TranslateTransform(-view.X, -view.Y));
             dc.PushClip(new RectangleGeometry(view));
             dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x20, 0x24, 0x2c)), null, view);
+            // Sous terre (égouts, grottes, donjons : map intérieure) : les maps intérieures visitées de la même sous-zone,
+            // sans la carte du monde ; dehors : la carte du monde, avec la vue réelle des maps extérieures visitées
             // Tuiles lues en arrière-plan (plusieurs secondes) : jamais ici, sur l'interface
             if (!_carteTiles.TryGetValue(map.SuperArea, out var tiles)) { pending = true; PreloadCarte(); tiles = []; }
-            foreach (var t in tiles.Where(t => t.Bounds.IntersectsWith(view)))
-                dc.DrawDrawing(t.Drawing);
-            // Vue réelle des maps visitées (sol et décors, dessinés en arrière-plan) par-dessus la carte du monde ;
-            // à mêmes coordonnées (maison, grotte…), la map où se trouve le personnage d'abord, sinon une map extérieure
-            var visited = _harvest!.Maps
+            if (!underground)
+                foreach (var t in tiles.Where(t => t.Bounds.IntersectsWith(view)))
+                    dc.DrawDrawing(t.Drawing);
+            // Vue réelle des maps visitées (sol et décors, dessinés en arrière-plan) ; à mêmes coordonnées, la map où se
+            // trouve le personnage d'abord, sinon une map du même niveau (dehors ou sous terre)
+            var visited = _harvest.Maps
                 .Select(kv => (Id: kv.Key, Hm: kv.Value, Info: _data!.Maps.GetValueOrDefault(kv.Key)))
                 .Where(m => m.Info != null && m.Info.SuperArea == map.SuperArea
-                    && Math.Abs(m.Info.X - map.X) <= MiniRadius && Math.Abs(m.Info.Y - map.Y) <= MiniRadius)
+                    && Math.Abs(m.Info.X - map.X) <= MiniRadius && Math.Abs(m.Info.Y - map.Y) <= MiniRadius
+                    && (!underground || m.Info.SubArea == map.SubArea))
                 .OrderByDescending(m => m.Id == map.Id);
             var drawn = new HashSet<(int, int)>();
             foreach (var m in visited)
             {
                 if (drawn.Contains((m.Info!.X, m.Info.Y))) continue;
-                if (Data.MapRenderer.TryGet(m.Id, m.Hm.Date, m.Hm.Key) is not { } real) continue;
+                if (Data.MapRenderer.TryGet(m.Id, m.Hm.Date, m.Hm.Key) is not { } real || (real.Outdoor == underground && m.Id != map.Id)) continue;
                 drawn.Add((m.Info.X, m.Info.Y));
-                dc.DrawImage(real, Data.WorldMap.Cell(m.Info.X, m.Info.Y));
+                dc.DrawImage(real.Image, Data.WorldMap.Cell(m.Info.X, m.Info.Y));
             }
             // Grille légère des maps
             var grid = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 0.8 / MiniScale);

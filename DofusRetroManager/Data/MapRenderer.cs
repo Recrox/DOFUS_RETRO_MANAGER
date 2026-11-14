@@ -24,8 +24,11 @@ public static class MapRenderer
         "Ankama", "Retro", "resources", "app", "retroclient", "clips", "gfx");
     static readonly string CacheDir = Path.Combine(GameData.AppDir, "cartes");
 
-    /// <summary>Vignettes prêtes (null : map intérieure ou illisible), par « id_date ».</summary>
-    static readonly ConcurrentDictionary<string, BitmapSource?> Ready = new();
+    /// <summary>Vue d'une map : vignette, et map extérieure ou non (égouts, grottes, donjons, maisons).</summary>
+    public sealed record MapView(BitmapSource Image, bool Outdoor);
+
+    /// <summary>Vignettes prêtes (null : map illisible), par « id_date ».</summary>
+    static readonly ConcurrentDictionary<string, MapView?> Ready = new();
     static readonly ConcurrentDictionary<string, bool> Queued = new();
     static readonly BlockingCollection<(int Id, string Date, string Key)> Queue = new();
     static Thread? _worker;
@@ -35,10 +38,10 @@ public static class MapRenderer
     public static int Version => Volatile.Read(ref _version);
 
     /// <summary>
-    /// Vignette d'une map visitée si elle est prête ; sinon null (map intérieure, illisible, ou demandée : elle sera
+    /// Vue d'une map visitée si elle est prête ; sinon null (map illisible, ou demandée : elle sera
     /// dessinée en arrière-plan, puis <see cref="Version"/> augmentera).
     /// </summary>
-    public static BitmapSource? TryGet(int mapId, string date, string key)
+    public static MapView? TryGet(int mapId, string date, string key)
     {
         var name = $"{mapId}_{date}";
         if (Ready.TryGetValue(name, out var img)) return img;
@@ -75,7 +78,7 @@ public static class MapRenderer
                 job = Queue.Take();
             }
             var name = $"{job.Id}_{job.Date}";
-            BitmapSource? img = null;
+            MapView? img = null;
             try { img = LoadCached(name) ?? RenderAndSave(job.Id, job.Date, job.Key, name); }
             catch { } // map illisible : rien n'est dessiné
             if (Ready.Count > 1200) Ready.Clear(); // ~60 Ko par vignette
@@ -85,9 +88,12 @@ public static class MapRenderer
         }
     }
 
-    static BitmapSource? LoadCached(string name)
+    /// <summary>Vignette gardée sur le disque : « id_date.png » (extérieure) ou « id_date.in.png » (intérieure).</summary>
+    static MapView? LoadCached(string name)
     {
+        bool outdoor = true;
         var path = Path.Combine(CacheDir, name + ".png");
+        if (!File.Exists(path)) { outdoor = false; path = Path.Combine(CacheDir, name + ".in.png"); }
         if (!File.Exists(path)) return null;
         var bmp = new BitmapImage();
         bmp.BeginInit();
@@ -95,12 +101,12 @@ public static class MapRenderer
         bmp.UriSource = new Uri(path);
         bmp.EndInit();
         bmp.Freeze();
-        return bmp;
+        return new MapView(bmp, outdoor);
     }
 
-    static BitmapSource? RenderAndSave(int id, string date, string key, string name)
+    static MapView? RenderAndSave(int id, string date, string key, string name)
     {
-        if (MapDecoder.Load(id, date, key) is not { Outdoor: true } map) return null;
+        if (MapDecoder.Load(id, date, key) is not { } map) return null;
         var img = Render(map);
         if (img == null) return null;
         try
@@ -108,11 +114,11 @@ public static class MapRenderer
             Directory.CreateDirectory(CacheDir);
             var enc = new PngBitmapEncoder();
             enc.Frames.Add(BitmapFrame.Create(img));
-            using var fs = File.Create(Path.Combine(CacheDir, name + ".png"));
+            using var fs = File.Create(Path.Combine(CacheDir, name + (map.Outdoor ? ".png" : ".in.png")));
             enc.Save(fs);
         }
         catch { } // pas de cache : elle sera redessinée au prochain lancement
-        return img;
+        return new MapView(img, map.Outdoor);
     }
 
     /// <summary>Vue de la map, comme le jeu la construit : sol, décors du calque 1, puis du calque 2, case par case.</summary>
