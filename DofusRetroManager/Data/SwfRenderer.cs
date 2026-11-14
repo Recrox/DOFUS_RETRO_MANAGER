@@ -71,12 +71,12 @@ public sealed class SwfRenderer
     /// <summary>Lit un SWF pour en rendre ensuite les symboles exportés (<see cref="RenderSymbol"/>).</summary>
     public static SwfRenderer Load(byte[] swf) => new(swf);
 
-    /// <summary>Rend la première image d'un symbole exporté, dans son propre repère ; null s'il est absent ou vide.</summary>
-    public Drawing? RenderSymbol(string name)
+    /// <summary>Rend une image (1 : la première) d'un symbole exporté, dans son propre repère ; null s'il est absent ou vide.</summary>
+    public Drawing? RenderSymbol(string name, int frame = 1)
     {
         if (!Exports.TryGetValue(name, out var id) || !_chars.TryGetValue(id, out var def)) return null;
         var group = def.Code == 39
-            ? RenderTimeline(ReadTags(def.Data, 4, def.Data.Length), ColorTx.Identity, 1)
+            ? RenderTimeline(ReadTags(def.Data, 4, def.Data.Length), ColorTx.Identity, 1, frame)
             : def.Code is 2 or 22 or 32 or 83 ? RenderShape(def.Code, def.Data, ColorTx.Identity) : new DrawingGroup();
         if (group.Children.Count == 0) return null;
         group.Freeze();
@@ -100,12 +100,13 @@ public sealed class SwfRenderer
 
     // --- Timeline (racine ou sprite) : liste d'affichage de la première image ---
 
-    DrawingGroup RenderTimeline(List<(int Code, byte[] Data)> tags, ColorTx cx, int depthLevel)
+    DrawingGroup RenderTimeline(List<(int Code, byte[] Data)> tags, ColorTx cx, int depthLevel, int frame = 1)
     {
+        int shown = 0;
         var display = new SortedDictionary<int, (int Char, Matrix M, ColorTx Cx, bool IsMask)>();
         foreach (var (code, data) in tags)
         {
-            if (code == 1) break; // ShowFrame : fin de la première image
+            if (code == 1 && ++shown >= frame) break; // ShowFrame : fin de l'image voulue
             if (code is 26 or 70) PlaceObject(code, data, display);
             else if (code == 4)
             {

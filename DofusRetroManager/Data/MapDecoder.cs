@@ -21,11 +21,30 @@ public static class MapDecoder
     /// <summary>Cases interactives de la map, ou null si le fichier est introuvable ou la clé incorrecte.</summary>
     public static List<InteractiveCell>? InteractiveCells(int mapId, string date, string key)
     {
+        if (Load(mapId, date, key) is not { } map) return null;
+        var cells = new List<InteractiveCell>();
+        for (int cell = 0; cell < map.Cells.Length; cell++)
+        {
+            var v = map.Cells[cell];
+            bool interactive = (v[7] & 2) != 0;
+            int obj2 = ((v[0] & 2) << 12) + ((v[7] & 1) << 12) + (v[8] << 6) + v[9];
+            if (interactive && obj2 > 0) cells.Add(new InteractiveCell(cell, obj2));
+        }
+        return cells;
+    }
+
+    /// <summary>Map déchiffrée : largeur, hauteur, extérieure ou non, et les 10 valeurs de chaque case.</summary>
+    public sealed record MapCells(int Width, int Height, bool Outdoor, int[][] Cells);
+
+    /// <summary>Contenu de la map, ou null si le fichier est introuvable ou la clé incorrecte.</summary>
+    public static MapCells? Load(int mapId, string date, string key)
+    {
         var path = Path.Combine(MapsDir, $"{mapId}_{date}X.swf");
         if (!File.Exists(path)) path = Path.Combine(MapsDir, $"{mapId}_{date}.swf");
         if (!File.Exists(path)) return null;
 
-        var data = Avm1.ToStr(Avm1.Run(File.ReadAllBytes(path)).GetValueOrDefault("mapData"));
+        var vars = Avm1.Run(File.ReadAllBytes(path));
+        var data = Avm1.ToStr(vars.GetValueOrDefault("mapData"));
         if (data.Length == 0) return null;
         if (path.EndsWith("X.swf"))
         {
@@ -34,16 +53,15 @@ public static class MapDecoder
         }
         if (data.Length == 0 || data.Length % 10 != 0 || data.Any(c => Hash.IndexOf(c) < 0)) return null;
 
-        var cells = new List<InteractiveCell>();
-        for (int i = 0, cell = 0; i < data.Length; i += 10, cell++)
+        var cells = new int[data.Length / 10][];
+        for (int i = 0; i < cells.Length; i++)
         {
-            var v = new int[10];
-            for (int j = 0; j < 10; j++) v[j] = Hash.IndexOf(data[i + j]);
-            bool interactive = (v[7] & 2) != 0;
-            int obj2 = ((v[0] & 2) << 12) + ((v[7] & 1) << 12) + (v[8] << 6) + v[9];
-            if (interactive && obj2 > 0) cells.Add(new InteractiveCell(cell, obj2));
+            var v = cells[i] = new int[10];
+            for (int j = 0; j < 10; j++) v[j] = Hash.IndexOf(data[i * 10 + j]);
         }
-        return cells;
+        int.TryParse(Avm1.ToStr(vars.GetValueOrDefault("width")), out var w);
+        int.TryParse(Avm1.ToStr(vars.GetValueOrDefault("height")), out var h);
+        return new MapCells(w > 0 ? w : 15, h > 0 ? h : 17, Avm1.ToStr(vars.GetValueOrDefault("bOutdoor")) == "true", cells);
     }
 
     /// <summary>Clé du message GDM : hexadécimal, puis séquences « %xx » décodées.</summary>

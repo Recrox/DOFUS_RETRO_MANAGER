@@ -15,8 +15,10 @@ public partial class MainWindow
 {
     MiniMapWindow? _miniMap;
     /// <summary>Maps visibles autour de celle du personnage (rayon), et échelle de l'image (une map : 40 × 23).</summary>
-    const int MiniRadius = 4;
-    const double MiniScale = 0.8;
+    /// <summary>Niveaux de zoom (molette ⚙ : − / +) : rayon en maps ; l'image garde la même taille.</summary>
+    static readonly int[] MiniRadii = [1, 2, 3, 4, 6, 8, 12];
+    int MiniRadius => MiniRadii[Math.Clamp(_organizer.MiniMapZoom, 0, MiniRadii.Length - 1)];
+    double MiniScale => 0.8 * 9 / (2 * MiniRadius + 1);
     string _miniKey = "";
     int _miniRetries;
     DateTime _miniRetryAt;
@@ -86,6 +88,13 @@ public partial class MainWindow
         // Molette ⚙ : déplacer / verrouiller, opacité propre à la mini-carte
         _miniMap.Gear.SetOpacity(opacity);
         _miniMap.Gear.LockToggled += () => MiniMapMove_Click(this, new RoutedEventArgs());
+        _miniMap.Gear.AddZoom(step =>
+        {
+            _organizer.MiniMapZoom = Math.Clamp(_organizer.MiniMapZoom + step, 0, MiniRadii.Length - 1);
+            _organizer.Save();
+            _miniKey = "";
+            UpdateMiniMap();
+        });
         _miniMap.Gear.OpacityChanged += v =>
         {
             _miniMap.Opacity = v;
@@ -134,7 +143,7 @@ public partial class MainWindow
             : (fgWindow != null ? CharacterOf(fgWindow) : null) ?? _hunt?.Shown;
         Data.MapInfo? map = me != null && int.TryParse(me.MapId, out var id) ? _data.Maps.GetValueOrDefault(id) : null;
         var wanted = _organizer.MiniMapResources.Select(k => k - ResourceFilterBase).ToHashSet();
-        var key = $"{pinned}|{map?.Id}|{string.Join(",", wanted)}|{_harvest.Maps.Count}|{_carteTiles.Count}";
+        var key = $"{pinned}|{MiniRadius}|{map?.Id}|{string.Join(",", wanted)}|{_harvest.Maps.Count}|{_carteTiles.Count}|{Data.MapRenderer.Version}";
         var w = EnsureMiniMap();
         // Tuiles ou icônes pas encore chargées : nouvel essai toutes les 2 s, 10 fois au plus
         bool retry = _miniRetries is > 0 and <= 10 && DateTime.Now >= _miniRetryAt;
@@ -178,6 +187,11 @@ public partial class MainWindow
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         {
+            // Icônes, textes et traits à taille constante à l'écran, quel que soit le zoom (k = 1 au zoom par défaut)
+            // (une seule icône par map quand deux ne tiennent plus)
+            double want = 0.8 / MiniScale;
+            int perCell = want * 19 * 2 <= cw - 2 ? 2 : 1;
+            double k = Math.Min(want, (cw - 2) / perCell / 19), s = 19 * k;
             dc.PushTransform(new ScaleTransform(MiniScale, MiniScale));
             dc.PushTransform(new TranslateTransform(-view.X, -view.Y));
             dc.PushClip(new RectangleGeometry(view));
@@ -186,8 +200,23 @@ public partial class MainWindow
             if (!_carteTiles.TryGetValue(map.SuperArea, out var tiles)) { pending = true; PreloadCarte(); tiles = []; }
             foreach (var t in tiles.Where(t => t.Bounds.IntersectsWith(view)))
                 dc.DrawDrawing(t.Drawing);
+            // Vue réelle des maps visitées (sol et décors, dessinés en arrière-plan) par-dessus la carte du monde ;
+            // à mêmes coordonnées (maison, grotte…), la map où se trouve le personnage d'abord, sinon une map extérieure
+            var visited = _harvest!.Maps
+                .Select(kv => (Id: kv.Key, Hm: kv.Value, Info: _data!.Maps.GetValueOrDefault(kv.Key)))
+                .Where(m => m.Info != null && m.Info.SuperArea == map.SuperArea
+                    && Math.Abs(m.Info.X - map.X) <= MiniRadius && Math.Abs(m.Info.Y - map.Y) <= MiniRadius)
+                .OrderByDescending(m => m.Id == map.Id);
+            var drawn = new HashSet<(int, int)>();
+            foreach (var m in visited)
+            {
+                if (drawn.Contains((m.Info!.X, m.Info.Y))) continue;
+                if (Data.MapRenderer.TryGet(m.Id, m.Hm.Date, m.Hm.Key) is not { } real) continue;
+                drawn.Add((m.Info.X, m.Info.Y));
+                dc.DrawImage(real, Data.WorldMap.Cell(m.Info.X, m.Info.Y));
+            }
             // Grille légère des maps
-            var grid = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 1);
+            var grid = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 0.8 / MiniScale);
             for (int i = 0; i <= size; i++)
             {
                 dc.DrawLine(grid, new Point(view.X + i * cw, view.Y), new Point(view.X + i * cw, view.Bottom));
@@ -200,20 +229,20 @@ public partial class MainWindow
                 var cell = Data.WorldMap.Cell(x, y);
                 if (!cell.IntersectsWith(view)) continue;
                 dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(70, 52, 211, 153)), null, cell);
-                double ix = cell.X + 2;
-                foreach (var (item, count) in items.Take(2))
+                double ix = cell.X + 2 * k;
+                foreach (var (item, count) in items.Take(perCell))
                 {
-                    if (Data.ItemIcons.Get(item) is { } icon) dc.DrawImage(icon, new Rect(ix, cell.Y + 2, 19, 19));
+                    if (Data.ItemIcons.Get(item) is { } icon) dc.DrawImage(icon, new Rect(ix, cell.Y + 2 * k, s, s));
                     else pending = true;
                     var text = new FormattedText(count.ToString(), System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                        font, 10, Brushes.White, 1.0);
-                    dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)), null, new Rect(ix + 19 - text.Width - 2, cell.Bottom - 12, text.Width + 2, 11));
-                    dc.DrawText(text, new Point(ix + 19 - text.Width - 1, cell.Bottom - 13));
-                    ix += 19;
+                        font, 10 * k, Brushes.White, 1.0);
+                    dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)), null, new Rect(ix + s - text.Width - 2 * k, cell.Bottom - 12 * k, text.Width + 2 * k, 11 * k));
+                    dc.DrawText(text, new Point(ix + s - text.Width - k, cell.Bottom - 13 * k));
+                    ix += s;
                 }
             }
             // Map du personnage
-            dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0xFF, 0x4D, 0x4D)), 2.5), Data.WorldMap.Cell(map.X, map.Y));
+            dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromRgb(0xFF, 0x4D, 0x4D)), 2.5 * 0.8 / MiniScale), Data.WorldMap.Cell(map.X, map.Y));
             dc.Pop(); dc.Pop(); dc.Pop();
         }
         var bitmap = new RenderTargetBitmap((int)(view.Width * MiniScale), (int)(view.Height * MiniScale), 96, 96, PixelFormats.Pbgra32);

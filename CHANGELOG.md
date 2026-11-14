@@ -2,6 +2,11 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.95.0 — 14 novembre 2026
+
+- **Carte** : la mini-carte en jeu montre la vraie vue des maps déjà visitées (sol, arbres, maisons), tirée des fichiers du jeu.
+- **Carte** : zoom avant et arrière sur la mini-carte en jeu (molette ⚙ : − / +), de 3 × 3 à 25 × 25 maps.
+
 ## 1.94.0 — 14 novembre 2026
 
 - **Carte** : la mini-carte en jeu peut suivre un personnage précis au lieu de la fenêtre au premier plan.

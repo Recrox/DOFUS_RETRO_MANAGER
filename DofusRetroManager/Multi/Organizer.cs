@@ -83,6 +83,8 @@ public sealed class OrganizerSettings
     public string MiniMapCharacter { get; set; } = "";
     /// <summary>Opacité de la mini-carte (molette ⚙) ; null : celle de la superposition.</summary>
     public double? MiniMapOpacity { get; set; }
+    /// <summary>Zoom de la mini-carte (indice des rayons, 3 : 9 × 9 maps).</summary>
+    public int MiniMapZoom { get; set; } = 3;
     public List<int> MiniMapResources { get; set; } = new();
 
     static string Path => System.IO.Path.Combine(GameData.AppDir, "organizer.json");

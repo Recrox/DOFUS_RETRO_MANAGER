@@ -15,7 +15,7 @@ public sealed class OverlayGear
     public readonly Border Button;
     public readonly StackPanel Panel = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 4), Visibility = Visibility.Collapsed };
     readonly TextBlock _lock = new();
-    readonly Slider _opacity = new() { Minimum = 40, Maximum = 100, Width = 110, VerticalAlignment = VerticalAlignment.Center, IsMoveToPointEnabled = true };
+    readonly Slider _opacity = new() { Minimum = 40, Maximum = 100, Width = 90, VerticalAlignment = VerticalAlignment.Center, IsMoveToPointEnabled = true };
     readonly TextBlock _value = new() { Width = 34, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right };
     bool _setting;
 
@@ -52,6 +52,19 @@ public sealed class OverlayGear
         Panel.Children.Add(_opacity);
         Panel.Children.Add(_value);
         SetLocked(true);
+    }
+
+    /// <summary>Boutons − / + (zoom de la mini-carte) : step = −1 ou +1.</summary>
+    public void AddZoom(Action<int> step)
+    {
+        foreach (var (text, delta, tip) in new[] { ("−", -1, "Zoom arrière"), ("+", 1, "Zoom avant") })
+        {
+            var label = new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.Bold };
+            var chip = new Border { Child = label, Padding = new Thickness(7, 0, 7, 1), CornerRadius = new CornerRadius(4), Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 4, 0), ToolTip = tip };
+            chip.SetResourceReference(Border.BackgroundProperty, "HoverBg");
+            chip.MouseLeftButtonDown += (_, e) => { e.Handled = true; step(delta); };
+            Panel.Children.Insert(1 + (delta > 0 ? 1 : 0), chip);
+        }
     }
 
     public void SetLocked(bool locked)
