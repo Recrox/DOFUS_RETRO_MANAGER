@@ -64,10 +64,17 @@ public static partial class GameWindows
         if (fg == h) return;
         // Rattachement d'abord : un SetForegroundWindow refusé fait clignoter la fenêtre dans la barre des tâches
         // (cas du clic + touche, où l'application n'a pas reçu la dernière entrée)
-        uint target = GetWindowThreadProcessId(fg, out _), self = GetCurrentThreadId();
+        // Rattachement aussi au fil de la fenêtre visée : sans lui, elle passe devant sans recevoir le focus clavier/souris
+        // (il faut alors cliquer deux fois). SetActiveWindow/SetFocus ne font que l'activer, comme Alt+Tab.
+        uint target = GetWindowThreadProcessId(fg, out _), dest = GetWindowThreadProcessId(h, out _), self = GetCurrentThreadId();
         bool attached = target != 0 && target != self && AttachThreadInput(self, target, true);
-        try { BringWindowToTop(h); SetForegroundWindow(h); }
-        finally { if (attached) AttachThreadInput(self, target, false); }
+        bool attachedDest = dest != 0 && dest != self && dest != target && AttachThreadInput(self, dest, true);
+        try { BringWindowToTop(h); SetForegroundWindow(h); SetActiveWindow(h); SetFocus(h); }
+        finally
+        {
+            if (attachedDest) AttachThreadInput(self, dest, false);
+            if (attached) AttachThreadInput(self, target, false);
+        }
         // Dernier recours (Windows refuse parfois quand l'application n'est pas active) : bascule comme Alt+Tab
         if (GetForegroundWindow() != h) SwitchToThisWindow(h, true);
         StopFlash(h);
@@ -115,6 +122,8 @@ public static partial class GameWindows
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
+    [DllImport("user32.dll")] static extern IntPtr SetActiveWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern IntPtr SetFocus(IntPtr h);
     [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
     [DllImport("user32.dll")] static extern bool IsZoomed(IntPtr h);
     [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);

@@ -2,6 +2,10 @@
 
 Les changements de chaque version, la plus récente en haut. Ce fichier est intégré à l'application (bouton **Nouveautés** en haut) et sert de notes de Release sur GitHub.
 
+## 1.93.0 — 14 novembre 2026
+
+- **Switcheur** : Correction : la fenêtre du jeu affichée reçoit tout de suite le clavier et la souris, sans devoir cliquer deux fois.
+
 ## 1.92.0 — 12 novembre 2026
 
 - **Paramètres** : nouveau bouton ⚙ en haut à droite : style et thème (retirés de l'en-tête), taille de la page, menu par familles ou tous les onglets sur une ligne comme avant, et choix des onglets affichés.
